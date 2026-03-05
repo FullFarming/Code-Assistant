@@ -215,6 +215,61 @@ function OwnerCard({ owner }: { owner: TaskData["owner"] }) {
   );
 }
 
+const WPR_STAFF: Record<string, { nameKo: string; email: string }> = {
+  "Gina Kim": { nameKo: "김지성 대리", email: "gina.kim@cushwake.com" },
+  "Emma Song": { nameKo: "Emma Song", email: "emma.song@cushwake.com" },
+  "Grace Kwon": { nameKo: "권희원 이사", email: "grace.kwon@ap.cushwake.com" },
+  "Hannah Jeong": { nameKo: "정혜은 대리", email: "hannah.jeong@cushwake.com" },
+};
+
+function HighlightStaff({ text }: { text: string }) {
+  const staffNames = Object.keys(WPR_STAFF);
+  const parts: { type: "text" | "staff"; value: string; staffKey?: string }[] = [];
+  let remaining = text;
+
+  while (remaining.length > 0) {
+    let earliestIdx = remaining.length;
+    let matchedName = "";
+    for (const name of staffNames) {
+      const idx = remaining.indexOf(name);
+      if (idx !== -1 && idx < earliestIdx) {
+        earliestIdx = idx;
+        matchedName = name;
+      }
+    }
+    if (matchedName && earliestIdx < remaining.length) {
+      if (earliestIdx > 0) {
+        parts.push({ type: "text", value: remaining.slice(0, earliestIdx) });
+      }
+      parts.push({ type: "staff", value: matchedName, staffKey: matchedName });
+      remaining = remaining.slice(earliestIdx + matchedName.length);
+    } else {
+      parts.push({ type: "text", value: remaining });
+      remaining = "";
+    }
+  }
+
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.type === "staff" && p.staffKey ? (
+          <a
+            key={i}
+            className="staff-badge"
+            href={`mailto:${WPR_STAFF[p.staffKey].email}`}
+            title={`${WPR_STAFF[p.staffKey].nameKo} — ${WPR_STAFF[p.staffKey].email}`}
+            data-testid={`staff-badge-${p.staffKey}`}
+          >
+            {p.value}
+          </a>
+        ) : (
+          <span key={i}>{p.value}</span>
+        )
+      )}
+    </>
+  );
+}
+
 function EmailBox({
   email,
   stepKey,
@@ -244,7 +299,7 @@ function EmailBox({
       <div className="email-meta">
         <div className="email-row">
           <span className="email-label">받는 사람</span>
-          <span className="email-value">{email.to}</span>
+          <span className="email-value"><HighlightStaff text={email.to} /></span>
           <button
             className={`email-copy-sm${copiedField === copyId("to") ? " copied" : ""}`}
             onClick={() => onCopy(copyId("to"), email.to)}
@@ -256,7 +311,7 @@ function EmailBox({
         {email.cc && (
           <div className="email-row">
             <span className="email-label">참조</span>
-            <span className="email-value">{email.cc}</span>
+            <span className="email-value"><HighlightStaff text={email.cc} /></span>
             <button
               className={`email-copy-sm${copiedField === copyId("cc") ? " copied" : ""}`}
               onClick={() => onCopy(copyId("cc"), email.cc!)}

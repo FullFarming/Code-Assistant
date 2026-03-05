@@ -891,6 +891,27 @@
   margin-top: 1px;
 }
 
+.staff-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  background: #c41230;
+  color: white;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  vertical-align: middle;
+  line-height: 1.6;
+}
+.staff-badge:hover {
+  background: #a00d26;
+  transform: scale(1.05);
+}
+
 .sec-div {
   border: none;
   border-top: 2px dashed #ccc;
