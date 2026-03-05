@@ -103,8 +103,7 @@ export const DATA: Record<string, TaskData> = {
         desc: "회신받은 번호를 기재한 뒤 <strong>Glosign</strong>을 통해 법인인감 날인을 요청합니다.",
         detail: "→ 비대면 인감날인 절차는 🖊️ 인감 날인 항목을 참고하세요."
       }
-    ],
-    note: "📌 담당자: WPR Gina Kim"
+    ]
   },
 
   명함: {
