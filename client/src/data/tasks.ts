@@ -74,7 +74,7 @@ export const BUBBLES: BubbleConfig[] = [
 export const DATA: Record<string, TaskData> = {
   공문번호: {
     icon: "📄", label: "공문번호 발급", badge: "행정",
-    owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지나", team: "WPR", contact: "gina.kim@cushwake.com" },
+    owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR", contact: "gina.kim@cushwake.com" },
     flow: ["공문 작성","승인 요청 메일","공문번호 회신","번호 기재","글로싸인 날인"],
     steps: [
       {
@@ -140,7 +140,7 @@ export const DATA: Record<string, TaskData> = {
 
   계약서: {
     icon: "📁", label: "보관계약서 열람", badge: "행정",
-    owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지나", team: "WPR", contact: "gina.kim@cushwake.com" },
+    owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR", contact: "gina.kim@cushwake.com" },
     flow: ["Gina Kim 메일 요청","형태 선택 (스캔/실물)","계약서 수령"],
     steps: [
       {
@@ -176,7 +176,7 @@ export const DATA: Record<string, TaskData> = {
 
   국내출장: {
     icon: "🚄", label: "국내 출장 신청", badge: "지원",
-    owner: { icon: "🧳", name: "Hannah Jeong", nameKo: "Hannah", team: "WPR", contact: "hannah.jeong@cushwake.com" },
+    owner: { icon: "🧳", name: "Hannah Jeong", nameKo: "정혜은 대리", team: "WPR", contact: "hannah.jeong@cushwake.com" },
     flow: ["신청서 작성","팀장·대표 승인","Hannah에 제출","예약 완료 수령"],
     steps: [
       { n: 1, title: "국내 출장 신청서 작성", desc: "국내 출장 신청서 링크를 통해 작성합니다.", detail: null },
@@ -198,7 +198,7 @@ export const DATA: Record<string, TaskData> = {
 
   해외출장: {
     icon: "✈️", label: "해외 출장 신청", badge: "지원 · APAC",
-    owner: { icon: "🧳", name: "Hannah Jeong", nameKo: "Hannah", team: "WPR", contact: "hannah.jeong@cushwake.com" },
+    owner: { icon: "🧳", name: "Hannah Jeong", nameKo: "정혜은 대리", team: "WPR", contact: "hannah.jeong@cushwake.com" },
     flow: ["신청서 작성","팀장·대표 승인","APAC 승인 (Hannah)","항공·호텔 예약","확인 수령"],
     steps: [
       { n: 1, title: "해외 출장 신청서 작성", desc: "", detail: null },
@@ -241,7 +241,7 @@ export const DATA: Record<string, TaskData> = {
 
   인감: {
     icon: "🖊️", label: "비대면 인감 날인 (Glosign)", badge: "시설",
-    owner: { icon: "🖊️", name: "Grace Kwon", nameKo: "권희원", team: "WPR", contact: "grace.kwon@ap.cushwake.com" },
+    owner: { icon: "🖊️", name: "Grace Kwon", nameKo: "권희원 이사", team: "WPR", contact: "grace.kwon@ap.cushwake.com" },
     flow: ["계약 시작하기","파일 업로드","계약명 입력","비대면 선택","결재자 설정","날인 위치","최종 확인"],
     steps: [
       { n: 1, title: "Glosign 접속 → [계약 시작하기]", desc: "", detail: null },
@@ -251,17 +251,17 @@ export const DATA: Record<string, TaskData> = {
       {
         n: 5, title: "내부 결재자 설정",
         desc: "결재 1차: 담당 사원 → 결재 2차: 부장",
-        detail: '서명참여자 (법인인감 날인 권한자): <strong>권희원 부장</strong><br>grace.kwon@ap.cushwake.com / 010-9282-4534'
+        detail: '서명참여자 (법인인감 날인 권한자): <strong>권희원 이사</strong><br>grace.kwon@ap.cushwake.com / 010-9282-4534'
       },
       { n: 6, title: "날인 위치 지정", desc: "[도장모양] 클릭 → 계약서 페이지에서 날인 위치 지정 → [다음]", detail: '인감증명서·법인등기부등본 요청 시: [클립모양] 클릭 → 첨부파일명 입력 후 [요청하기]' },
       { n: 7, title: "[최종 확인] → 전자서명 신청 완료", desc: "", detail: null }
     ],
-    note: "📌 법인인감 권한자: 권희원 부장 | glosign.com | 신규직원: Reception 대행"
+    note: "📌 법인인감 권한자: 권희원 이사 | glosign.com | 신규직원: Reception 대행"
   },
 
   법인차량: {
     icon: "🚗", label: "법인차량 이용", badge: "시설 · 커넥트프로",
-    owner: { icon: "🧳", name: "Hannah Jeong", nameKo: "Hannah", team: "WPR", contact: "hannah.jeong@cushwake.com" },
+    owner: { icon: "🧳", name: "Hannah Jeong", nameKo: "정혜은 대리", team: "WPR", contact: "hannah.jeong@cushwake.com" },
     flow: ["앱 설치 및 법인 연결","차량 예약","승인 확인","차량 이용","운행일지 작성","사용 종료"],
     steps: [
       {
