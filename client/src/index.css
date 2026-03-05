@@ -271,8 +271,8 @@
   transition: transform 0.15s ease, filter 0.15s ease;
   z-index: 20;
   user-select: none;
-  width: 150px;
-  height: 150px;
+  width: 168px;
+  height: 168px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -296,10 +296,10 @@
   position: relative;
   z-index: 2;
   font-family: var(--font-brush);
-  font-size: 21px;
+  font-size: 24px;
   color: var(--ink);
   pointer-events: none;
-  padding-bottom: 18px;
+  padding-bottom: 14px;
   transition: color 0.15s ease;
 }
 .bubble:hover,
@@ -845,12 +845,12 @@
     min-height: 60vh;
   }
   .bubble {
-    width: 120px;
-    height: 120px;
+    width: 138px;
+    height: 138px;
   }
   .bubble-label {
-    font-size: 17px;
-    padding-bottom: 14px;
+    font-size: 20px;
+    padding-bottom: 10px;
   }
   .video-bg video {
     object-fit: contain;
@@ -871,12 +871,12 @@
     font-size: 16px;
   }
   .bubble {
-    width: 100px;
-    height: 100px;
+    width: 118px;
+    height: 118px;
   }
   .bubble-label {
-    font-size: 14px;
-    padding-bottom: 12px;
+    font-size: 17px;
+    padding-bottom: 8px;
   }
   .header-title {
     font-size: 18px;
