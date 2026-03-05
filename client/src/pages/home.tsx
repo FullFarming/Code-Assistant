@@ -3,11 +3,19 @@ import { BUBBLES, DATA, type TaskData } from "@/data/tasks";
 import introVideo from "@assets/그림_기반_애니메이션_영상_제작_1772682936965.mp4";
 
 export default function Home() {
-  const [activeKey, setActiveKey] = useState<string | null>("공문번호");
+  const [activeKey, setActiveKey] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set());
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const monitorBodyRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (v) {
+      v.play().catch(() => {});
+    }
+  }, []);
 
   const activeData = activeKey ? DATA[activeKey] : null;
 
@@ -46,6 +54,16 @@ export default function Home() {
     setTimeout(() => setCopiedField(null), 2000);
   }, []);
 
+  const handleDismiss = useCallback(() => {
+    if (!activeKey) return;
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setActiveKey(null);
+      setIsTransitioning(false);
+      setExpandedDetails(new Set());
+    }, 200);
+  }, [activeKey]);
+
   return (
     <div className="layout" data-testid="layout-container">
       <header className="header" data-testid="header">
@@ -56,8 +74,13 @@ export default function Home() {
         <div className="header-title">업무 가이드 📚</div>
       </header>
 
-      <div className="stage">
-        <div className="left-panel">
+      <div className={`stage${activeKey ? "" : " full-video"}`}>
+        <div className="left-panel" onClick={handleDismiss} data-testid="left-panel">
+          <div className={`video-bg${activeKey ? " blurred" : ""}`}>
+            <video ref={videoRef} autoPlay loop muted playsInline data-testid="intro-video">
+              <source src={introVideo} type="video/mp4" />
+            </video>
+          </div>
           <div className="hatching" />
           <div className="bubble-cloud">
             {BUBBLES.map((b) => (
@@ -69,18 +92,13 @@ export default function Home() {
                   ...(b.left ? { left: b.left } : {}),
                   ...(b.right ? { right: b.right } : {}),
                 }}
-                onClick={() => handleBubbleClick(b.key)}
+                onClick={(e) => { e.stopPropagation(); handleBubbleClick(b.key); }}
                 aria-pressed={activeKey === b.key}
                 data-testid={`bubble-${b.key}`}
               >
                 {b.emoji} {b.text}
               </button>
             ))}
-          </div>
-          <div className={`video-wrap${activeKey ? " blurred" : ""}`}>
-            <video autoPlay loop muted playsInline data-testid="intro-video">
-              <source src={introVideo} type="video/mp4" />
-            </video>
           </div>
         </div>
 
