@@ -187,9 +187,6 @@ export default function Home() {
                       <div>{activeData.warn}</div>
                     </div>
                   )}
-                  {activeData.note && (
-                    <div className="note">{activeData.note}</div>
-                  )}
                 </div>
               </div>
               <div className="monitor-stand">
