@@ -1,0 +1,1130 @@
+# C&W Korea 인터랙티브 업무 가이드 — 제작 명세서
+
+> **문서 목적:** `CW_웹툰_인터랙티브가이드.html` 의 전체 구조, 디자인 시스템, 인터랙션 로직, 반응형 설계, 담당자 표시 방식을 포함한 재제작/수정 가이드입니다.
+
+---
+
+## 목차
+
+1. [프로젝트 개요](#1-프로젝트-개요)
+2. [파일 구성](#2-파일-구성)
+3. [디자인 시스템](#3-디자인-시스템)
+4. [페이지 레이아웃 구조](#4-페이지-레이아웃-구조)
+5. [Left Panel — 영상 & 말풍선](#5-left-panel--영상--말풍선)
+6. [Right Panel — 모니터 & 슬라이드 전환](#6-right-panel--모니터--슬라이드-전환)
+7. [반응형 설계 명세](#7-반응형-설계-명세)
+8. [담당자 표시 컴포넌트](#8-담당자-표시-컴포넌트)
+9. [콘텐츠 데이터 구조 (DATA 객체)](#9-콘텐츠-데이터-구조-data-객체)
+10. [전체 업무 항목별 상세 내용](#10-전체-업무-항목별-상세-내용)
+11. [인터랙션 흐름 명세](#11-인터랙션-흐름-명세)
+12. [CSS 변수 & 스타일 가이드](#12-css-변수--스타일-가이드)
+13. [추가 기능 확장 가이드](#13-추가-기능-확장-가이드)
+
+---
+
+## 1. 프로젝트 개요
+
+| 항목 | 내용 |
+|------|------|
+| **프로젝트명** | C&W Korea WPR 업무 가이드 — 웹툰 인터랙티브 버전 |
+| **대상** | 서울 오피스 전 직원 |
+| **기술 스택** | 단일 HTML 파일 (Vanilla JS + CSS) |
+| **외부 의존** | Google Fonts (Nanum Pen Script, Noto Sans KR) |
+| **영상 파일** | `intro_animation.mp4` (HTML과 **같은 폴더**에 위치) |
+| **핵심 UX** | 영상이 메인 화면에서 무한 재생 → 말풍선 클릭 → 우측에 모니터 슬라이드 인 → 상세 가이드 확인 |
+
+### 디자인 컨셉
+
+- **웹툰 스타일**: 검정 잉크 테두리, 오프셋 박스 섀도우, 손글씨 폰트
+- **흑백 베이스**: 메인 컬러는 잉크(#111) + 종이(#f7f5f0), 포인트 레드(#c41230)
+- **좌우 분할 스테이지**: 왼쪽 = 영상·말풍선 극장 / 오른쪽 = 모니터 디스플레이
+
+---
+
+## 2. 파일 구성
+
+```
+📁 프로젝트 폴더
+├── CW_웹툰_인터랙티브가이드.html   ← 메인 파일
+└── intro_animation.mp4            ← 배경 영상 (필수: 같은 폴더)
+```
+
+> ⚠️ 영상 파일명이 다를 경우 HTML 내 `<source src="intro_animation.mp4">` 경로를 수정합니다.
+
+---
+
+## 3. 디자인 시스템
+
+### 3-1. CSS 변수 (`:root`)
+
+```css
+:root {
+  --ink:        #111;          /* 기본 텍스트 / 테두리 */
+  --paper:      #f7f5f0;       /* 배경색 (크림빛 종이) */
+  --panel:      #ffffff;       /* 카드 내부 배경 */
+  --accent:     #c41230;       /* C&W 브랜드 레드 */
+  --shadow:     4px 4px 0px var(--ink);   /* 웹툰 오프셋 그림자 */
+  --shadow-sm:  2px 2px 0px var(--ink);   /* 작은 오프셋 */
+  --font-brush: 'Nanum Pen Script', cursive;  /* 손글씨 폰트 */
+  --font-body:  'Noto Sans KR', sans-serif;   /* 본문 폰트 */
+}
+```
+
+### 3-2. 공통 테두리 규칙
+
+모든 카드/버튼/패널에 적용:
+```css
+border: 2px solid var(--ink);
+box-shadow: var(--shadow);   /* 또는 var(--shadow-sm) */
+```
+
+### 3-3. 타이포그래피 스케일
+
+| 역할 | 폰트 | 크기 |
+|------|------|------|
+| 헤더 브랜드명 | Nanum Pen Script | 22px |
+| 페이지 타이틀 | Nanum Pen Script | 26px |
+| 말풍선 텍스트 | Nanum Pen Script | 18px |
+| 모니터 제목 | Nanum Pen Script | 18px |
+| 스텝 제목 | Noto Sans KR 700 | 14px |
+| 스텝 설명 | Noto Sans KR 400 | 12.5px |
+| 노트/경고 | Noto Sans KR 400 | 12px |
+
+### 3-4. 컬러 팔레트
+
+```
+■ #111111  — Ink (테두리, 텍스트, 모니터 타이틀바)
+■ #f7f5f0  — Paper (페이지 배경)
+■ #ffffff  — Panel (카드 내부)
+■ #c41230  — Accent Red (강조, 활성 말풍선, 화살표)
+■ #f0f7ff  — Email Blue BG
+■ #1565c0  — Email Header Blue
+■ #fff8e1  — Note Yellow BG
+■ #ffc107  — Note Yellow Border
+```
+
+---
+
+## 4. 페이지 레이아웃 구조
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  HEADER  (브랜드 + 페이지 타이틀)   height: 60px         │
+├──────────────────────────┬──────────────────────────────┤
+│                          │                              │
+│    LEFT PANEL            │    RIGHT PANEL               │
+│  (영상 + 말풍선)           │  (모니터 슬라이드)             │
+│                          │                              │
+│  grid-column: 1fr        │  grid-column: 1fr            │
+│  min-height: calc(       │                              │
+│    100vh - 60px)         │                              │
+│                          │                              │
+└──────────────────────────┴──────────────────────────────┘
+```
+
+### HTML 뼈대
+
+```html
+<div class="layout">
+  <header class="header"> ... </header>
+  <div class="stage">
+    <div class="left-panel">
+      <div class="bubble-cloud"> <!-- 말풍선 13개 --> </div>
+      <div class="video-wrap">
+        <video autoplay loop muted playsinline> ... </video>
+      </div>
+    </div>
+    <div class="right-panel">
+      <div class="monitor-wrap" id="monitorWrap">
+        <div class="monitor"> ... </div>
+        <div class="monitor-stand"> ... </div>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+### CSS Grid 설정
+
+```css
+.layout {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+}
+.stage {
+  display: grid;
+  grid-template-columns: 1fr 1fr;   /* 50:50 분할 */
+}
+```
+
+---
+
+## 5. Left Panel — 영상 & 말풍선
+
+### 5-1. 영상 설정
+
+```html
+<div class="video-wrap">
+  <video autoplay loop muted playsinline>
+    <source src="intro_animation.mp4" type="video/mp4"/>
+  </video>
+</div>
+```
+
+```css
+.video-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  z-index: 5;
+  margin-bottom: 0;
+}
+.video-wrap video {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 3px solid var(--ink);
+  box-shadow: var(--shadow);
+  border-radius: 4px;
+  background: #eee;
+}
+```
+
+**⚠️ 말풍선 클릭 시 영상 흐림 효과 (반응형 핵심 동작)**
+
+```css
+/* 기본 상태: 선명 */
+.video-wrap {
+  transition: filter 0.4s ease, opacity 0.4s ease;
+  filter: none;
+  opacity: 1;
+}
+
+/* 말풍선 활성화 시: 흐림 적용 */
+.video-wrap.blurred {
+  filter: blur(3px);
+  opacity: 0.55;
+}
+```
+
+JavaScript 연동:
+```javascript
+function selectBubble(el) {
+  // ... 기존 로직 ...
+
+  // 영상 흐림 처리
+  const video = document.querySelector('.video-wrap');
+  video.classList.add('blurred');
+}
+```
+
+> 📌 영상을 다시 선명하게 되돌리려면 좌측 패널 빈 영역 클릭 또는 "초기화" 버튼 추가를 권장합니다.
+
+---
+
+### 5-2. 말풍선 (Thought Bubble) 컴포넌트
+
+#### HTML 구조
+
+```html
+<div
+  class="bubble float-a active"
+  data-key="공문번호"
+  style="top:3%; left:5%;"
+  onclick="selectBubble(this)"
+>
+  📄 공문번호 발급
+</div>
+```
+
+| 속성 | 역할 |
+|------|------|
+| `class="bubble"` | 기본 스타일 적용 |
+| `class="float-a/b/c"` | 떠다니는 애니메이션 종류 선택 (3가지) |
+| `class="active"` | 현재 선택된 말풍선 (JS로 토글) |
+| `data-key` | JS에서 `DATA[key]`를 참조하는 식별자 |
+| `style="top/left/right"` | 말풍선 위치 (절대 좌표, % 단위) |
+
+#### CSS 스타일
+
+```css
+.bubble {
+  position: absolute;
+  background: white;
+  border: 2.5px solid var(--ink);
+  box-shadow: var(--shadow-sm);
+  border-radius: 40px;
+  padding: 9px 18px;
+  font-family: var(--font-brush);
+  font-size: 18px;
+  cursor: pointer;
+  pointer-events: all;
+  white-space: nowrap;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s;
+  z-index: 20;
+  user-select: none;
+}
+
+/* 호버: 반전 */
+.bubble:hover {
+  background: var(--ink);
+  color: white;
+  transform: scale(1.08) translateY(-2px);
+  box-shadow: 6px 6px 0px var(--accent);
+}
+
+/* 활성: 레드 */
+.bubble.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  box-shadow: 4px 4px 0px var(--ink);
+  transform: scale(1.05);
+}
+
+/* 꼬리 점 (::after pseudo) */
+.bubble::after {
+  content: '● ● ●';
+  position: absolute;
+  font-size: 6px;
+  color: var(--ink);
+  letter-spacing: 2px;
+  bottom: -20px;
+  left: 40%;
+}
+```
+
+#### 플로팅 애니메이션 (3종)
+
+```css
+@keyframes float-a {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+@keyframes float-b {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-5px); }
+}
+@keyframes float-c {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-11px); }
+}
+.float-a { animation: float-a 3.2s ease-in-out infinite; }
+.float-b { animation: float-b 4.1s ease-in-out infinite; }
+.float-c { animation: float-c 3.7s ease-in-out infinite; }
+.bubble.active { animation: none !important; }  /* 선택 시 중지 */
+```
+
+#### 13개 말풍선 위치 좌표표
+
+| # | data-key | 이모지 + 텍스트 | top | left/right | float |
+|---|----------|-----------------|-----|------------|-------|
+| 1 | 공문번호 | 📄 공문번호 발급 | 3% | left: 5% | float-a |
+| 2 | 명함 | 💳 명함 신청 | 3% | right: 6% | float-b |
+| 3 | 계약서 | 📁 보관계약서 | 17% | left: 2% | float-c |
+| 4 | 화환 | 🌸 화환 신청 | 17% | right: 3% | float-a |
+| 5 | 국내출장 | 🚄 국내 출장 | 31% | left: 5% | float-b |
+| 6 | 해외출장 | ✈️ 해외 출장 | 31% | right: 4% | float-c |
+| 7 | 락커 | 🔐 락커 사용 | 45% | left: 2% | float-a |
+| 8 | 인감 | 🖊️ 인감 날인 | 45% | right: 2% | float-b |
+| 9 | 법인차량 | 🚗 법인차량 | 58% | left: 4% | float-c |
+| 10 | supplier | 💼 Supplier | 58% | right: 5% | float-a |
+| 11 | solstice | 🖥️ Solstice | 71% | left: 3% | float-b |
+| 12 | canteen | 📹 Canteen Room | 71% | right: 3% | float-c |
+| 13 | printix | 🖨️ Printix | 83% | left: 30% | float-a |
+
+---
+
+## 6. Right Panel — 모니터 & 슬라이드 전환
+
+### 6-1. 슬라이드 인/아웃 동작 명세
+
+```css
+/* 기본: 숨김 (우측에서 대기) */
+.monitor-wrap {
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.monitor-wrap.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(40px) scale(0.97);  /* 오른쪽에서 슬라이드 인 */
+}
+.monitor-wrap.visible {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(0) scale(1);
+}
+```
+
+JavaScript 전환 순서:
+```javascript
+function selectBubble(el) {
+  const wrap = document.getElementById('monitorWrap');
+
+  // 1. 슬라이드 아웃 (기존 내용 숨김)
+  wrap.classList.remove('visible');
+  wrap.classList.add('hidden');
+
+  setTimeout(() => {
+    // 2. 내용 교체
+    document.getElementById('monitorIcon').textContent  = d.icon;
+    document.getElementById('monitorLabel').textContent = d.label;
+    document.getElementById('monitorBadge').textContent = d.badge;
+    document.getElementById('monitorBody').innerHTML    = renderContent(key);
+
+    // 3. 슬라이드 인 (새 내용 표시)
+    wrap.classList.remove('hidden');
+    wrap.classList.add('visible');
+  }, 200);
+}
+```
+
+### 6-2. 모니터 프레임 HTML 구조
+
+```html
+<!-- 모니터 본체 -->
+<div class="monitor">
+  <!-- 타이틀바 -->
+  <div class="monitor-titlebar">
+    <div class="monitor-dots">
+      <span></span>  <!-- 빨강 -->
+      <span></span>  <!-- 노랑 -->
+      <span></span>  <!-- 초록 -->
+    </div>
+    <span class="monitor-icon" id="monitorIcon">📄</span>
+    <span class="monitor-label" id="monitorLabel">공문번호 발급</span>
+    <span class="monitor-badge" id="monitorBadge">행정</span>
+  </div>
+
+  <!-- 콘텐츠 영역 (JS로 주입) -->
+  <div class="monitor-body" id="monitorBody"></div>
+</div>
+
+<!-- 모니터 받침대 -->
+<div class="monitor-stand">
+  <div class="monitor-neck"></div>   <!-- 넥 (사다리꼴) -->
+  <div class="monitor-base"></div>   <!-- 베이스 (가로 바) -->
+</div>
+```
+
+### 6-3. 모니터 스탠드 CSS
+
+```css
+.monitor-neck {
+  width: 30px;
+  height: 18px;
+  background: var(--ink);
+  clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+}
+.monitor-base {
+  width: 120px;
+  height: 12px;
+  background: var(--ink);
+  border-radius: 0 0 6px 6px;
+}
+```
+
+---
+
+## 7. 반응형 설계 명세
+
+### 7-1. 브레이크포인트
+
+| 브레이크포인트 | 레이아웃 변경 |
+|---------------|--------------|
+| > 900px | 좌우 2단 (1fr 1fr) |
+| ≤ 900px | 상하 1단, 영상 위 / 모니터 아래 |
+| ≤ 600px | 말풍선 폰트 축소, 영상 높이 제한 |
+
+### 7-2. 모바일 CSS
+
+```css
+@media (max-width: 900px) {
+  /* 레이아웃: 2단 → 1단 */
+  .stage {
+    grid-template-columns: 1fr;
+  }
+
+  /* 좌측 패널 하단 경계선으로 전환 */
+  .left-panel {
+    border-right: none;
+    border-bottom: 3px solid var(--ink);
+    min-height: 60vh;
+  }
+
+  /* 말풍선 크기 축소 */
+  .bubble {
+    font-size: 15px;
+    padding: 7px 14px;
+  }
+
+  /* 영상 최대 높이 제한 */
+  .video-wrap {
+    max-width: 100%;
+    max-height: 50vh;
+  }
+  .video-wrap video {
+    max-height: 50vh;
+    object-fit: contain;
+  }
+
+  /* 모니터 패딩 축소 */
+  .right-panel {
+    padding: 16px;
+  }
+
+  /* 정보 그리드 1열 */
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .bubble {
+    font-size: 13px;
+    padding: 5px 10px;
+  }
+  .header-title {
+    font-size: 18px;
+  }
+  .monitor-titlebar {
+    font-size: 14px;
+  }
+}
+```
+
+### 7-3. 말풍선 모바일 위치 재배치 (600px 이하)
+
+모바일에서는 `position: absolute`가 아닌 `position: relative`로 전환하여 영상 위에 격자형으로 배열 권장:
+
+```css
+@media (max-width: 600px) {
+  .bubble-cloud {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px;
+    justify-content: center;
+  }
+  .bubble {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+  }
+}
+```
+
+---
+
+## 8. 담당자 표시 컴포넌트
+
+### 8-1. 담당자 데이터 구조
+
+DATA 객체의 각 항목에 `owner` 필드를 추가합니다:
+
+```javascript
+owner: {
+  icon: "👩‍💼",          // 담당자 아이콘 (이모지 또는 이미지 URL)
+  name: "Gina Kim",     // 담당자 이름 (영문)
+  nameKo: "김지나",      // 담당자 이름 (한글)
+  team: "WPR",          // 소속 팀
+  contact: "gina.kim@cushwake.com"  // 이메일 (선택)
+}
+```
+
+### 8-2. 담당자 카드 HTML 렌더링 함수
+
+```javascript
+function renderOwner(owner) {
+  if (!owner) return '';
+  return `
+    <div class="owner-card">
+      <div class="owner-icon">${owner.icon}</div>
+      <div class="owner-info">
+        <div class="owner-name">${owner.nameKo} <span>${owner.name}</span></div>
+        <div class="owner-team">${owner.team}</div>
+        ${owner.contact
+          ? `<a class="owner-contact" href="mailto:${owner.contact}">${owner.contact}</a>`
+          : ''}
+      </div>
+    </div>`;
+}
+```
+
+### 8-3. 담당자 카드 CSS
+
+```css
+.owner-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-sm);
+  border-radius: 8px;
+  background: white;
+  margin-top: 14px;
+}
+.owner-icon {
+  font-size: 32px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  flex-shrink: 0;
+}
+.owner-info {
+  flex: 1;
+}
+.owner-name {
+  font-weight: 900;
+  font-size: 14px;
+  color: var(--ink);
+}
+.owner-name span {
+  font-weight: 400;
+  font-size: 12px;
+  color: #666;
+  margin-left: 6px;
+}
+.owner-team {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 700;
+  margin-top: 2px;
+}
+.owner-contact {
+  font-size: 11px;
+  color: #1565c0;
+  text-decoration: none;
+  display: block;
+  margin-top: 2px;
+}
+.owner-contact:hover { text-decoration: underline; }
+```
+
+### 8-4. 전체 담당자 목록
+
+| # | 업무 key | 담당자 (한글) | 담당자 (영문) | 팀 | 아이콘 | 이메일 |
+|---|----------|--------------|--------------|-----|--------|--------|
+| 1 | 공문번호 | 김지나 | Gina Kim | WPR | 👩‍💼 | gina.kim@cushwake.com |
+| 2 | 명함 | Emma Song | Emma Song | Reception | 💁‍♀️ | emma.song@cushwake.com |
+| 3 | 계약서 | 김지나 | Gina Kim | WPR | 👩‍💼 | gina.kim@cushwake.com |
+| 4 | 화환 | Emma Song | Emma Song | Reception | 💁‍♀️ | emma.song@cushwake.com |
+| 5 | 국내출장 | Hannah | Hannah Jeong | WPR | 🧳 | hannah.jeong@cushwake.com |
+| 6 | 해외출장 | Hannah | Hannah Jeong | WPR | 🧳 | hannah.jeong@cushwake.com |
+| 7 | 락커 | (자가 처리) | Self-Service | — | 🔑 | — |
+| 8 | 인감 | 권희원 | Grace Kwon | WPR | 🖊️ | grace.kwon@ap.cushwake.com |
+| 9 | 법인차량 | Hannah | Hannah Jeong | WPR | 🧳 | hannah.jeong@cushwake.com |
+| 10 | supplier | WPR Team | WPR Team | WPR | 👥 | — |
+| 11 | solstice | IT Team | IT Team | IT | 💻 | — |
+| 12 | canteen | WPR Team | WPR Team | WPR | 📹 | — |
+| 13 | printix | IT Team | IT Team | IT | 💻 | — |
+
+---
+
+## 9. 콘텐츠 데이터 구조 (DATA 객체)
+
+### 9-1. 항목 스키마
+
+```javascript
+const DATA = {
+  [key]: {
+    // ── 기본 정보 ──
+    icon:   String,   // 이모지 (모니터 타이틀바 표시)
+    label:  String,   // 항목 제목 (모니터 레이블)
+    badge:  String,   // 카테고리 배지 (행정 / 지원 / 시설 / IT)
+
+    // ── 담당자 (신규 추가) ──
+    owner: {
+      icon:    String,  // 이모지 또는 이미지 URL
+      name:    String,  // 영문 이름
+      nameKo:  String,  // 한글 이름
+      team:    String,  // 팀명
+      contact: String,  // 이메일 (선택)
+    },
+
+    // ── 플로우 단계 (가로 화살표) ──
+    flow: String[],     // 예: ["신청서 작성", "승인", "제출"]
+
+    // ── 스텝 (번호별 상세) ──
+    steps: [
+      {
+        n:      Number,  // 스텝 번호 (0도 가능)
+        title:  String,  // 스텝 제목
+        desc:   String,  // 스텝 설명 (HTML 허용)
+        detail: String,  // ▶ 상세보기 버튼 내용 (null이면 버튼 미표시)
+        email: {         // Outlook 메일 목업 (선택)
+          to:      String,
+          cc:      String,  // 선택
+          subject: String,
+          body:    String,
+          attach:  String   // 선택
+        }
+      }
+    ],
+
+    // ── 정보 그리드 (2열 카드) ──
+    infoGrid: [
+      { title: String, items: String[] }
+    ],
+
+    // ── 정책 테이블 ──
+    table: {
+      headers: String[],
+      rows:    String[][]
+    },
+
+    // ── 경고 박스 ──
+    warn: String,
+
+    // ── 하단 노트 ──
+    note: String
+  }
+}
+```
+
+### 9-2. 새 항목 추가 방법
+
+**1단계:** DATA 객체에 새 key 추가
+```javascript
+const DATA = {
+  // ... 기존 항목들 ...
+
+  새업무key: {
+    icon: "🆕",
+    label: "새 업무 제목",
+    badge: "카테고리",
+    owner: {
+      icon: "👤",
+      name: "Name",
+      nameKo: "이름",
+      team: "팀명",
+      contact: "email@cushwake.com"
+    },
+    flow: ["1단계", "2단계", "3단계"],
+    steps: [
+      { n:1, title:"첫 번째 단계", desc:"설명", detail: null }
+    ],
+    note: "📌 담당자: 이름"
+  }
+};
+```
+
+**2단계:** HTML에 말풍선 추가
+```html
+<div
+  class="bubble float-b"
+  data-key="새업무key"
+  style="top:XX%; left:XX%;"
+  onclick="selectBubble(this)"
+>
+  🆕 새 업무
+</div>
+```
+
+---
+
+## 10. 전체 업무 항목별 상세 내용
+
+### 📄 공문번호 발급
+
+| 필드 | 값 |
+|------|-----|
+| **icon** | 📄 |
+| **label** | 공문번호 발급 |
+| **badge** | 행정 |
+| **담당자** | 김지나 (Gina Kim) / WPR |
+
+**Flow:** 공문 작성 → 승인 요청 메일 → 공문번호 회신 → 번호 기재 → 글로싸인 날인
+
+**Steps:**
+1. 공문 작성 — 양식에 맞게 작성, 공문번호 란은 **빈칸**
+2. 승인 요청 메일 발송 — 부서장(To), 관련자(cc), Gina Kim(cc)
+   - 첨부: `[공문명]_초안.pdf`
+3. 공문번호 회신 수령 — Gina Kim이 메일로 번호 회신
+4. 번호 기재 후 Glosign 날인 요청 → **인감 날인 항목 참조**
+
+---
+
+### 💳 명함 신청 방법
+
+| 필드 | 값 |
+|------|-----|
+| **icon** | 💳 |
+| **badge** | 행정 |
+| **담당자** | Emma Song / Reception |
+
+**Flow:** 신규직원 WPR 처리 → 사이트 로그인 → 템플릿 선택 → 승인메일 전달 → 3~5일 배송
+
+**사이트:** https://www.printrobo.co.kr/sps/cushmanwakefield/
+**ID:** CWK1234 | **PW:** cw123456
+
+---
+
+### 📁 보관계약서 열람
+
+| 필드 | 값 |
+|------|-----|
+| **icon** | 📁 |
+| **badge** | 행정 |
+| **담당자** | 김지나 (Gina Kim) / WPR |
+
+**Flow:** Gina Kim 메일 요청 → 형태 선택 → 계약서 수령
+
+**보관 기준:** 부서로부터 날인 완료된 계약서 중 보관 요청을 받아 전달받은 것만 해당
+
+---
+
+### 🌸 화환 신청
+
+| 필드 | 값 |
+|------|-----|
+| **icon** | 🌸 |
+| **badge** | 지원 |
+| **담당자** | Emma Song / Reception |
+
+**사이트:** http://bosanflower.com/main/main.php
+**긴급:** Emma Song 직접 연락
+
+---
+
+### 🚄 국내 출장
+
+| 필드 | 값 |
+|------|-----|
+| **icon** | 🚄 |
+| **badge** | 지원 |
+| **담당자** | Hannah Jeong / WPR |
+
+**Flow:** 신청서 작성 → 팀장·대표 승인 → Hannah에 제출 → 예약 완료 수령
+
+---
+
+### ✈️ 해외 출장
+
+| 필드 | 값 |
+|------|-----|
+| **icon** | ✈️ |
+| **badge** | 지원 · APAC |
+| **담당자** | Hannah Jeong / WPR |
+
+**항공 규정:**
+- 7시간 미만 → Economy만
+- 7시간 이상 → Premium Economy
+- Executive Director 이상 + 7시간 이상 → Business
+
+**비자:** 중국 출장 시 최소 2주 전 여행사 신청
+
+---
+
+### 🔐 락커 사용 (ML81PA)
+
+| 필드 | 값 |
+|------|-----|
+| **icon** | 🔐 |
+| **badge** | 시설 |
+| **담당자** | Self-Service (A/S: 1644-3461) |
+
+**모드:** 일회성(기본) / 영구성 / 마스터
+**배터리 방전:** Micro 5핀 외부 전원 공급 → 해제 후 교체
+
+---
+
+### 🖊️ 비대면 인감 날인 (Glosign)
+
+| 필드 | 값 |
+|------|-----|
+| **icon** | 🖊️ |
+| **badge** | 시설 |
+| **담당자** | 권희원 (Grace Kwon) / WPR |
+| **연락처** | grace.kwon@ap.cushwake.com / 010-9282-4534 |
+
+**Flow:** 계약 시작 → 파일 업로드 → 계약명 입력 → 비대면 선택 → 결재자 설정 → 날인 위치 → 최종 확인
+
+---
+
+### 🚗 법인차량
+
+| 필드 | 값 |
+|------|-----|
+| **icon** | 🚗 |
+| **badge** | 시설 · 커넥트프로 |
+| **담당자** | Hannah Jeong / WPR |
+
+**앱:** 롯데렌터카 비즈카
+**법인 등록번호:** 110114-0194461
+**사업자등록번호:** 104-81-51299
+**주차:** 항상 지하 6층 | **긴급:** 1588-1230
+
+---
+
+### 💼 Workday Supplier 등록
+
+| 필드 | 값 |
+|------|-----|
+| **icon** | 💼 |
+| **badge** | IT · 5-Step |
+| **담당자** | WPR Team |
+
+**필수 서류 5가지:** ① 3rd party 계약서 ② 사업자등록증 ③ 통장사본 ④ 실사설문지 ⑤ DD Form
+
+---
+
+### 🖥️ Solstice 화면 공유
+
+| 필드 | 값 |
+|------|-----|
+| **icon** | 🖥️ |
+| **badge** | IT · 무선 |
+| **담당자** | IT Team |
+
+**IP:** 10.196.72.101 (CWKCorp) / 10.196.78.31 (CWKGuest)
+
+---
+
+### 📹 Canteen 회의실 Teams Room
+
+| 필드 | 값 |
+|------|-----|
+| **icon** | 📹 |
+| **badge** | IT · 하이브리드 |
+| **담당자** | WPR Team |
+
+**회의실 이메일:** KORSeoul.CanteenRM@cushwake.com
+**⚠️ 주의:** AirMedia 사용 중 Teams 화면 공유 버튼 금지
+
+---
+
+### 🖨️ Printix 인쇄
+
+| 필드 | 값 |
+|------|-----|
+| **icon** | 🖨️ |
+| **badge** | IT · Cloud |
+| **담당자** | IT Team |
+
+**앱:** Printix app (App Store / Play Store)
+**프린터 이름:** Printix Anywhere (Seoul-Korea)
+
+---
+
+## 11. 인터랙션 흐름 명세
+
+### 11-1. 전체 인터랙션 흐름도
+
+```
+사용자 접속
+    │
+    ▼
+페이지 로드 → DOMContentLoaded
+    │
+    ├─ 영상 autoplay loop (무한 반복)
+    ├─ 말풍선 float 애니메이션 시작
+    └─ 첫 번째 말풍선 (공문번호) 자동 선택
+         │
+         ▼
+    모니터 표시 (visible 상태)
+         │
+         ▼
+┌─── 말풍선 클릭 ─────────────────────────────────────────┐
+│                                                          │
+│  1. 기존 활성 말풍선 → active 제거                        │
+│  2. 클릭된 말풍선 → active 추가                           │
+│  3. 영상 → blurred 클래스 추가 (흐림 처리)                │
+│  4. 모니터 → hidden (슬라이드 아웃)                       │
+│  5. 200ms 지연 후:                                       │
+│     a. monitorBody innerHTML 교체                        │
+│     b. 모니터 → visible (슬라이드 인)                     │
+│     c. scrollTop = 0 (스크롤 최상단)                     │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+         │
+         ▼
+    ▶ 상세보기 버튼 클릭
+         │
+         ├─ open 클래스 토글
+         ├─ 버튼 텍스트 ▶/▲ 전환
+         └─ 상세 내용 슬라이드 다운 표시
+```
+
+### 11-2. 핵심 JavaScript 함수
+
+```javascript
+// ── 말풍선 클릭 핸들러 ──────────────────────────────────────────
+function selectBubble(el) {
+  // 1. 모든 말풍선 비활성화
+  document.querySelectorAll('.bubble').forEach(b => b.classList.remove('active'));
+
+  // 2. 클릭된 말풍선 활성화
+  el.classList.add('active');
+
+  // 3. 영상 흐림 처리
+  document.querySelector('.video-wrap').classList.add('blurred');
+
+  // 4. 데이터 조회
+  const key = el.dataset.key;
+  const d = DATA[key];
+  if (!d) return;
+
+  // 5. 모니터 슬라이드 아웃
+  const wrap = document.getElementById('monitorWrap');
+  wrap.classList.remove('visible');
+  wrap.classList.add('hidden');
+
+  // 6. 내용 교체 후 슬라이드 인
+  setTimeout(() => {
+    document.getElementById('monitorIcon').textContent  = d.icon;
+    document.getElementById('monitorLabel').textContent = d.label;
+    document.getElementById('monitorBadge').textContent = d.badge;
+    document.getElementById('monitorBody').innerHTML    = renderContent(key);
+    document.getElementById('monitorBody').scrollTop    = 0;
+
+    wrap.classList.remove('hidden');
+    wrap.classList.add('visible');
+  }, 200);
+}
+
+// ── 상세보기 토글 ────────────────────────────────────────────────
+function toggleDetail(id, btn) {
+  const el = document.getElementById(id);
+  const isOpen = el.classList.contains('open');
+  el.classList.toggle('open', !isOpen);
+  btn.textContent = isOpen ? '▶ 상세 보기' : '▲ 닫기';
+}
+
+// ── 초기화 (페이지 로드 시) ─────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const first = document.querySelector('.bubble.active');
+  if (first) selectBubble(first);
+});
+```
+
+---
+
+## 12. CSS 변수 & 스타일 가이드
+
+### 12-1. 렌더링 함수 목록
+
+| 함수명 | 역할 | 출력 |
+|--------|------|------|
+| `renderContent(key)` | 전체 콘텐츠 조합 | HTML 문자열 |
+| `renderFlow(steps)` | 가로 플로우 화살표 | `.flow-row` HTML |
+| `renderEmail(email)` | Outlook 메일 목업 | `.email-box` HTML |
+| `renderInfoGrid(cards)` | 2열 정보 카드 그리드 | `.info-grid` HTML |
+| `renderTable(table)` | 정책 테이블 | `.ptable` HTML |
+| `renderOwner(owner)` | 담당자 카드 **(신규)** | `.owner-card` HTML |
+
+### 12-2. 콘텐츠 렌더링 순서
+
+```javascript
+function renderContent(key) {
+  const d = DATA[key];
+  let html = '';
+
+  html += renderFlow(d.flow);         // 1. 플로우
+  html += renderSteps(d.steps);       // 2. 스텝 목록
+  html += renderInfoGrid(d.infoGrid); // 3. 정보 그리드 (있는 경우)
+  html += renderTable(d.table);       // 4. 테이블 (있는 경우)
+  html += renderWarn(d.warn);         // 5. 경고 (있는 경우)
+  html += renderOwner(d.owner);       // 6. 담당자 카드 (항상 하단)
+  html += renderNote(d.note);         // 7. 노트
+
+  return html;
+}
+```
+
+---
+
+## 13. 추가 기능 확장 가이드
+
+### 13-1. 검색 기능 추가
+
+```javascript
+// 검색 입력 → 해당하는 말풍선 하이라이트
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll('.bubble').forEach(b => {
+    const match = b.textContent.toLowerCase().includes(q) ||
+                  b.dataset.key.includes(q);
+    b.style.opacity = (q === '' || match) ? '1' : '0.3';
+  });
+});
+```
+
+### 13-2. 다크 모드 지원
+
+```css
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink:   #f0ece4;
+    --paper: #1a1a1a;
+    --panel: #2a2a2a;
+  }
+  .bubble { background: #2a2a2a; color: var(--ink); }
+  .monitor { background: #2a2a2a; }
+}
+```
+
+### 13-3. 인쇄 스타일
+
+```css
+@media print {
+  .left-panel { display: none; }
+  .stage { grid-template-columns: 1fr; }
+  .monitor-wrap { opacity: 1 !important; transform: none !important; }
+  .bubble { display: none; }
+}
+```
+
+### 13-4. 즐겨찾기/북마크 기능
+
+URL 해시를 이용해 직접 링크 공유:
+```javascript
+// URL에 현재 항목 반영: /guide.html#명함
+function selectBubble(el) {
+  window.location.hash = el.dataset.key;
+  // ... 기존 로직 ...
+}
+
+// 로드 시 URL 해시 확인
+window.addEventListener('DOMContentLoaded', () => {
+  const hash = window.location.hash.replace('#', '');
+  const target = hash
+    ? document.querySelector(`.bubble[data-key="${hash}"]`)
+    : document.querySelector('.bubble.active');
+  if (target) selectBubble(target);
+});
+```
+
+---
+
+## 부록 A — 체크리스트
+
+### 빌드 전 확인
+
+- [ ] `intro_animation.mp4` 와 HTML 파일이 **같은 폴더**에 있는지 확인
+- [ ] 구글 폰트 로드 확인 (`Nanum Pen Script`, `Noto Sans KR`)
+- [ ] 모든 `data-key` 값이 `DATA` 객체의 키와 일치하는지 확인
+- [ ] 각 항목에 `owner` 필드가 추가되었는지 확인
+
+### QA 체크리스트
+
+- [ ] 13개 말풍선 모두 클릭 테스트
+- [ ] 모니터 슬라이드 인/아웃 전환 확인
+- [ ] 영상 흐림(blur) 효과 작동 확인
+- [ ] `▶ 상세 보기` 확장/접기 동작 확인
+- [ ] 모바일(900px 이하) 레이아웃 확인
+- [ ] 스크롤 영역에서 담당자 카드가 항상 하단에 표시되는지 확인
+- [ ] 이메일 목업이 있는 항목 (공문번호, 명함, 계약서, 국내출장, 해외출장) 렌더링 확인
+
+---
+
+*최종 수정: 2026년 3월 | Cushman & Wakefield Korea WPR Team*
