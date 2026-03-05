@@ -162,7 +162,7 @@ export const DATA: Record<string, TaskData> = {
 
   국내출장: {
     icon: "🚄", label: "국내 출장 신청", badge: "지원",
-    owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR (정혜은 대리 업무 대행)", contact: "gina.kim@cushwake.com" },
+    owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR", contact: "gina.kim@cushwake.com" },
     flow: ["신청서 작성","팀장·대표 승인","Gina Kim에 제출","예약 완료 수령"],
     steps: [
       { n: 1, title: "국내 출장 신청서 작성", desc: "국내 출장 신청서 링크를 통해 작성합니다.", detail: null },
@@ -179,12 +179,11 @@ export const DATA: Record<string, TaskData> = {
       },
       { n: 4, title: "예약 완료 메일 수령", desc: "여행사를 통해 호텔·교통편 예약 완료 후 내역을 메일로 수령합니다.", detail: null }
     ],
-    warn: "정혜은 대리를 대신하여 김지성 대리가 업무를 대행하고 있습니다."
   },
 
   해외출장: {
     icon: "✈️", label: "해외 출장 신청", badge: "지원 · APAC",
-    owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR (정혜은 대리 업무 대행)", contact: "gina.kim@cushwake.com" },
+    owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR", contact: "gina.kim@cushwake.com" },
     flow: ["신청서 작성","팀장·대표 승인","APAC 승인 (Gina Kim)","항공·호텔 예약","확인 수령"],
     steps: [
       { n: 1, title: "해외 출장 신청서 작성", desc: "", detail: null },
@@ -206,7 +205,6 @@ export const DATA: Record<string, TaskData> = {
       { title: "🏨 호텔 규정", items: ["승인 예산 한도 내 예약","Client 동반 시 동일 호텔 가능"] },
       { title: "🛂 중국 비자", items: ["여행사 대행 신청 가능","최소 2주 전 신청 필수"] }
     ],
-    warn: "정혜은 대리를 대신하여 김지성 대리가 업무를 대행하고 있습니다."
   },
 
   락커: {
@@ -245,7 +243,7 @@ export const DATA: Record<string, TaskData> = {
 
   법인차량: {
     icon: "🚗", label: "법인차량 이용", badge: "시설 · 커넥트프로",
-    owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR (정혜은 대리 업무 대행)", contact: "gina.kim@cushwake.com" },
+    owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR", contact: "gina.kim@cushwake.com" },
     flow: ["앱 설치 및 법인 연결","차량 예약","승인 확인","차량 이용","운행일지 작성","사용 종료"],
     steps: [
       {
@@ -267,7 +265,6 @@ export const DATA: Record<string, TaskData> = {
         ["사고 발생","김지성 대리에게 즉시 연락"]
       ]
     },
-    warn: "정혜은 대리를 대신하여 김지성 대리가 업무를 대행하고 있습니다."
   },
 
   supplier: {
