@@ -126,7 +126,6 @@ export default function Home() {
                 </div>
                 <div className="monitor-body" ref={monitorBodyRef} data-testid="monitor-body">
                   <OwnerCard owner={activeData.owner} />
-                  <FlowRow flow={activeData.flow} />
                   {activeData.steps.length > 0 && (
                     <div className="steps-container">
                       {activeData.steps.map((step) => {
