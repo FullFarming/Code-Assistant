@@ -65,7 +65,6 @@ export default function Home() {
   }, [activeKey]);
 
   return (
-    <div className="layout" data-testid="layout-container">
       <div className={`stage${activeKey ? "" : " full-video"}`}>
         <div className="left-panel" onClick={handleDismiss} data-testid="left-panel">
           <div className={`video-bg${activeKey ? " blurred" : ""}`}>
@@ -188,7 +187,6 @@ export default function Home() {
           )}
         </div>
       </div>
-    </div>
   );
 }
 
