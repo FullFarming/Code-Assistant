@@ -66,14 +66,6 @@ export default function Home() {
 
   return (
     <div className="layout" data-testid="layout-container">
-      <header className="header" data-testid="header">
-        <div>
-          <div className="header-brand">CUSHMAN &amp; WAKEFIELD</div>
-          <div className="header-sub">Korea WPR Team</div>
-        </div>
-        <div className="header-title">업무 가이드 📚</div>
-      </header>
-
       <div className={`stage${activeKey ? "" : " full-video"}`}>
         <div className="left-panel" onClick={handleDismiss} data-testid="left-panel">
           <div className={`video-bg${activeKey ? " blurred" : ""}`}>
