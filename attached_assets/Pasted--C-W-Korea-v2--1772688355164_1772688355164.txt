@@ -1,0 +1,1394 @@
+# C&W Korea 인터랙티브 업무 가이드 v2 — 제작 명세서
+
+> **문서 목적:** 스크린샷 피드백을 반영한 리디자인 버전의 전체 구현 가이드입니다.
+> 변경 핵심: ① 메인 화면에서 **영상 속 모니터에 폴더 버튼 배치** → ② 버튼 클릭 시 **오른쪽 패널 슬라이드 인** → ③ **뒤로가기 버튼**으로 폴더 목록 복귀 | ④ 영상 크기 현재의 **80%로 축소**
+
+---
+
+## 목차
+
+1. [변경사항 요약](#1-변경사항-요약)
+2. [파일 구성](#2-파일-구성)
+3. [전체 페이지 구조](#3-전체-페이지-구조)
+4. [Left Panel — 영상 + 모니터 오버레이](#4-left-panel--영상--모니터-오버레이)
+5. [모니터 오버레이 — 폴더 버튼 그리드](#5-모니터-오버레이--폴더-버튼-그리드)
+6. [Right Panel — 콘텐츠 슬라이드 패널](#6-right-panel--콘텐츠-슬라이드-패널)
+7. [뒤로가기 버튼 명세](#7-뒤로가기-버튼-명세)
+8. [담당자 카드 컴포넌트](#8-담당자-카드-컴포넌트)
+9. [반응형 설계 명세](#9-반응형-설계-명세)
+10. [디자인 시스템](#10-디자인-시스템)
+11. [전체 HTML 구조 뼈대](#11-전체-html-구조-뼈대)
+12. [전체 CSS 코드](#12-전체-css-코드)
+13. [전체 JavaScript 코드](#13-전체-javascript-코드)
+14. [콘텐츠 데이터 구조 (DATA 객체)](#14-콘텐츠-데이터-구조-data-객체)
+15. [업무 항목별 상세 데이터](#15-업무-항목별-상세-데이터)
+16. [QA 체크리스트](#16-qa-체크리스트)
+
+---
+
+## 1. 변경사항 요약
+
+| 항목 | v1 (기존) | v2 (신규) |
+|------|-----------|-----------|
+| 버튼 배치 | 영상 주변 흩어진 13개 말풍선 | 영상 위 **모니터 오버레이 내 폴더 그리드** |
+| 첫 화면 | 말풍선 + 빈 오른쪽 패널 | 영상 전체 + 모니터 속 폴더 아이콘 목록 |
+| 버튼 클릭 동작 | 오른쪽 모니터 등장 | 오른쪽 슬라이드 패널 등장 + 영상 축소/흐림 |
+| 뒤로가기 | 없음 | ← 뒤로가기 버튼으로 폴더 목록 복귀 |
+| 영상 크기 | 100% | **80%** (max-width 기준 축소) |
+| 네비게이션 | 없음 | 상단 우측 WPR / FAQ 탭 |
+
+---
+
+## 2. 파일 구성
+
+```
+📁 프로젝트 폴더/
+├── index.html                  ← 메인 파일 (단일 HTML)
+└── intro_animation.mp4         ← 배경 영상 (같은 폴더 필수)
+```
+
+> ⚠️ 영상 파일명이 다르면 `<source src="intro_animation.mp4">` 경로를 수정하세요.
+
+---
+
+## 3. 전체 페이지 구조
+
+### 3-1. 화면 상태 흐름
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                         HEADER (60px)                            │
+│    [C&W 로고]                              [WPR]  [FAQ]          │
+└──────────────────────────────────────────────────────────────────┘
+│                                                                  │
+│  ┌─────────────── STATE A: 기본 화면 ─────────────────────────┐  │
+│  │                                                            │  │
+│  │   영상 (80% 크기) + 모니터 오버레이                          │  │
+│  │   ┌──────────────────────────────────┐                    │  │
+│  │   │  모니터 화면 (오버레이)            │                    │  │
+│  │   │  ┌────┐ ┌────┐ ┌────┐ ┌────┐   │                    │  │
+│  │   │  │📄  │ │💳  │ │📁  │ │🌸  │   │                    │  │
+│  │   │  │공문 │ │명함 │ │계약 │ │화환 │   │                    │  │
+│  │   │  └────┘ └────┘ └────┘ └────┘   │                    │  │
+│  │   │  ┌────┐ ┌────┐ ┌────┐ ┌────┐   │                    │  │
+│  │   │  │🚄  │ │✈️  │ │🔐  │ │🖊️  │   │                    │  │
+│  │   │  │국내 │ │해외 │ │락커 │ │인감 │   │                    │  │
+│  │   │  └────┘ └────┘ └────┘ └────┘   │                    │  │
+│  │   │  ┌────┐ ┌────┐ ┌────┐ ┌────┐   │                    │  │
+│  │   │  │🚗  │ │💼  │ │🖥️  │ │📹  │   │                    │  │
+│  │   │  │법인 │ │공급 │ │화면 │ │회의 │   │                    │  │
+│  │   │  └────┘ └────┘ └────┘ └────┘   │                    │  │
+│  │   │            ┌────┐               │                    │  │
+│  │   │            │🖨️  │               │                    │  │
+│  │   │            │인쇄 │               │                    │  │
+│  │   └──────────────────────────────────┘                    │  │
+│  └────────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  ┌─────────────── STATE B: 항목 선택 후 ──────────────────────┐  │
+│  │                                                            │  │
+│  │  [영상 + 오버레이 — 축소 + blur]  │  [슬라이드 패널 등장]   │  │
+│  │  (좌: 50%)                       │  (우: 50%)              │  │
+│  │                                  │  ┌─────────────────┐   │  │
+│  │                                  │  │ ← 뒤로가기       │   │  │
+│  │                                  │  │ 📄 공문번호 발급  │   │  │
+│  │                                  │  │ ─────────────── │   │  │
+│  │                                  │  │ 담당자 카드       │   │  │
+│  │                                  │  │ 스텝 목록        │   │  │
+│  │                                  │  │ 메일 템플릿      │   │  │
+│  │                                  │  └─────────────────┘   │  │
+│  └────────────────────────────────────────────────────────────┘  │
+```
+
+### 3-2. CSS Grid 레이아웃
+
+```css
+/* 전체 레이아웃 */
+.layout {
+  display: grid;
+  grid-template-rows: 60px 1fr;
+  min-height: 100vh;
+}
+
+/* 스테이지: 기본은 1열 (영상 전체) → STATE B에서 2열 */
+.stage {
+  position: relative;
+  overflow: hidden;
+}
+
+/* STATE B 활성화 시 */
+.stage.panel-open {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+```
+
+---
+
+## 4. Left Panel — 영상 + 모니터 오버레이
+
+### 4-1. HTML 구조
+
+```html
+<div class="left-panel" id="leftPanel">
+  <!-- 배경 영상 (80% 크기) -->
+  <div class="video-container">
+    <video
+      id="bgVideo"
+      autoplay loop muted playsinline
+      class="bg-video"
+    >
+      <source src="intro_animation.mp4" type="video/mp4"/>
+    </video>
+  </div>
+
+  <!-- 모니터 오버레이 (영상 위에 겹침) -->
+  <div class="monitor-overlay" id="monitorOverlay">
+    <div class="overlay-screen">
+      <!-- 타이틀바 -->
+      <div class="overlay-titlebar">
+        <div class="overlay-dots">
+          <span class="dot red"></span>
+          <span class="dot yellow"></span>
+          <span class="dot green"></span>
+        </div>
+        <span class="overlay-title">WPR 업무 가이드</span>
+      </div>
+      <!-- 폴더 그리드 (JS로 렌더링) -->
+      <div class="folder-grid" id="folderGrid"></div>
+    </div>
+  </div>
+</div>
+```
+
+### 4-2. 영상 크기 80% 설정
+
+```css
+/* 영상 컨테이너 */
+.video-container {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 영상 본체: 80% 크기 */
+.bg-video {
+  width: 80%;           /* ← 핵심: 기존 100% → 80% */
+  height: 80%;
+  object-fit: contain;  /* 비율 유지 */
+  border-radius: 4px;
+  transition: filter 0.4s ease, opacity 0.4s ease;
+}
+
+/* 패널 열림 시 영상 흐림 */
+.stage.panel-open .bg-video {
+  filter: blur(4px) grayscale(20%);
+  opacity: 0.45;
+}
+```
+
+### 4-3. 모니터 오버레이 위치
+
+```css
+/* 오버레이: 영상 위에 절대 위치로 겹침 */
+.monitor-overlay {
+  position: absolute;
+
+  /* 영상(80%) 내 모니터 화면 위치 — 영상 구도에 맞게 조정 */
+  top: 8%;
+  left: 50%;
+  transform: translateX(-20%);   /* 영상 속 모니터 중앙 정렬 */
+  width: 42%;                    /* 모니터 화면 너비 */
+
+  z-index: 10;
+  pointer-events: all;
+}
+
+/* 오버레이 화면 (웹툰 스타일 프레임) */
+.overlay-screen {
+  background: rgba(255, 255, 255, 0.96);
+  border: 2.5px solid var(--ink);
+  box-shadow: var(--shadow);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* 타이틀바 */
+.overlay-titlebar {
+  background: var(--ink);
+  color: white;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* macOS 스타일 점 3개 */
+.overlay-dots { display: flex; gap: 5px; }
+.dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+}
+.dot.red    { background: #ff5f56; }
+.dot.yellow { background: #ffbd2e; }
+.dot.green  { background: #27c93f; }
+```
+
+> 📌 **영상 구도 맞춤 조정:** `top`, `left`, `transform` 값은 실제 영상 속 모니터 화면 위치에 맞게 픽셀 단위로 미세 조정이 필요합니다. 브라우저 개발자 도구로 확인하며 조정하세요.
+
+---
+
+## 5. 모니터 오버레이 — 폴더 버튼 그리드
+
+### 5-1. 폴더 그리드 CSS
+
+```css
+/* 4열 폴더 그리드 */
+.folder-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 10px 8px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+/* 폴더 버튼 개별 */
+.folder-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--font-body);
+}
+
+.folder-btn:hover {
+  background: rgba(196, 18, 48, 0.08);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.folder-btn.active {
+  background: rgba(196, 18, 48, 0.12);
+  border-color: var(--accent);
+}
+
+/* 폴더 아이콘 */
+.folder-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-sm);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.folder-btn:hover .folder-icon {
+  box-shadow: 3px 3px 0px var(--accent);
+}
+
+/* 폴더 레이블 */
+.folder-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: center;
+  line-height: 1.3;
+  word-break: keep-all;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 56px;
+}
+```
+
+### 5-2. 폴더 버튼 데이터 (FOLDERS 배열)
+
+```javascript
+const FOLDERS = [
+  { key: "공문번호",  icon: "📄", label: "공문번호\n발급",   color: "#fff9e6" },
+  { key: "명함",      icon: "💳", label: "명함 신청",         color: "#e8f5e9" },
+  { key: "계약서",    icon: "📁", label: "보관계약서",         color: "#fff3e0" },
+  { key: "화환",      icon: "🌸", label: "화환 신청",          color: "#fce4ec" },
+  { key: "국내출장",  icon: "🚄", label: "국내 출장",          color: "#e3f2fd" },
+  { key: "해외출장",  icon: "✈️", label: "해외 출장",          color: "#ede7f6" },
+  { key: "락커",      icon: "🔐", label: "락커 사용",          color: "#e8eaf6" },
+  { key: "인감",      icon: "🖊️", label: "인감 날인",          color: "#f3e5f5" },
+  { key: "법인차량",  icon: "🚗", label: "법인차량",           color: "#e0f2f1" },
+  { key: "supplier",  icon: "💼", label: "Supplier",           color: "#fff8e1" },
+  { key: "solstice",  icon: "🖥️", label: "Solstice",           color: "#e1f5fe" },
+  { key: "canteen",   icon: "📹", label: "Canteen\nRoom",       color: "#fbe9e7" },
+  { key: "printix",   icon: "🖨️", label: "Printix",            color: "#f9fbe7" },
+];
+```
+
+### 5-3. 폴더 그리드 렌더링 함수
+
+```javascript
+function renderFolderGrid() {
+  const grid = document.getElementById('folderGrid');
+  grid.innerHTML = FOLDERS.map(f => `
+    <button
+      class="folder-btn"
+      data-key="${f.key}"
+      onclick="openPanel('${f.key}')"
+      title="${DATA[f.key]?.label || f.key}"
+    >
+      <div class="folder-icon" style="background: ${f.color};">
+        ${f.icon}
+      </div>
+      <span class="folder-label">${f.label.replace('\n', '<br>')}</span>
+    </button>
+  `).join('');
+}
+
+// 초기화 시 실행
+window.addEventListener('DOMContentLoaded', () => {
+  renderFolderGrid();
+});
+```
+
+---
+
+## 6. Right Panel — 콘텐츠 슬라이드 패널
+
+### 6-1. HTML 구조
+
+```html
+<!-- 오른쪽 슬라이드 패널 (기본: 숨김) -->
+<div class="slide-panel" id="slidePanel">
+
+  <!-- 패널 헤더 -->
+  <div class="panel-header">
+    <button class="back-btn" onclick="closePanel()">
+      ← 목록으로
+    </button>
+    <div class="panel-title-wrap">
+      <span class="panel-icon" id="panelIcon">📄</span>
+      <span class="panel-title" id="panelTitle">공문번호 발급</span>
+    </div>
+    <span class="panel-badge" id="panelBadge">행정</span>
+  </div>
+
+  <!-- 패널 바디 (콘텐츠 주입 영역) -->
+  <div class="panel-body" id="panelBody">
+    <!-- JS로 renderContent(key) 주입 -->
+  </div>
+
+</div>
+```
+
+### 6-2. 슬라이드 패널 CSS
+
+```css
+/* 슬라이드 패널 기본 (숨김 상태) */
+.slide-panel {
+  position: fixed;
+  top: 60px;                /* 헤더 높이만큼 아래 */
+  right: 0;
+  width: 50%;
+  height: calc(100vh - 60px);
+  background: var(--paper);
+  border-left: 3px solid var(--ink);
+  box-shadow: -6px 0px 24px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  /* 슬라이드 아웃 (기본) */
+  transform: translateX(100%);
+  opacity: 0;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.35s ease;
+  pointer-events: none;
+}
+
+/* 슬라이드 인 (활성) */
+.slide-panel.open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* 패널 헤더 */
+.panel-header {
+  background: var(--ink);
+  color: white;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  border-bottom: 2px solid var(--ink);
+}
+
+/* 패널 바디 (스크롤 가능) */
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink) var(--paper);
+}
+.panel-body::-webkit-scrollbar { width: 5px; }
+.panel-body::-webkit-scrollbar-thumb { background: var(--ink); }
+```
+
+### 6-3. 패널 열기/닫기 JavaScript
+
+```javascript
+// ── 패널 열기 ──────────────────────────────────────────────────
+function openPanel(key) {
+  const d = DATA[key];
+  if (!d) return;
+
+  // 1. 활성 폴더 버튼 표시
+  document.querySelectorAll('.folder-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.key === key)
+  );
+
+  // 2. 영상 흐림 처리 + 레이아웃 전환
+  document.querySelector('.stage').classList.add('panel-open');
+
+  // 3. 패널 헤더 업데이트
+  document.getElementById('panelIcon').textContent  = d.icon;
+  document.getElementById('panelTitle').textContent = d.label;
+  document.getElementById('panelBadge').textContent = d.badge;
+
+  // 4. 패널 바디 콘텐츠 주입
+  const body = document.getElementById('panelBody');
+  body.innerHTML = renderContent(key);
+  body.scrollTop = 0;
+
+  // 5. 슬라이드 인
+  const panel = document.getElementById('slidePanel');
+  panel.classList.add('open');
+}
+
+// ── 패널 닫기 (뒤로가기) ────────────────────────────────────────
+function closePanel() {
+  // 1. 슬라이드 아웃
+  document.getElementById('slidePanel').classList.remove('open');
+
+  // 2. 폴더 버튼 활성 해제
+  document.querySelectorAll('.folder-btn').forEach(b =>
+    b.classList.remove('active')
+  );
+
+  // 3. 영상 흐림 제거 + 레이아웃 복귀
+  setTimeout(() => {
+    document.querySelector('.stage').classList.remove('panel-open');
+  }, 300);  // 슬라이드 아웃 애니메이션 완료 후
+}
+```
+
+---
+
+## 7. 뒤로가기 버튼 명세
+
+### 7-1. CSS
+
+```css
+/* 뒤로가기 버튼 */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  background: transparent;
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: white;
+  transform: translateX(-3px);  /* 왼쪽으로 살짝 이동 */
+}
+
+.back-btn::before {
+  content: "←";
+  font-size: 16px;
+}
+```
+
+### 7-2. 패널 타이틀 영역 CSS
+
+```css
+.panel-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.panel-icon {
+  font-size: 22px;
+}
+
+.panel-title {
+  font-family: var(--font-brush);
+  font-size: 20px;
+  color: white;
+}
+
+.panel-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+```
+
+---
+
+## 8. 담당자 카드 컴포넌트
+
+모니터 패널 상단 (스텝 목록 위)에 **항상 표시**됩니다.
+
+### 8-1. HTML (렌더링 결과)
+
+```html
+<div class="owner-card">
+  <div class="owner-avatar">👩‍💼</div>
+  <div class="owner-info">
+    <div class="owner-names">
+      <span class="owner-name-ko">김지성 대리</span>
+      <span class="owner-name-en">Gina Kim</span>
+    </div>
+    <div class="owner-team">WPR</div>
+    <a class="owner-email" href="mailto:gina.kim@cushwake.com">
+      gina.kim@cushwake.com
+    </a>
+  </div>
+</div>
+```
+
+### 8-2. 담당자 카드 CSS
+
+```css
+.owner-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border: 2.5px solid var(--ink);
+  box-shadow: var(--shadow-sm);
+  border-radius: 8px;
+  background: white;
+  margin-bottom: 16px;
+}
+
+/* 아바타 원형 */
+.owner-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2.5px solid var(--ink);
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+/* 이름 + 팀 + 이메일 */
+.owner-info { flex: 1; }
+
+.owner-names {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.owner-name-ko {
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.owner-name-en {
+  font-size: 12px;
+  color: #666;
+}
+
+.owner-team {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+
+.owner-email {
+  font-size: 12px;
+  color: #1565c0;
+  text-decoration: none;
+  display: block;
+}
+.owner-email:hover { text-decoration: underline; }
+```
+
+### 8-3. 담당자 렌더링 함수 (JavaScript)
+
+```javascript
+function renderOwner(owner) {
+  if (!owner) return '';
+  return `
+    <div class="owner-card">
+      <div class="owner-avatar">${owner.icon}</div>
+      <div class="owner-info">
+        <div class="owner-names">
+          <span class="owner-name-ko">${owner.nameKo}</span>
+          <span class="owner-name-en">${owner.name}</span>
+        </div>
+        <div class="owner-team">${owner.team}</div>
+        ${owner.contact
+          ? `<a class="owner-email" href="mailto:${owner.contact}">${owner.contact}</a>`
+          : '<span class="owner-email" style="color:#999;">—</span>'
+        }
+      </div>
+    </div>`;
+}
+```
+
+### 8-4. 전체 담당자 목록
+
+| key | 아이콘 | 한글 이름 | 영문 이름 | 팀 | 이메일 |
+|-----|--------|----------|----------|----|--------|
+| 공문번호 | 👩‍💼 | 김지나 | Gina Kim | WPR | gina.kim@cushwake.com |
+| 명함 | 💁‍♀️ | Emma Song | Emma Song | Reception | emma.song@cushwake.com |
+| 계약서 | 👩‍💼 | 김지나 | Gina Kim | WPR | gina.kim@cushwake.com |
+| 화환 | 💁‍♀️ | Emma Song | Emma Song | Reception | emma.song@cushwake.com |
+| 국내출장 | 🧳 | Hannah Jeong | Hannah Jeong | WPR | hannah.jeong@cushwake.com |
+| 해외출장 | 🧳 | Hannah Jeong | Hannah Jeong | WPR | hannah.jeong@cushwake.com |
+| 락커 | 🔑 | (자가 처리) | Self-Service | — | A/S: 1644-3461 |
+| 인감 | 🖊️ | 권희원 | Grace Kwon | WPR | grace.kwon@ap.cushwake.com |
+| 법인차량 | 🧳 | Hannah Jeong | Hannah Jeong | WPR | hannah.jeong@cushwake.com |
+| supplier | 👥 | WPR Team | WPR Team | WPR | — |
+| solstice | 💻 | IT Team | IT Team | IT | — |
+| canteen | 📹 | WPR Team | WPR Team | WPR | — |
+| printix | 💻 | IT Team | IT Team | IT | — |
+
+---
+
+## 9. 반응형 설계 명세
+
+### 9-1. 브레이크포인트 정의
+
+| 브레이크포인트 | 대상 기기 | 주요 변경 |
+|---------------|----------|----------|
+| > 1200px | 대형 모니터 | 기본 레이아웃 |
+| 901px – 1200px | 일반 노트북 | 폴더 3열 |
+| 601px – 900px | 태블릿 | 슬라이드 패널 전체 너비, 폴더 3열 |
+| ≤ 600px | 모바일 | 세로 1단, 폴더 2열 |
+
+### 9-2. 미디어 쿼리 CSS
+
+```css
+/* ── 태블릿 (≤900px) ─────────────────────────────────── */
+@media (max-width: 900px) {
+
+  /* 패널 열릴 때 전체 너비 */
+  .slide-panel {
+    width: 100%;
+    top: 60px;
+  }
+
+  /* 영상 위에 패널이 덮이므로 stage 그리드 불필요 */
+  .stage.panel-open {
+    display: block;
+  }
+
+  /* 영상 더 작게 */
+  .bg-video {
+    width: 90%;
+    height: 90%;
+  }
+
+  /* 폴더 3열 */
+  .folder-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* 오버레이 위치 조정 */
+  .monitor-overlay {
+    width: 55%;
+    top: 6%;
+    transform: translateX(-15%);
+  }
+}
+
+/* ── 모바일 (≤600px) ─────────────────────────────────── */
+@media (max-width: 600px) {
+
+  /* 헤더 */
+  .header-brand { font-size: 16px; }
+  .header-title { display: none; }  /* 타이틀 숨김 */
+
+  /* 영상 */
+  .bg-video {
+    width: 100%;
+    height: auto;
+  }
+
+  /* 폴더 2열 */
+  .folder-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+    padding: 6px;
+  }
+  .folder-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 15px;
+  }
+  .folder-label { font-size: 9px; }
+
+  /* 오버레이 */
+  .monitor-overlay {
+    width: 70%;
+    top: 4%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* 뒤로가기 버튼 텍스트 축약 */
+  .back-btn { font-size: 12px; padding: 4px 10px; }
+  .back-btn::before { content: "←"; }
+
+  /* 패널 */
+  .panel-title { font-size: 16px; }
+  .panel-badge { display: none; }
+
+  /* 담당자 카드 */
+  .owner-avatar { width: 40px; height: 40px; font-size: 22px; }
+}
+```
+
+---
+
+## 10. 디자인 시스템
+
+### 10-1. CSS 변수
+
+```css
+:root {
+  /* 색상 */
+  --ink:     #111111;      /* 기본 텍스트/테두리 */
+  --paper:   #f7f5f0;      /* 페이지 배경 */
+  --panel:   #ffffff;      /* 카드 배경 */
+  --accent:  #c41230;      /* C&W 브랜드 레드 */
+
+  /* 그림자 (웹툰 오프셋) */
+  --shadow:    4px 4px 0px var(--ink);
+  --shadow-sm: 2px 2px 0px var(--ink);
+
+  /* 폰트 */
+  --font-brush: 'Nanum Pen Script', cursive;
+  --font-body:  'Noto Sans KR', sans-serif;
+}
+```
+
+### 10-2. 헤더 상단 네비게이션 (WPR / FAQ)
+
+```html
+<header class="header">
+  <!-- 좌: 로고 -->
+  <div class="header-left">
+    <img src="cw-logo.svg" alt="Cushman &amp; Wakefield" class="header-logo"/>
+    <!-- 로고 이미지 없을 경우: -->
+    <!-- <span class="header-brand">CUSHMAN &amp; WAKEFIELD</span> -->
+  </div>
+
+  <!-- 우: 탭 네비게이션 -->
+  <nav class="header-nav">
+    <a href="#" class="nav-tab active">WPR</a>
+    <a href="#" class="nav-tab">FAQ</a>
+  </nav>
+</header>
+```
+
+```css
+.header {
+  height: 60px;
+  background: white;
+  border-bottom: 2px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  z-index: 200;
+  position: relative;
+}
+
+.header-logo { height: 32px; }
+.header-brand {
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  color: var(--ink);
+}
+
+/* WPR / FAQ 탭 */
+.header-nav { display: flex; gap: 4px; }
+
+.nav-tab {
+  padding: 6px 18px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: #666;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.nav-tab:hover { color: var(--accent); }
+
+.nav-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+```
+
+### 10-3. 콘텐츠 내부 컴포넌트 CSS
+
+```css
+/* ── 플로우 화살표 ── */
+.flow-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+.flow-item {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.flow-arrow {
+  color: var(--accent);
+  font-weight: 900;
+  font-size: 14px;
+}
+
+/* ── 스텝 ── */
+.step {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+  align-items: flex-start;
+}
+.step-num {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 900;
+  flex-shrink: 0;
+}
+.step-title { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+.step-desc  { font-size: 12.5px; color: #444; line-height: 1.65; }
+
+/* ── 상세보기 ── */
+.expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  padding: 3px 10px;
+  background: white;
+  border: 2px solid var(--ink);
+  border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all 0.15s;
+}
+.expand-btn:hover { background: var(--ink); color: white; }
+
+.expand-detail {
+  display: none;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  font-size: 12px; line-height: 1.7; color: #333;
+}
+.expand-detail.open { display: block; }
+
+/* ── 이메일 박스 ── */
+.email-box {
+  background: #f0f7ff;
+  border: 2px solid #bcd8ff;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.email-header {
+  background: #1565c0;
+  color: white;
+  padding: 6px 12px;
+  font-size: 12px; font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+/* "전체 복사" 버튼 */
+.copy-all-btn {
+  padding: 2px 8px;
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 4px;
+  color: white;
+  font-size: 10px;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+.copy-all-btn:hover { background: rgba(255,255,255,0.35); }
+
+.email-meta { padding: 8px 12px; border-bottom: 1px solid #d0e8ff; }
+.email-row  { display: flex; gap: 6px; font-size: 11px; margin-bottom: 3px; align-items: center; }
+.email-label { color: #1565c0; font-weight: 700; width: 55px; flex-shrink: 0; }
+.email-val  { flex: 1; color: #333; }
+/* 개별 복사 버튼 */
+.copy-btn {
+  padding: 1px 7px;
+  background: #e3efff;
+  border: 1px solid #bcd8ff;
+  border-radius: 4px;
+  font-size: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: var(--font-body);
+}
+.copy-btn:hover { background: #bcd8ff; }
+
+.email-body {
+  padding: 10px 12px;
+  font-size: 12px; color: #333; line-height: 1.75;
+  white-space: pre-line;
+}
+.email-attach {
+  padding: 6px 12px;
+  background: #e8f0ff;
+  border-top: 1px solid #d0e8ff;
+  font-size: 11px; color: #555;
+  display: flex; align-items: center; gap: 5px;
+}
+.attach-tag {
+  background: #e53935;
+  color: white;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 9px; font-weight: 900;
+}
+
+/* ── 정보 그리드 ── */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+.info-card {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+.info-card-title { font-size: 11px; color: var(--accent); font-weight: 900; margin-bottom: 5px; }
+.info-card ul    { padding-left: 14px; margin: 0; }
+.info-card li    { font-size: 11px; color: #444; line-height: 1.7; }
+
+/* ── 테이블 ── */
+.ptable { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+.ptable th { background: var(--ink); color: white; padding: 7px 10px; text-align: left; }
+.ptable td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+.ptable tr:nth-child(even) td { background: var(--paper); }
+
+/* ── 경고 ── */
+.warn {
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 5px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  font-size: 12px; color: #856404;
+  display: flex; gap: 6px;
+}
+
+/* ── 노트 ── */
+.note {
+  background: #fff8e1;
+  border-left: 4px solid #ffc107;
+  padding: 7px 12px;
+  border-radius: 0 5px 5px 0;
+  margin-top: 10px;
+  font-size: 12px; color: #555; line-height: 1.6;
+}
+
+/* ── 구분선 ── */
+.sec-div {
+  border: none;
+  border-top: 2px dashed #ddd;
+  margin: 14px 0;
+}
+```
+
+---
+
+## 11. 전체 HTML 구조 뼈대
+
+```html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>C&W Korea — WPR 업무 가이드</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── 위 CSS 코드 전체 삽입 ── */
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ① 헤더 -->
+  <header class="header">
+    <div class="header-left">
+      <span class="header-brand">CUSHMAN &amp; WAKEFIELD</span>
+    </div>
+    <nav class="header-nav">
+      <a href="#" class="nav-tab active">WPR</a>
+      <a href="#" class="nav-tab">FAQ</a>
+    </nav>
+  </header>
+
+  <!-- ② 메인 스테이지 -->
+  <div class="stage" id="stage">
+
+    <!-- ── 좌: 영상 + 모니터 오버레이 ── -->
+    <div class="left-panel" id="leftPanel">
+
+      <!-- 배경 영상 -->
+      <div class="video-container">
+        <video id="bgVideo" autoplay loop muted playsinline class="bg-video">
+          <source src="intro_animation.mp4" type="video/mp4"/>
+        </video>
+      </div>
+
+      <!-- 모니터 오버레이 -->
+      <div class="monitor-overlay" id="monitorOverlay">
+        <div class="overlay-screen">
+          <div class="overlay-titlebar">
+            <div class="overlay-dots">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <span class="overlay-title">WPR 업무 가이드</span>
+          </div>
+          <div class="folder-grid" id="folderGrid">
+            <!-- JS: renderFolderGrid() -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── 우: 슬라이드 패널 ── -->
+    <div class="slide-panel" id="slidePanel">
+
+      <div class="panel-header">
+        <button class="back-btn" onclick="closePanel()">목록으로</button>
+        <div class="panel-title-wrap">
+          <span class="panel-icon" id="panelIcon">📄</span>
+          <span class="panel-title" id="panelTitle">공문번호 발급</span>
+        </div>
+        <span class="panel-badge" id="panelBadge">행정</span>
+      </div>
+
+      <div class="panel-body" id="panelBody">
+        <!-- JS: renderContent(key) -->
+      </div>
+
+    </div>
+
+  </div><!-- /stage -->
+</div><!-- /layout -->
+
+<script>
+  /* ── 위 JavaScript 전체 삽입 ── */
+</script>
+</body>
+</html>
+```
+
+---
+
+## 12. 전체 CSS 코드
+
+> 위 각 섹션의 CSS를 아래 순서로 `<style>` 태그 안에 배치합니다.
+
+```
+1. CSS 변수 (:root)
+2. Reset & Base (*, body)
+3. 레이아웃 (.layout, .stage)
+4. 헤더 (.header, .header-nav, .nav-tab)
+5. Left Panel (.left-panel, .video-container, .bg-video)
+6. 모니터 오버레이 (.monitor-overlay, .overlay-screen, .overlay-titlebar, .dot)
+7. 폴더 그리드 (.folder-grid, .folder-btn, .folder-icon, .folder-label)
+8. 슬라이드 패널 (.slide-panel, .panel-header, .back-btn, .panel-body)
+9. 담당자 카드 (.owner-card, .owner-avatar, .owner-info, ...)
+10. 콘텐츠 컴포넌트 (flow, step, email-box, info-grid, ptable, warn, note)
+11. 반응형 미디어 쿼리
+```
+
+---
+
+## 13. 전체 JavaScript 코드
+
+```javascript
+// ── 1. 폴더 데이터 (FOLDERS) ──────────────────────────────────
+const FOLDERS = [ /* 섹션 5-2 참조 */ ];
+
+// ── 2. 콘텐츠 데이터 (DATA) ───────────────────────────────────
+const DATA = { /* 섹션 14-15 참조 */ };
+
+// ── 3. 렌더링 함수들 ────────────────────────────────────────────
+
+function renderFolderGrid() { /* 섹션 5-3 참조 */ }
+function renderContent(key) { /* 아래 참조 */ }
+function renderOwner(owner)  { /* 섹션 8-3 참조 */ }
+function renderFlow(steps)   { /* 플로우 HTML 생성 */ }
+function renderEmail(email)  { /* 이메일 목업 HTML */ }
+function renderInfoGrid(c)   { /* 정보 그리드 HTML */ }
+function renderTable(t)      { /* 테이블 HTML */ }
+
+function renderContent(key) {
+  const d = DATA[key];
+  if (!d) return '<p>데이터 없음</p>';
+  let html = '';
+
+  html += renderOwner(d.owner);     // ① 담당자 카드 (최상단)
+  html += renderFlow(d.flow);       // ② 플로우 화살표
+  if (d.steps?.length) {
+    d.steps.forEach(s => {
+      html += renderStep(s);        // ③ 스텝 목록
+    });
+  }
+  if (d.infoGrid) {
+    html += '<hr class="sec-div">';
+    html += renderInfoGrid(d.infoGrid);  // ④ 정보 그리드
+  }
+  if (d.table) {
+    html += '<hr class="sec-div">';
+    html += renderTable(d.table);        // ⑤ 테이블
+  }
+  if (d.warn) html += `<div class="warn"><span>⚠️</span><div>${d.warn}</div></div>`;
+  if (d.note) html += `<div class="note">${d.note}</div>`;
+
+  return html;
+}
+
+// ── 4. 패널 열기/닫기 ────────────────────────────────────────
+function openPanel(key) { /* 섹션 6-3 참조 */ }
+function closePanel()   { /* 섹션 6-3 참조 */ }
+
+// ── 5. 상세보기 토글 ──────────────────────────────────────────
+function toggleDetail(id, btn) {
+  const el = document.getElementById(id);
+  const isOpen = el.classList.contains('open');
+  el.classList.toggle('open', !isOpen);
+  btn.textContent = isOpen ? '▶ 상세 보기' : '▲ 닫기';
+}
+
+// ── 6. 복사 기능 ──────────────────────────────────────────────
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ 복사됨';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+
+// ── 7. 초기화 ─────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  renderFolderGrid();
+});
+```
+
+---
+
+## 14. 콘텐츠 데이터 구조 (DATA 객체)
+
+```javascript
+const DATA = {
+  [key]: {
+    icon:   String,      // 이모지 (패널 헤더)
+    label:  String,      // 제목
+    badge:  String,      // 카테고리 배지
+
+    owner: {             // 담당자 정보
+      icon:    String,   // 이모지
+      nameKo:  String,   // 한글 이름
+      name:    String,   // 영문 이름
+      team:    String,   // 팀명
+      contact: String,   // 이메일 (없으면 null)
+    },
+
+    flow: String[],      // 플로우 단계 배열
+
+    steps: [{
+      n:      Number,    // 스텝 번호
+      title:  String,    // 제목
+      desc:   String,    // 설명 (HTML 허용)
+      detail: String,    // 상세보기 내용 (null이면 버튼 미표시)
+      email: {           // 메일 목업 (선택)
+        to:      String,
+        cc:      String,
+        subject: String,
+        body:    String,
+        attach:  String,
+      }
+    }],
+
+    infoGrid: [{ title: String, items: String[] }],
+    table:    { headers: String[], rows: String[][] },
+    warn:     String,    // 경고 박스 내용
+    note:     String,    // 하단 노트
+  }
+}
+```
+
+---
+
+## 15. 업무 항목별 상세 데이터
+
+### 📄 공문번호 발급 (`key: "공문번호"`)
+
+```javascript
+공문번호: {
+  icon: "📄", label: "공문번호 발급", badge: "행정",
+  owner: { icon:"👩‍💼", nameKo:"김지나", name:"Gina Kim", team:"WPR", contact:"gina.kim@cushwake.com" },
+  flow: ["공문 작성","승인 요청 메일","공문번호 회신","번호 기재","글로싸인 날인"],
+  steps: [
+    { n:1, title:"공문 작성", desc:"공문 양식에 맞게 작성. 공문번호 란은 <strong>빈칸</strong>으로 두세요.", detail:null },
+    { n:2, title:"승인 요청 메일 발송",
+      desc:"부서장(To), 관련자(cc), WPR Gina Kim(cc)에게 발송합니다.",
+      email: { to:"부서장", cc:"관련자, Gina Kim (gina.kim@cushwake.com)",
+               subject:"[승인요청] 공문번호 발급 – [공문명] / [날짜]",
+               body:`안녕하세요,\n\n[공문명]에 대한 공문번호 발급 승인을 요청드립니다.\n\n■ 공문 목적   : [내용]\n■ 수신처     : [기관명]\n■ 발신 예정일 : [날짜]\n\n감사합니다.`,
+               attach:"[공문명]_초안.pdf" } },
+    { n:3, title:"공문번호 회신 수령", desc:"승인 후 <strong>Gina Kim</strong>이 번호를 메일로 회신합니다.", detail:null },
+    { n:4, title:"번호 기재 → Glosign 날인", desc:"번호를 기재 후 Glosign으로 법인인감 날인 요청.", detail:"→ 🖊️ 인감 날인 항목 참조" },
+  ],
+  note: "📌 담당자: WPR Gina Kim"
+}
+```
+
+### 💳 명함 신청 (`key: "명함"`)
+
+```javascript
+명함: {
+  icon: "💳", label: "명함 신청 방법", badge: "행정",
+  owner: { icon:"💁‍♀️", nameKo:"Emma Song", name:"Emma Song", team:"Reception", contact:"emma.song@cushwake.com" },
+  flow: ["신규직원 WPR처리","사이트 로그인","템플릿 선택","승인메일 전달","3~5일 배송"],
+  steps: [
+    { n:1, title:"신규 직원 명함", desc:"신규 입사자는 <strong>WPR팀(Emma Song)</strong>에서 우선 신청.", detail:null },
+    { n:2, title:"추가 명함 — 사이트 접속",
+      desc:"🌐 printrobo.co.kr/sps/cushmanwakefield/<br><strong>ID:</strong> CWK1234 &nbsp; <strong>PW:</strong> cw123456", detail:null },
+    { n:3, title:"템플릿 선택 및 내용 입력",
+      desc:"템플릿 리스트 → 명함작성 → 내용 기재 → 시안 검토 → [다음]",
+      detail:"그룹명이 필요한 경우 <strong>그룹명 추가 템플릿 (2번째)</strong> 사용" },
+    { n:4, title:"승인 메일 → Emma Song에게 전달",
+      desc:"신청 완료 후 받은 승인 메일을 Emma Song에게 전달합니다.",
+      email: { to:"Emma Song (emma.song@cushwake.com)",
+               subject:"[명함 신청] [이름] 명함 주문 요청",
+               body:`안녕하세요 Emma님,\n\n명함 신청 승인 메일 전달드립니다.\n\n■ 신청자   : [이름 / 직급 / 부서]\n■ 요청사항 : [특이사항, 없으면 '없음']\n\n감사합니다.`,
+               attach:"명함 신청 승인 메일 (시스템 자동발송 원문 전달)" } },
+    { n:5, title:"배송 (3~5일 이내)", desc:"주문 완료 후 3~5일 내 사무실로 배송됩니다.", detail:null },
+  ],
+  note: "📌 담당자: Reception Emma Song"
+}
+```
+
+> 나머지 11개 항목 (계약서, 화환, 국내출장, 해외출장, 락커, 인감, 법인차량, supplier, solstice, canteen, printix)은 동일한 스키마로 작성합니다. 기존 v1 명세서 '섹션 10' 데이터를 참고하여 `owner` 필드만 추가하면 됩니다.
+
+---
+
+## 16. QA 체크리스트
+
+### 빌드 전
+
+- [ ] `intro_animation.mp4` 와 HTML 파일이 **같은 폴더**에 있는가
+- [ ] 구글 폰트 (`Nanum Pen Script`, `Noto Sans KR`) 로드 확인
+- [ ] FOLDERS 배열의 `key` 값이 DATA 객체 키와 **모두 일치**하는가
+- [ ] 모든 항목에 `owner` 필드가 작성되었는가
+
+### 기능 테스트
+
+- [ ] 영상이 자동 재생 + 루프 되는가
+- [ ] 폴더 그리드 13개 항목이 정상 표시되는가
+- [ ] 각 폴더 버튼 클릭 시 슬라이드 패널이 오른쪽에서 슬라이드 인 되는가
+- [ ] 영상이 패널 열릴 때 흐림 처리되는가
+- [ ] **← 목록으로** 버튼 클릭 시 패널이 슬라이드 아웃 되는가
+- [ ] 뒤로가기 후 영상 blur가 해제되는가
+- [ ] 담당자 카드가 각 항목 최상단에 표시되는가
+- [ ] `▶ 상세 보기` 확장/접기가 작동하는가
+- [ ] 이메일 복사 버튼이 작동하는가
+
+### 반응형 테스트
+
+- [ ] 900px 이하: 슬라이드 패널이 전체 너비로 표시되는가
+- [ ] 600px 이하: 폴더 그리드가 2열로 전환되는가
+- [ ] 모바일에서 오버레이 위치가 영상 모니터 화면 위에 맞게 표시되는가
+
+### 디자인 체크
+
+- [ ] 영상 크기가 기존의 **80%**로 표시되는가
+- [ ] WPR / FAQ 탭이 헤더 우측에 표시되는가
+- [ ] 활성 폴더 버튼에 레드 테두리가 표시되는가
+- [ ] 뒤로가기 버튼 hover 시 왼쪽 이동 효과가 작동하는가
+
+---
+
+*최종 수정: 2026년 3월 | Cushman & Wakefield Korea WPR Team*

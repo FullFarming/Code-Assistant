@@ -1,36 +1,54 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { BUBBLES, DATA, type TaskData } from "@/data/tasks";
+import { DATA, type TaskData } from "@/data/tasks";
 import introVideo from "@assets/그림_기반_애니메이션_영상_제작_1772682936965.mp4";
+
+const FOLDERS = [
+  { key: "공문번호", icon: "📄", label: "공문번호\n발급", color: "#fff9e6" },
+  { key: "명함", icon: "💳", label: "명함 신청", color: "#e8f5e9" },
+  { key: "계약서", icon: "📁", label: "보관계약서", color: "#fff3e0" },
+  { key: "화환", icon: "🌸", label: "화환 신청", color: "#fce4ec" },
+  { key: "국내출장", icon: "🚄", label: "국내 출장", color: "#e3f2fd" },
+  { key: "해외출장", icon: "✈️", label: "해외 출장", color: "#ede7f6" },
+  { key: "락커", icon: "🔐", label: "락커 사용", color: "#e8eaf6" },
+  { key: "인감", icon: "🖊️", label: "인감 날인", color: "#f3e5f5" },
+  { key: "법인차량", icon: "🚗", label: "법인차량", color: "#e0f2f1" },
+  { key: "supplier", icon: "💼", label: "Supplier", color: "#fff8e1" },
+  { key: "solstice", icon: "🖥️", label: "Solstice", color: "#e1f5fe" },
+  { key: "canteen", icon: "📹", label: "Canteen\nRoom", color: "#fbe9e7" },
+  { key: "printix", icon: "🖨️", label: "Printix", color: "#f9fbe7" },
+];
 
 export default function Home() {
   const [activeKey, setActiveKey] = useState<string | null>(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
   const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set());
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const monitorBodyRef = useRef<HTMLDivElement>(null);
+  const panelBodyRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const v = videoRef.current;
-    if (v) {
-      v.play().catch(() => {});
-    }
+    if (v) v.play().catch(() => {});
   }, []);
 
   const activeData = activeKey ? DATA[activeKey] : null;
 
-  const handleBubbleClick = useCallback((key: string) => {
-    if (key === activeKey) return;
-    setIsTransitioning(true);
+  const openPanel = useCallback((key: string) => {
+    setActiveKey(key);
+    setPanelOpen(true);
     setExpandedDetails(new Set());
     setTimeout(() => {
-      setActiveKey(key);
-      setIsTransitioning(false);
-      if (monitorBodyRef.current) {
-        monitorBodyRef.current.scrollTop = 0;
-      }
-    }, 200);
-  }, [activeKey]);
+      if (panelBodyRef.current) panelBodyRef.current.scrollTop = 0;
+    }, 50);
+  }, []);
+
+  const closePanel = useCallback(() => {
+    setPanelOpen(false);
+    setTimeout(() => {
+      setActiveKey(null);
+      setExpandedDetails(new Set());
+    }, 350);
+  }, []);
 
   const toggleDetail = useCallback((id: string) => {
     setExpandedDetails(prev => {
@@ -54,139 +72,137 @@ export default function Home() {
     setTimeout(() => setCopiedField(null), 2000);
   }, []);
 
-  const handleDismiss = useCallback(() => {
-    if (!activeKey) return;
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setActiveKey(null);
-      setIsTransitioning(false);
-      setExpandedDetails(new Set());
-    }, 200);
-  }, [activeKey]);
-
   return (
-      <div className={`stage${activeKey ? "" : " full-video"}`}>
-        <div className="left-panel" onClick={handleDismiss} data-testid="left-panel">
-          <div className={`video-bg${activeKey ? " blurred" : ""}`}>
-            <video ref={videoRef} autoPlay loop muted playsInline data-testid="intro-video">
-              <source src={introVideo} type="video/mp4" />
-            </video>
-          </div>
-          <div className="hatching" />
-          <div className="bubble-cloud">
-            {BUBBLES.map((b) => (
-              <button
-                key={b.key}
-                className={`bubble ${b.floatClass}${activeKey === b.key ? " active" : ""}`}
-                style={{
-                  top: b.top,
-                  ...(b.left ? { left: b.left } : {}),
-                  ...(b.right ? { right: b.right } : {}),
-                }}
-                onClick={(e) => { e.stopPropagation(); handleBubbleClick(b.key); }}
-                aria-pressed={activeKey === b.key}
-                data-testid={`bubble-${b.key}`}
-              >
-                <svg className="bubble-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                  <path d="M 60,130 C 30,130 20,100 35,80 C 20,50 60,30 80,50 C 90,20 140,20 150,50 C 180,40 190,80 165,100 C 180,120 160,140 140,130 C 110,150 80,150 60,130 Z" />
-                </svg>
-                <span className="bubble-label">{b.emoji} {b.text}</span>
-              </button>
-            ))}
-          </div>
+    <div className={`stage${panelOpen ? " panel-open" : ""}`} data-testid="stage">
+      <div className="left-panel" data-testid="left-panel">
+        <div className="video-container">
+          <video ref={videoRef} autoPlay loop muted playsInline className="bg-video" data-testid="intro-video">
+            <source src={introVideo} type="video/mp4" />
+          </video>
         </div>
 
-        <div className="right-panel">
-          {!activeData ? (
-            <div className="empty-state" data-testid="empty-state">
-              <div className="big-arrow">👈</div>
-              <p>왼쪽의 말풍선을 클릭하면<br />상세 가이드가 여기에 표시됩니다</p>
+        <div className="monitor-overlay" data-testid="monitor-overlay">
+          <div className="overlay-screen">
+            <div className="overlay-titlebar">
+              <div className="overlay-dots">
+                <span className="dot red" />
+                <span className="dot yellow" />
+                <span className="dot green" />
+              </div>
+              <span className="overlay-title">WPR 업무 가이드</span>
             </div>
-          ) : (
-            <div className={`monitor-wrap ${isTransitioning ? "hidden" : "visible"}`} data-testid="monitor-wrap">
-              <div className="monitor">
-                <div className="monitor-titlebar">
-                  <div className="monitor-dots">
-                    <span />
-                    <span />
-                    <span />
+            <div className="folder-grid" data-testid="folder-grid">
+              {FOLDERS.map((f) => (
+                <button
+                  key={f.key}
+                  className={`folder-btn${activeKey === f.key ? " active" : ""}`}
+                  onClick={() => openPanel(f.key)}
+                  data-testid={`folder-${f.key}`}
+                >
+                  <div className="folder-icon" style={{ background: f.color }}>
+                    {f.icon}
                   </div>
-                  <span className="monitor-icon">{activeData.icon}</span>
-                  <span className="monitor-label" data-testid="monitor-label">{activeData.label}</span>
-                  <span className="monitor-badge">{activeData.badge}</span>
-                </div>
-                <div className="monitor-body" ref={monitorBodyRef} data-testid="monitor-body">
-                  <OwnerCard owner={activeData.owner} />
-                  {activeData.steps.length > 0 && (
-                    <div className="steps-container">
-                      {activeData.steps.map((step) => {
-                        const detailId = `${activeKey}-step-${step.n}`;
-                        const isExpanded = expandedDetails.has(detailId);
-                        return (
-                          <div className="step" key={step.n} data-testid={`step-${step.n}`}>
-                            <div className="step-num">{step.n}</div>
-                            <div className="step-body">
-                              <div className="step-title">{step.title}</div>
-                              {step.desc && (
-                                <div className="step-desc" dangerouslySetInnerHTML={{ __html: step.desc }} />
-                              )}
-                              {step.detail && (
-                                <>
-                                  <button
-                                    className="expand-btn"
-                                    onClick={() => toggleDetail(detailId)}
-                                    data-testid={`expand-btn-${step.n}`}
-                                  >
-                                    {isExpanded ? "▲ 닫기" : "▶ 상세 보기"}
-                                  </button>
-                                  <div
-                                    className={`expand-detail${isExpanded ? " open" : ""}`}
-                                    dangerouslySetInnerHTML={{ __html: step.detail }}
-                                  />
-                                </>
-                              )}
-                              {step.email && (
-                                <EmailBox
-                                  email={step.email}
-                                  stepKey={`${activeKey}-${step.n}`}
-                                  copiedField={copiedField}
-                                  onCopy={handleCopy}
-                                />
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {activeData.infoGrid && (
-                    <>
-                      <hr className="sec-div" />
-                      <InfoGrid cards={activeData.infoGrid} />
-                    </>
-                  )}
-                  {activeData.table && (
-                    <>
-                      <hr className="sec-div" />
-                      <PolicyTable table={activeData.table} />
-                    </>
-                  )}
-                  {activeData.warn && (
-                    <div className="warn">
-                      <span>⚠️</span>
-                      <div>{activeData.warn}</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="monitor-stand">
-                <div className="monitor-neck" />
-                <div className="monitor-base" />
-              </div>
+                  <span className="folder-label">{f.label}</span>
+                </button>
+              ))}
             </div>
-          )}
+          </div>
         </div>
       </div>
+
+      <div className={`slide-panel${panelOpen ? " open" : ""}`} data-testid="slide-panel">
+        {activeData && (
+          <>
+            <div className="panel-header">
+              <button className="back-btn" onClick={closePanel} data-testid="back-btn">
+                목록으로
+              </button>
+              <div className="panel-title-wrap">
+                <span className="panel-icon">{activeData.icon}</span>
+                <span className="panel-title" data-testid="panel-title">{activeData.label}</span>
+              </div>
+              <span className="panel-badge">{activeData.badge}</span>
+            </div>
+            <div className="panel-body" ref={panelBodyRef} data-testid="panel-body">
+              <OwnerCard owner={activeData.owner} />
+              {activeData.flow && activeData.flow.length > 0 && (
+                <div className="flow-row" data-testid="flow-row">
+                  {activeData.flow.map((step, i) => (
+                    <span key={i}>
+                      {i > 0 && <span className="flow-arrow">→</span>}
+                      <span className="flow-item">{step}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {activeData.steps.length > 0 && (
+                <div className="steps-container">
+                  {activeData.steps.map((step) => {
+                    const detailId = `${activeKey}-step-${step.n}`;
+                    const isExpanded = expandedDetails.has(detailId);
+                    return (
+                      <div className="step" key={step.n} data-testid={`step-${step.n}`}>
+                        <div className="step-num">{step.n}</div>
+                        <div className="step-body">
+                          <div className="step-title">{step.title}</div>
+                          {step.desc && (
+                            <div className="step-desc" dangerouslySetInnerHTML={{ __html: step.desc }} />
+                          )}
+                          {step.detail && (
+                            <>
+                              <button
+                                className="expand-btn"
+                                onClick={() => toggleDetail(detailId)}
+                                data-testid={`expand-btn-${step.n}`}
+                              >
+                                {isExpanded ? "▲ 닫기" : "▶ 상세 보기"}
+                              </button>
+                              <div
+                                className={`expand-detail${isExpanded ? " open" : ""}`}
+                                dangerouslySetInnerHTML={{ __html: step.detail }}
+                              />
+                            </>
+                          )}
+                          {step.email && (
+                            <EmailBox
+                              email={step.email}
+                              stepKey={`${activeKey}-${step.n}`}
+                              copiedField={copiedField}
+                              onCopy={handleCopy}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {activeData.infoGrid && (
+                <>
+                  <hr className="sec-div" />
+                  <InfoGrid cards={activeData.infoGrid} />
+                </>
+              )}
+              {activeData.table && (
+                <>
+                  <hr className="sec-div" />
+                  <PolicyTable table={activeData.table} />
+                </>
+              )}
+              {activeData.warn && (
+                <div className="warn">
+                  <span>⚠️</span>
+                  <div>{activeData.warn}</div>
+                </div>
+              )}
+              {activeData.note && (
+                <div className="note" data-testid="note">{activeData.note}</div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -205,20 +221,6 @@ function OwnerCard({ owner }: { owner: TaskData["owner"] }) {
           </a>
         )}
       </div>
-    </div>
-  );
-}
-
-function FlowRow({ flow }: { flow: string[] }) {
-  if (!flow || flow.length === 0) return null;
-  return (
-    <div className="flow-row" data-testid="flow-row">
-      {flow.map((step, i) => (
-        <span key={i}>
-          <span className="flow-item">{step}</span>
-          {i < flow.length - 1 && <span className="flow-arrow">→</span>}
-        </span>
-      ))}
     </div>
   );
 }
