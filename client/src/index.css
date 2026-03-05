@@ -707,6 +707,30 @@
   line-height: 1.7;
   white-space: pre-line;
   border-top: 1px solid #d0e8ff;
+  position: relative;
+}
+.email-body-copy-btn {
+  display: block;
+  margin-top: 8px;
+  margin-left: auto;
+  padding: 3px 10px;
+  background: #e3f0ff;
+  border: 1px solid #bcd8ff;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1565c0;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: var(--font-body);
+}
+.email-body-copy-btn:hover {
+  background: #cce3ff;
+}
+.email-body-copy-btn.copied {
+  background: #d4edda;
+  border-color: #28a745;
+  color: #28a745;
 }
 .email-attach {
   padding: 5px 12px;

@@ -335,6 +335,13 @@ function EmailBox({
       </div>
       <div className="email-body-content">
         {email.body}
+        <button
+          className={`email-body-copy-btn${copiedField === copyId("body") ? " copied" : ""}`}
+          onClick={() => onCopy(copyId("body"), email.body)}
+          data-testid={`copy-body-${stepKey}`}
+        >
+          {copiedField === copyId("body") ? "✓ 복사됨" : "본문 복사"}
+        </button>
       </div>
       {email.attach && (
         <div className="email-attach">
