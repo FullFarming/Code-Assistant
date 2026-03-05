@@ -146,7 +146,6 @@ export const DATA: Record<string, TaskData> = {
         detail: "보관 중인 계약서는 부서로부터 날인이 완료된 계약서 중 보관 요청을 받아 전달받은 것만 해당됩니다."
       }
     ],
-    note: "📌 담당자: WPR Gina Kim"
   },
 
   화환: {
@@ -159,7 +158,6 @@ export const DATA: Record<string, TaskData> = {
       { n: 3, title: "소속 팀장 승인", desc: "소속 부서 팀장의 승인을 진행합니다.", detail: null },
       { n: 4, title: "Reception Emma Song에게 제출", desc: "승인 완료 후 Emma Song에게 전달하면 신청이 완료됩니다.", detail: null }
     ],
-    note: "📌 주말·긴급 건: Emma Song에게 직접 연락 | 담당자: Reception Emma Song"
   },
 
   국내출장: {
@@ -224,7 +222,6 @@ export const DATA: Record<string, TaskData> = {
       { title: "🔋 배터리 방전 시", items: ["Micro 5핀 케이블 앞면 연결","비밀번호 입력 → 해제 후 교체"] }
     ],
     steps: [],
-    note: "📌 공장 출하: 일회성 모드 | A/S: 1644-3461"
   },
 
   인감: {
@@ -244,7 +241,6 @@ export const DATA: Record<string, TaskData> = {
       { n: 6, title: "날인 위치 지정", desc: "[도장모양] 클릭 → 계약서 페이지에서 날인 위치 지정 → [다음]", detail: '인감증명서·법인등기부등본 요청 시: [클립모양] 클릭 → 첨부파일명 입력 후 [요청하기]' },
       { n: 7, title: "[최종 확인] → 전자서명 신청 완료", desc: "", detail: null }
     ],
-    note: "📌 법인인감 권한자: 권희원 이사 | glosign.com | 신규직원: Reception 대행"
   },
 
   법인차량: {
@@ -294,7 +290,6 @@ export const DATA: Record<string, TaskData> = {
       { n: 4, title: "첨부서류 5가지 업로드", desc: "농협은행 계좌인 경우 농협중앙회/단위농협 여부를 메모란에 기재", detail: null },
       { n: 5, title: "OK 클릭 → 1·2차 승인 완료 후 사용 가능", desc: "Inactive 상태 또는 승인 지연 시 WPR에 문의 (Compliance 검토 관련)", detail: null }
     ],
-    note: "📌 담당자: WPR팀 문의"
   },
 
   solstice: {
@@ -307,7 +302,6 @@ export const DATA: Record<string, TaskData> = {
       { n: 3, title: "회의실 화면에 표시된 KEY 번호 입력", desc: "TV 화면 좌측에 표시되는 4자리 숫자 KEY", detail: null },
       { n: 4, title: "[Desktop] 클릭 → 화면 공유 완료", desc: "공유 중단: 상단 바에서 [공유중단] 클릭", detail: null }
     ],
-    note: "📌 CWKCorp IP: 10.196.72.101 | CWKGuest IP: 10.196.78.31"
   },
 
   canteen: {
@@ -333,7 +327,6 @@ export const DATA: Record<string, TaskData> = {
       }
     ],
     warn: "AirMedia 사용 중 Teams '화면 공유' 버튼 클릭 금지 (충돌·에코) | 오디오 설정 임의 변경 금지 | 중요 미팅 전 리허설 권장",
-    note: "📌 회의실 이메일: KORSeoul.CanteenRM@cushwake.com"
   },
 
   printix: {
@@ -347,6 +340,5 @@ export const DATA: Record<string, TaskData> = {
       { n: 4, title: "PC에서 인쇄 명령", desc: '프린터: <strong>Printix Anywhere (Seoul-Korea)</strong> 선택 → 인쇄', detail: null },
       { n: 5, title: "앱 → QR 스캔 → 인쇄 완료", desc: "Printix 앱 인쇄 목록 → 파일 선택(꾹 누름) → [Scan] → [Scan QR] → 복합기 QR 스캔", detail: null }
     ],
-    note: "📌 스캔 방법은 기존과 동일 | 문제 발생 시 IT팀 문의"
   }
 };
