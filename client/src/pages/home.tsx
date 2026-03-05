@@ -96,7 +96,10 @@ export default function Home() {
                 aria-pressed={activeKey === b.key}
                 data-testid={`bubble-${b.key}`}
               >
-                {b.emoji} {b.text}
+                <svg className="bubble-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                  <path d="M 60,130 C 30,130 20,100 35,80 C 20,50 60,30 80,50 C 90,20 140,20 150,50 C 180,40 190,80 165,100 C 180,120 160,140 140,130 C 135,140 135,160 150,170 C 125,165 115,145 110,130 C 90,140 70,140 60,130 Z" />
+                </svg>
+                <span className="bubble-label">{b.emoji} {b.text}</span>
               </button>
             ))}
           </div>

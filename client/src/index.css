@@ -262,46 +262,71 @@
 
 .bubble {
   position: absolute;
-  background: white;
-  border: 2.5px solid var(--ink);
-  box-shadow: 2px 2px 0px var(--ink);
-  border-radius: 40px;
-  padding: 9px 18px;
-  font-family: var(--font-brush);
-  font-size: 18px;
+  background: none;
+  border: none;
+  padding: 0;
   cursor: pointer;
   pointer-events: all;
   white-space: nowrap;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s, color 0.15s, border-color 0.15s;
+  transition: transform 0.15s ease, filter 0.15s ease;
   z-index: 20;
   user-select: none;
+  width: 150px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bubble-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.bubble-svg path {
+  fill: white;
+  stroke: #a1c4e5;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  transition: fill 0.15s ease, stroke 0.15s ease;
+}
+.bubble-label {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-brush);
+  font-size: 21px;
+  color: var(--ink);
+  pointer-events: none;
+  padding-bottom: 18px;
+  transition: color 0.15s ease;
 }
 .bubble:hover,
 .bubble:focus-visible {
-  background: var(--ink);
-  color: white;
-  transform: scale(1.08) translateY(-2px);
-  box-shadow: 6px 6px 0px #c41230;
+  transform: scale(1.12) translateY(-4px);
   outline: none;
+  filter: drop-shadow(3px 4px 0px rgba(196, 18, 48, 0.5));
+}
+.bubble:hover .bubble-svg path,
+.bubble:focus-visible .bubble-svg path {
+  fill: var(--ink);
+  stroke: var(--ink);
+}
+.bubble:hover .bubble-label,
+.bubble:focus-visible .bubble-label {
+  color: white;
 }
 .bubble.active {
-  background: #c41230;
+  transform: scale(1.08);
+  filter: drop-shadow(3px 4px 0px rgba(0,0,0,0.3));
+}
+.bubble.active .bubble-svg path {
+  fill: #c41230;
+  stroke: #a00d26;
+}
+.bubble.active .bubble-label {
   color: white;
-  border-color: #c41230;
-  box-shadow: 4px 4px 0px var(--ink);
-  transform: scale(1.05);
-}
-.bubble::after {
-  content: '\25CF \25CF \25CF';
-  position: absolute;
-  font-size: 6px;
-  color: var(--ink);
-  letter-spacing: 2px;
-  bottom: -20px;
-  left: 40%;
-}
-.bubble.active::after {
-  color: var(--ink);
 }
 
 @keyframes float-a {
@@ -820,8 +845,12 @@
     min-height: 60vh;
   }
   .bubble {
-    font-size: 15px;
-    padding: 7px 14px;
+    width: 120px;
+    height: 120px;
+  }
+  .bubble-label {
+    font-size: 17px;
+    padding-bottom: 14px;
   }
   .video-bg video {
     object-fit: contain;
@@ -842,8 +871,12 @@
     font-size: 16px;
   }
   .bubble {
-    font-size: 13px;
-    padding: 5px 10px;
+    width: 100px;
+    height: 100px;
+  }
+  .bubble-label {
+    font-size: 14px;
+    padding-bottom: 12px;
   }
   .header-title {
     font-size: 18px;
@@ -855,7 +888,7 @@
     position: relative;
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 4px;
     padding: 12px;
     justify-content: center;
   }
