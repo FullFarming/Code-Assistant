@@ -110,7 +110,7 @@ export const DATA: Record<string, TaskData> = {
   명함: {
     icon: "💳", label: "명함 신청 방법", badge: "행정",
     owner: { icon: "💁‍♀️", name: "Emma Song", nameKo: "Emma Song", team: "Reception", contact: "emma.song@cushwake.com" },
-    flow: ["신규직원 WPR 처리","사이트 로그인","템플릿 선택","승인메일 전달","3~5일 배송"],
+    flow: ["신규직원 WPR 처리","사이트 로그인","템플릿 선택","3~5일 배송"],
     steps: [
       { n: 1, title: "신규 직원 명함", desc: "신규 입사자 명함은 <strong>WPR팀(Emma Song)</strong>에서 우선 신청하여 준비합니다.", detail: null },
       {
@@ -123,17 +123,7 @@ export const DATA: Record<string, TaskData> = {
         desc: "왼쪽 템플릿 리스트 → 명함작성 접속 → 내용 기재 후 시안 검토 → [다음]",
         detail: '부서 아래 그룹명이 필요한 경우 <strong>그룹명 추가 템플릿 (2번째)</strong>을 사용하세요.'
       },
-      {
-        n: 4, title: "승인 메일 → Emma Song에게 전달",
-        desc: "신청 완료 후 받은 승인 메일을 리셉션 Emma Song에게 전달합니다.",
-        email: {
-          to: "Emma Song (emma.song@cushwake.com)",
-          subject: "[명함 신청] [이름] 명함 주문 요청",
-          body: "안녕하세요 Emma님,\n\n명함 신청 승인 메일을 전달 드립니다.\n\n■ 신청자   : [이름 / 직급 / 부서]\n■ 요청사항 : [특이사항, 없으면 '없음']\n\n감사합니다.",
-          attach: "명함 신청 승인 메일 (시스템 자동발송 원문 전달)"
-        }
-      },
-      { n: 5, title: "배송 (3~5일 이내)", desc: "주문 완료 후 3~5일 이내 사무실로 배송됩니다.", detail: null }
+      { n: 4, title: "배송 (3~5일 이내)", desc: "주문 완료 후 3~5일 이내 사무실로 배송됩니다.", detail: null }
     ],
     note: "📌 담당자: Reception Emma Song"
   },
