@@ -124,8 +124,7 @@ export const DATA: Record<string, TaskData> = {
         detail: '부서 아래 그룹명이 필요한 경우 <strong>그룹명 추가 템플릿 (2번째)</strong>을 사용하세요.'
       },
       { n: 4, title: "배송 (3~5일 이내)", desc: "주문 완료 후 3~5일 이내 사무실로 배송됩니다.", detail: null }
-    ],
-    note: "📌 담당자: Reception Emma Song"
+    ]
   },
 
   계약서: {
