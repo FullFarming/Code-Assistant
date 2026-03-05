@@ -176,40 +176,40 @@ export const DATA: Record<string, TaskData> = {
 
   국내출장: {
     icon: "🚄", label: "국내 출장 신청", badge: "지원",
-    owner: { icon: "🧳", name: "Hannah Jeong", nameKo: "정혜은 대리", team: "WPR", contact: "hannah.jeong@cushwake.com" },
-    flow: ["신청서 작성","팀장·대표 승인","Hannah에 제출","예약 완료 수령"],
+    owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR (정혜은 대리 업무 대행)", contact: "gina.kim@cushwake.com" },
+    flow: ["신청서 작성","팀장·대표 승인","Gina Kim에 제출","예약 완료 수령"],
     steps: [
       { n: 1, title: "국내 출장 신청서 작성", desc: "국내 출장 신청서 링크를 통해 작성합니다.", detail: null },
       { n: 2, title: "팀장님 및 대표님 승인", desc: "", detail: null },
       {
-        n: 3, title: "WPR Hannah 대리에게 제출",
-        desc: "승인 완료 후 Hannah 대리에게 승인 내역 및 지원 요청사항을 전달합니다.",
+        n: 3, title: "WPR 김지성 대리에게 제출",
+        desc: "승인 완료 후 김지성 대리에게 승인 내역 및 지원 요청사항을 전달합니다.",
         email: {
-          to: "Hannah (WPR) (hannah.jeong@cushwake.com)",
+          to: "Gina Kim (gina.kim@cushwake.com)",
           subject: "[국내출장] [이름] / [출장지] / [기간]",
-          body: "안녕하세요 Hannah님,\n\n국내 출장 승인이 완료되어 지원 요청 드립니다.\n\n■ 출장자    : [이름 / 직급 / 부서]\n■ 출장지    : [목적지]\n■ 출장기간  : [YYYY.MM.DD ~ YYYY.MM.DD]\n■ 출장 목적 : [내용]\n\n[지원 요청사항]\n- 호텔  : □ 필요  □ 불필요\n- 교통편 : □ KTX  □ 항공  □ 기타\n\n감사합니다.",
+          body: "안녕하세요 Gina님,\n\n국내 출장 승인이 완료되어 지원 요청 드립니다.\n\n■ 출장자    : [이름 / 직급 / 부서]\n■ 출장지    : [목적지]\n■ 출장기간  : [YYYY.MM.DD ~ YYYY.MM.DD]\n■ 출장 목적 : [내용]\n\n[지원 요청사항]\n- 호텔  : □ 필요  □ 불필요\n- 교통편 : □ KTX  □ 항공  □ 기타\n\n감사합니다.",
           attach: "국내출장_신청서_승인완료.pdf"
         }
       },
       { n: 4, title: "예약 완료 메일 수령", desc: "여행사를 통해 호텔·교통편 예약 완료 후 내역을 메일로 수령합니다.", detail: null }
     ],
-    note: "📌 담당자: WPR Hannah 대리"
+    warn: "정혜은 대리를 대신하여 김지성 대리가 업무를 대행하고 있습니다."
   },
 
   해외출장: {
     icon: "✈️", label: "해외 출장 신청", badge: "지원 · APAC",
-    owner: { icon: "🧳", name: "Hannah Jeong", nameKo: "정혜은 대리", team: "WPR", contact: "hannah.jeong@cushwake.com" },
-    flow: ["신청서 작성","팀장·대표 승인","APAC 승인 (Hannah)","항공·호텔 예약","확인 수령"],
+    owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR (정혜은 대리 업무 대행)", contact: "gina.kim@cushwake.com" },
+    flow: ["신청서 작성","팀장·대표 승인","APAC 승인 (Gina Kim)","항공·호텔 예약","확인 수령"],
     steps: [
       { n: 1, title: "해외 출장 신청서 작성", desc: "", detail: null },
       { n: 2, title: "팀장님 및 대표님 국내 승인", desc: "", detail: null },
       {
-        n: 3, title: "WPR Hannah를 통해 APAC 승인",
+        n: 3, title: "WPR 김지성 대리를 통해 APAC 승인",
         desc: "Travel Requisition Form + 대표님 승인 내역 필요",
         email: {
-          to: "Hannah (WPR) (hannah.jeong@cushwake.com)",
+          to: "Gina Kim (gina.kim@cushwake.com)",
           subject: "[해외출장 APAC승인] [이름] / [국가] / [기간]",
-          body: "안녕하세요 Hannah님,\n\n해외 출장 국내 승인이 완료되어 APAC 승인 요청 드립니다.\n\n■ 출장자    : [이름 / 직급 / 부서]\n■ 출장국가  : [국가명 / 도시]\n■ 출장기간  : [YYYY.MM.DD ~ YYYY.MM.DD]\n■ 출장 목적 : [내용]\n■ 항공편    : □ Economy  □ Premium Economy  □ Business\n\nTravel Requisition Form 및 대표님 승인 내역 첨부합니다.\n\n감사합니다.",
+          body: "안녕하세요 Gina님,\n\n해외 출장 국내 승인이 완료되어 APAC 승인 요청 드립니다.\n\n■ 출장자    : [이름 / 직급 / 부서]\n■ 출장국가  : [국가명 / 도시]\n■ 출장기간  : [YYYY.MM.DD ~ YYYY.MM.DD]\n■ 출장 목적 : [내용]\n■ 항공편    : □ Economy  □ Premium Economy  □ Business\n\nTravel Requisition Form 및 대표님 승인 내역 첨부합니다.\n\n감사합니다.",
           attach: "Travel_Requisition_Form.docx | 대표님_승인내역.pdf"
         }
       },
@@ -220,7 +220,7 @@ export const DATA: Record<string, TaskData> = {
       { title: "🏨 호텔 규정", items: ["승인 예산 한도 내 예약","Client 동반 시 동일 호텔 가능"] },
       { title: "🛂 중국 비자", items: ["여행사 대행 신청 가능","최소 2주 전 신청 필수"] }
     ],
-    note: "📌 담당자: WPR Hannah 대리"
+    warn: "정혜은 대리를 대신하여 김지성 대리가 업무를 대행하고 있습니다."
   },
 
   락커: {
@@ -261,7 +261,7 @@ export const DATA: Record<string, TaskData> = {
 
   법인차량: {
     icon: "🚗", label: "법인차량 이용", badge: "시설 · 커넥트프로",
-    owner: { icon: "🧳", name: "Hannah Jeong", nameKo: "정혜은 대리", team: "WPR", contact: "hannah.jeong@cushwake.com" },
+    owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR (정혜은 대리 업무 대행)", contact: "gina.kim@cushwake.com" },
     flow: ["앱 설치 및 법인 연결","차량 예약","승인 확인","차량 이용","운행일지 작성","사용 종료"],
     steps: [
       {
@@ -280,10 +280,10 @@ export const DATA: Record<string, TaskData> = {
         ["주차·톨비","Expense 청구 (목적지·업무내용 기재)"],
         ["주차 위치","항상 지하 6층"],
         ["긴급 문제","롯데렌터카 1588-1230"],
-        ["사고 발생","Hannah 대리에게 즉시 연락"]
+        ["사고 발생","김지성 대리에게 즉시 연락"]
       ]
     },
-    note: "📌 이용 범위: 업무 시간 내·업무 용도만 / 출퇴근 불가 | 담당자: WPR Hannah 대리"
+    warn: "정혜은 대리를 대신하여 김지성 대리가 업무를 대행하고 있습니다."
   },
 
   supplier: {
