@@ -116,7 +116,7 @@ export default function Home() {
         </div>
 
         {windowState !== "normal" && (
-          <button className="desktop-shortcut" onClick={handleWindowRestore} data-testid="desktop-shortcut">
+          <button className="desktop-shortcut ml-[300px] mr-[300px] mt-[420px] mb-[420px]" onClick={handleWindowRestore} data-testid="desktop-shortcut">
             <div className="shortcut-icon">📂</div>
             <span className="shortcut-label">WPR 업무 가이드</span>
           </button>
