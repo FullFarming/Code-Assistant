@@ -193,7 +193,6 @@ export default function Home() {
                 <span className="panel-icon">{activeData.icon}</span>
                 <span className="panel-title" data-testid="panel-title">{activeData.label}</span>
               </div>
-              <span className="panel-badge">{activeData.badge}</span>
             </div>
             <div className="panel-body" ref={panelBodyRef} data-testid="panel-body">
               <OwnerCard owner={activeData.owner} />
