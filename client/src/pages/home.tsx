@@ -110,7 +110,7 @@ export default function Home() {
     <div className={`stage${panelOpen ? " panel-open" : ""}`} data-testid="stage">
       <div className="left-panel" data-testid="left-panel">
         <div className="video-container">
-          <video ref={videoRef} autoPlay loop muted playsInline className="bg-video" data-testid="intro-video">
+          <video ref={videoRef} autoPlay loop muted playsInline className="bg-video ml-[299px] mr-[299px] mt-[400px] mb-[400px]" data-testid="intro-video">
             <source src={introVideo} type="video/mp4" />
           </video>
         </div>
@@ -182,7 +182,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-
       <div className={`slide-panel${panelOpen ? " open" : ""}`} data-testid="slide-panel">
         {activeData && (
           <>
