@@ -45,7 +45,7 @@ Interactive web application for Cushman & Wakefield Korea employees to navigate 
 - IT: Supplier, Solstice, Canteen Room, Printix
 
 ## Staff (담당자별 분류 순서)
-- 권희원 이사 (Grace Kwon): 인감
-- 김경만 과장 (Noel Kim): Supplier, Solstice, Canteen, Printix
-- 김지성 대리 (Gina Kim): 공문번호, 계약서, 국내출장, 해외출장, 법인차량
-- 송진영 사원 (Emma Song): 명함, 화환, 락커
+- 권희원 이사 (Grace Kwon): WPR팀 총괄
+- 김경만 과장 (Noel Kim): 인감(Glosign), Solstice, Canteen Room, Printix
+- 김지성 대리 (Gina Kim): 공문번호, 계약서, 국내출장, 해외출장, 락커, Supplier
+- 송진영 사원 (Emma Song): 명함, 화환, 법인차량

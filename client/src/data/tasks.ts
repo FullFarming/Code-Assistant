@@ -209,7 +209,7 @@ export const DATA: Record<string, TaskData> = {
 
   락커: {
     icon: "🔐", label: "락커 사용 방법 (ML81PA)", badge: "시설",
-    owner: { icon: "🔑", name: "Self-Service", nameKo: "자가 처리", team: "—" },
+    owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR", contact: "gina.kim@cushwake.com" },
     flow: [],
     infoGrid: [
       { title: "🔒 잠글 때 (일회성)", items: ["문 닫고 비밀번호(4자리) 입력","솔도~ + 적색 LED 3회 → 완료","5~12자리: ⊞ + PW + ⊞"] },
@@ -224,7 +224,7 @@ export const DATA: Record<string, TaskData> = {
 
   인감: {
     icon: "🖊️", label: "비대면 인감 날인 (Glosign)", badge: "시설",
-    owner: { icon: "🖊️", name: "Grace Kwon", nameKo: "권희원 이사", team: "WPR", contact: "grace.kwon@ap.cushwake.com" },
+    owner: { icon: "💻", name: "Noel Kim", nameKo: "김경만 과장", team: "WPR", contact: "noel.kim@cushwake.com" },
     flow: ["계약 시작하기","파일 업로드","계약명 입력","비대면 선택","결재자 설정","날인 위치","최종 확인"],
     steps: [
       { n: 1, title: "Glosign 접속 → [계약 시작하기]", desc: "", detail: null },
@@ -243,7 +243,7 @@ export const DATA: Record<string, TaskData> = {
 
   법인차량: {
     icon: "🚗", label: "법인차량 이용", badge: "시설 · 커넥트프로",
-    owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR", contact: "gina.kim@cushwake.com" },
+    owner: { icon: "💁‍♀️", name: "Emma Song", nameKo: "송진영 사원", team: "WPR", contact: "emma.song@cushwake.com" },
     flow: ["앱 설치 및 법인 연결","차량 예약","승인 확인","차량 이용","운행일지 작성","사용 종료"],
     steps: [
       {
@@ -269,7 +269,7 @@ export const DATA: Record<string, TaskData> = {
 
   supplier: {
     icon: "💼", label: "Workday Supplier 등록", badge: "IT · 5-Step",
-    owner: { icon: "💻", name: "Noel Kim", nameKo: "김경만 과장", team: "WPR", contact: "noel.kim@cushwake.com" },
+    owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR", contact: "gina.kim@cushwake.com" },
     flow: ["5가지 서류 준비","Create Supplier Request","필수항목 입력","연락처 입력","서류 첨부","제출·승인"],
     steps: [
       { n: 0, title: "사전 준비 서류 (5가지 모두 필수)", desc: "① 3rd party 계약서 &nbsp; ② 사업자등록증 &nbsp; ③ 통장사본 &nbsp; ④ 실사설문지 (공식 영문명 기재 필수) &nbsp; ⑤ 3rd Party Risk Assessment DD Form", detail: null },
