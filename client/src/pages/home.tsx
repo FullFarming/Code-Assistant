@@ -11,7 +11,7 @@ const FOLDERS = [
   { key: "국내출장", icon: "🚄", label: "국내 출장", color: "#e3f2fd" },
   { key: "해외출장", icon: "✈️", label: "해외 출장", color: "#ede7f6" },
   { key: "락커", icon: "🔐", label: "락커 사용", color: "#e8eaf6" },
-  { key: "인감", icon: "🖊️", label: "인감 날인", color: "#f3e5f5" },
+  { key: "인감", icon: "🖊️", label: "비대면 인감 날인\n(Glosign)", color: "#f3e5f5" },
   { key: "법인차량", icon: "🚗", label: "법인차량", color: "#e0f2f1" },
   { key: "supplier", icon: "💼", label: "Supplier", color: "#fff8e1" },
   { key: "solstice", icon: "🖥️", label: "Solstice", color: "#e1f5fe" },
