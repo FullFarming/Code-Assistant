@@ -18,19 +18,23 @@ Interactive web application for Cushman & Wakefield Korea employees to navigate 
 ## Key Features
 - Looping animation video as main visual (80% size, dark background)
 - Monitor overlay with 13 folder icon buttons in a 4-column grid (macOS-style titlebar)
+- **Tab bar** inside monitor overlay: "기능별 분류" (folder grid) / "담당자별 분류" (person cards)
+- **담당자별 분류 탭**: 4 staff person cards (2×2 grid) → click → R&R responsibility list → click → opens same slide panel as folder icons
 - Slide-in right panel (50% width, fixed position) for task details with ← back button
 - Video blurs/dims when panel is open
 - Step-by-step workflow guides with numbered steps
-- Outlook-style email templates with copy functionality
+- Outlook-style email templates with copy functionality (to/cc/subject/body individual copy + full copy)
+- WPR staff names in email to/cc highlighted as red badge chips (clickable mailto links)
 - Owner/contact person cards for each task
 - Header with C&W logo + WPR/FAQ navigation tabs
 - FAQ page with Korean Q&A accordion (12 questions)
-- Responsive design (desktop 50% panel, tablet full-width panel, mobile 2-col folders)
+- Responsive design (desktop 50% panel, tablet full-width panel, mobile 2-col folders; person grid 1-col on mobile)
 
 ## File Structure
 - `client/src/pages/home.tsx` - Main WPR page with video + monitor overlay + slide panel
 - `client/src/pages/faq.tsx` - FAQ accordion page
 - `client/src/data/tasks.ts` - All task workflow data (13 tasks) with owner info
+- `client/src/data/persons.ts` - 4 WPR staff person data with R&R mappings to task keys
 - `client/src/index.css` - Complete styling (v2 design system)
 - `client/src/App.tsx` - App routing + header component
 

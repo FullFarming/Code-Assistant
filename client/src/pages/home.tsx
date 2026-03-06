@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { DATA, type TaskData } from "@/data/tasks";
+import { persons, type Person } from "@/data/persons";
 import introVideo from "@assets/그림_기반_애니메이션_영상_제작_1772682936965.mp4";
 
 const FOLDERS = [
@@ -23,6 +24,8 @@ export default function Home() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set());
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"function" | "person">("function");
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const panelBodyRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -48,6 +51,14 @@ export default function Home() {
       setActiveKey(null);
       setExpandedDetails(new Set());
     }, 350);
+  }, []);
+
+  const handleViewChange = useCallback((mode: "function" | "person") => {
+    setPanelOpen(false);
+    setActiveKey(null);
+    setExpandedDetails(new Set());
+    setViewMode(mode);
+    setSelectedPerson(null);
   }, []);
 
   const toggleDetail = useCallback((id: string) => {
@@ -91,20 +102,48 @@ export default function Home() {
               </div>
               <span className="overlay-title">WPR 업무 가이드</span>
             </div>
-            <div className="folder-grid" data-testid="folder-grid">
-              {FOLDERS.map((f) => (
-                <button
-                  key={f.key}
-                  className={`folder-btn${activeKey === f.key ? " active" : ""}`}
-                  onClick={() => openPanel(f.key)}
-                  data-testid={`folder-${f.key}`}
-                >
-                  <div className="folder-icon" style={{ background: f.color }}>
-                    {f.icon}
-                  </div>
-                  <span className="folder-label">{f.label}</span>
-                </button>
-              ))}
+            <div className="window-tab-bar" data-testid="window-tab-bar">
+              <button
+                className={`window-tab${viewMode === "function" ? " active" : ""}`}
+                onClick={() => handleViewChange("function")}
+                data-testid="tab-function"
+              >
+                🗂️ 기능별 분류
+              </button>
+              <button
+                className={`window-tab${viewMode === "person" ? " active" : ""}`}
+                onClick={() => handleViewChange("person")}
+                data-testid="tab-person"
+              >
+                👤 담당자별 분류
+              </button>
+            </div>
+            <div className="tab-content-enter" key={viewMode}>
+              {viewMode === "function" ? (
+                <div className="folder-grid" data-testid="folder-grid">
+                  {FOLDERS.map((f) => (
+                    <button
+                      key={f.key}
+                      className={`folder-btn${activeKey === f.key ? " active" : ""}`}
+                      onClick={() => openPanel(f.key)}
+                      data-testid={`folder-${f.key}`}
+                    >
+                      <div className="folder-icon" style={{ background: f.color }}>
+                        {f.icon}
+                      </div>
+                      <span className="folder-label">{f.label}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : selectedPerson ? (
+                <PersonDetailPanel
+                  person={selectedPerson}
+                  onBack={() => setSelectedPerson(null)}
+                  onSelectTask={openPanel}
+                />
+              ) : (
+                <PersonGrid onSelectPerson={setSelectedPerson} />
+              )}
             </div>
           </div>
         </div>
@@ -390,5 +429,87 @@ function PolicyTable({ table }: { table: NonNullable<TaskData["table"]> }) {
         ))}
       </tbody>
     </table>
+  );
+}
+
+function PersonGrid({ onSelectPerson }: { onSelectPerson: (p: Person) => void }) {
+  return (
+    <div className="person-grid" data-testid="person-grid">
+      {persons.map((person) => (
+        <button
+          key={person.id}
+          className="person-card"
+          onClick={() => onSelectPerson(person)}
+          data-testid={`person-card-${person.id}`}
+          style={{ "--person-color": person.color } as React.CSSProperties}
+        >
+          <div className="person-card-top">
+            <div className="person-avatar" style={{ background: `${person.color}18`, borderColor: person.color, color: person.color }}>
+              {person.avatarInitial}
+            </div>
+            <div className="person-name-area">
+              <div className="person-name">{person.name} {person.title}</div>
+              <div className="person-team">{person.team}</div>
+            </div>
+          </div>
+          <div className="person-desc">{person.description}</div>
+          <div className="person-count" style={{ color: person.color, background: `${person.color}14` }}>
+            {person.emoji} 담당 업무 {person.responsibilities.length}개
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PersonDetailPanel({
+  person,
+  onBack,
+  onSelectTask,
+}: {
+  person: Person;
+  onBack: () => void;
+  onSelectTask: (taskKey: string) => void;
+}) {
+  return (
+    <div className="person-detail" data-testid="person-detail">
+      <div className="person-detail-header" style={{ background: `${person.color}08` }}>
+        <button className="person-back-btn" onClick={onBack} data-testid="person-back-btn">←</button>
+        <div className="person-avatar-sm" style={{ background: `${person.color}18`, borderColor: person.color, color: person.color }}>
+          {person.avatarInitial}
+        </div>
+        <div>
+          <div className="person-detail-name">{person.name} {person.title}</div>
+          <div className="person-detail-desc">{person.description}</div>
+        </div>
+      </div>
+      <div className="rr-list">
+        <div className="rr-section-title">담당 업무 ({person.responsibilities.length})</div>
+        {person.responsibilities.map((resp, idx) => {
+          const taskExists = !!DATA[resp.taskKey];
+          return (
+            <button
+              key={resp.taskKey}
+              className="rr-item"
+              onClick={() => taskExists && onSelectTask(resp.taskKey)}
+              disabled={!taskExists}
+              data-testid={`rr-item-${resp.taskKey}`}
+              style={{ "--person-color": person.color, opacity: taskExists ? 1 : 0.5 } as React.CSSProperties}
+            >
+              <div className="rr-num" style={{ background: `${person.color}16`, borderColor: `${person.color}40`, color: person.color }}>
+                {idx + 1}
+              </div>
+              <div className="rr-text">
+                <div className="rr-label">{resp.label}</div>
+                <div className="rr-desc">{resp.description}</div>
+              </div>
+              <div className="rr-arrow" style={{ color: taskExists ? person.color : "#ccc" }}>
+                {taskExists ? "→" : "—"}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
