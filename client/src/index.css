@@ -298,10 +298,76 @@
   width: 9px;
   height: 9px;
   border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s;
+  position: relative;
+}
+.dot:hover {
+  transform: scale(1.3);
+  filter: brightness(1.15);
 }
 .dot.red { background: #ff5f56; }
 .dot.yellow { background: #ffbd2e; }
 .dot.green { background: #27c93f; }
+
+.monitor-overlay.win-minimized {
+  animation: winMinimize 0.35s ease forwards;
+  pointer-events: none;
+}
+.monitor-overlay.win-closed {
+  animation: winClose 0.3s ease forwards;
+  pointer-events: none;
+}
+@keyframes winMinimize {
+  0% { transform: translateX(-20%) scale(1); opacity: 1; }
+  100% { transform: translateX(-20%) scale(0.05) translateY(300px); opacity: 0; }
+}
+@keyframes winClose {
+  0% { transform: translateX(-20%) scale(1); opacity: 1; }
+  100% { transform: translateX(-20%) scale(0.3); opacity: 0; }
+}
+
+.desktop-shortcut {
+  position: absolute;
+  bottom: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 18px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  animation: shortcutAppear 0.4s ease 0.3s both;
+}
+.desktop-shortcut:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.45);
+  transform: translateX(-50%) translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+@keyframes shortcutAppear {
+  from { opacity: 0; transform: translateX(-50%) scale(0.7); }
+  to { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+.shortcut-icon {
+  font-size: 42px;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
+}
+.shortcut-label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  white-space: nowrap;
+}
 
 .window-tab-bar {
   display: flex;

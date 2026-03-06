@@ -26,6 +26,7 @@ export default function Home() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"function" | "person">("function");
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [windowState, setWindowState] = useState<"normal" | "minimized" | "closed">("normal");
   const panelBodyRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -61,6 +62,28 @@ export default function Home() {
     setSelectedPerson(null);
   }, []);
 
+  const handleWindowClose = useCallback(() => {
+    if (panelOpen) {
+      setPanelOpen(false);
+      setActiveKey(null);
+      setExpandedDetails(new Set());
+    }
+    setWindowState("closed");
+  }, [panelOpen]);
+
+  const handleWindowMinimize = useCallback(() => {
+    if (panelOpen) {
+      setPanelOpen(false);
+      setActiveKey(null);
+      setExpandedDetails(new Set());
+    }
+    setWindowState("minimized");
+  }, [panelOpen]);
+
+  const handleWindowRestore = useCallback(() => {
+    setWindowState("normal");
+  }, []);
+
   const toggleDetail = useCallback((id: string) => {
     setExpandedDetails(prev => {
       const next = new Set(prev);
@@ -92,59 +115,70 @@ export default function Home() {
           </video>
         </div>
 
-        <div className="monitor-overlay" data-testid="monitor-overlay">
+        {windowState !== "normal" && (
+          <button className="desktop-shortcut" onClick={handleWindowRestore} data-testid="desktop-shortcut">
+            <div className="shortcut-icon">📂</div>
+            <span className="shortcut-label">WPR 업무 가이드</span>
+          </button>
+        )}
+
+        <div className={`monitor-overlay${windowState === "minimized" ? " win-minimized" : ""}${windowState === "closed" ? " win-closed" : ""}`} data-testid="monitor-overlay">
           <div className="overlay-screen">
             <div className="overlay-titlebar">
               <div className="overlay-dots">
-                <span className="dot red" />
-                <span className="dot yellow" />
-                <span className="dot green" />
+                <span className="dot red" onClick={handleWindowClose} data-testid="dot-close" />
+                <span className="dot yellow" onClick={handleWindowMinimize} data-testid="dot-minimize" />
+                <span className="dot green" onClick={handleWindowRestore} data-testid="dot-expand" />
               </div>
               <span className="overlay-title">WPR 업무 가이드</span>
             </div>
-            <div className="window-tab-bar" data-testid="window-tab-bar">
-              <button
-                className={`window-tab${viewMode === "function" ? " active" : ""}`}
-                onClick={() => handleViewChange("function")}
-                data-testid="tab-function"
-              >
-                🗂️ 기능별 분류
-              </button>
-              <button
-                className={`window-tab${viewMode === "person" ? " active" : ""}`}
-                onClick={() => handleViewChange("person")}
-                data-testid="tab-person"
-              >
-                👤 담당자별 분류
-              </button>
-            </div>
-            <div className="tab-content-enter" key={viewMode}>
-              {viewMode === "function" ? (
-                <div className="folder-grid" data-testid="folder-grid">
-                  {FOLDERS.map((f) => (
-                    <button
-                      key={f.key}
-                      className={`folder-btn${activeKey === f.key ? " active" : ""}`}
-                      onClick={() => openPanel(f.key)}
-                      data-testid={`folder-${f.key}`}
-                    >
-                      <div className="folder-icon" style={{ background: f.color }}>
-                        {f.icon}
-                      </div>
-                      <span className="folder-label">{f.label}</span>
-                    </button>
-                  ))}
+            {windowState === "normal" && (
+              <>
+                <div className="window-tab-bar" data-testid="window-tab-bar">
+                  <button
+                    className={`window-tab${viewMode === "function" ? " active" : ""}`}
+                    onClick={() => handleViewChange("function")}
+                    data-testid="tab-function"
+                  >
+                    🗂️ 기능별 분류
+                  </button>
+                  <button
+                    className={`window-tab${viewMode === "person" ? " active" : ""}`}
+                    onClick={() => handleViewChange("person")}
+                    data-testid="tab-person"
+                  >
+                    👤 담당자별 분류
+                  </button>
                 </div>
-              ) : selectedPerson ? (
-                <PersonDetailPanel
-                  person={selectedPerson}
-                  onBack={() => setSelectedPerson(null)}
-                  onSelectTask={openPanel}
-                />
-              ) : (
-                <PersonGrid onSelectPerson={setSelectedPerson} />
-              )}
-            </div>
+                <div className="tab-content-enter" key={viewMode}>
+                  {viewMode === "function" ? (
+                    <div className="folder-grid" data-testid="folder-grid">
+                      {FOLDERS.map((f) => (
+                        <button
+                          key={f.key}
+                          className={`folder-btn${activeKey === f.key ? " active" : ""}`}
+                          onClick={() => openPanel(f.key)}
+                          data-testid={`folder-${f.key}`}
+                        >
+                          <div className="folder-icon" style={{ background: f.color }}>
+                            {f.icon}
+                          </div>
+                          <span className="folder-label">{f.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : selectedPerson ? (
+                    <PersonDetailPanel
+                      person={selectedPerson}
+                      onBack={() => setSelectedPerson(null)}
+                      onSelectTask={openPanel}
+                    />
+                  ) : (
+                    <PersonGrid onSelectPerson={setSelectedPerson} />
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
