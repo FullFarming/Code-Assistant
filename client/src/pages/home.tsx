@@ -256,8 +256,9 @@ function OwnerCard({ owner }: { owner: TaskData["owner"] }) {
 
 const WPR_STAFF: Record<string, { nameKo: string; email: string }> = {
   "Gina Kim": { nameKo: "김지성 대리", email: "gina.kim@cushwake.com" },
-  "Emma Song": { nameKo: "Emma Song", email: "emma.song@cushwake.com" },
+  "Emma Song": { nameKo: "송진영 사원", email: "emma.song@cushwake.com" },
   "Grace Kwon": { nameKo: "권희원 이사", email: "grace.kwon@ap.cushwake.com" },
+  "Noel Kim": { nameKo: "김경만 과장", email: "noel.kim@cushwake.com" },
   "Hannah Jeong": { nameKo: "정혜은 대리", email: "hannah.jeong@cushwake.com" },
 };
 
@@ -443,15 +444,11 @@ function PersonGrid({ onSelectPerson }: { onSelectPerson: (p: Person) => void })
           data-testid={`person-card-${person.id}`}
           style={{ "--person-color": person.color } as React.CSSProperties}
         >
-          <div className="person-card-top">
-            <div className="person-avatar" style={{ background: `${person.color}18`, borderColor: person.color, color: person.color }}>
-              {person.avatarInitial}
-            </div>
-            <div className="person-name-area">
-              <div className="person-name">{person.name} {person.title}</div>
-              <div className="person-team">{person.team}</div>
-            </div>
+          <div className="person-avatar-lg" style={{ background: `${person.color}18`, borderColor: person.color, color: person.color }}>
+            {person.avatarInitial}
           </div>
+          <div className="person-card-name">{person.name} {person.title}</div>
+          <div className="person-card-name-en">{person.nameEn}</div>
           <div className="person-desc">{person.description}</div>
           <div className="person-count" style={{ color: person.color, background: `${person.color}14` }}>
             {person.emoji} 담당 업무 {person.responsibilities.length}개
@@ -480,6 +477,7 @@ function PersonDetailPanel({
         </div>
         <div>
           <div className="person-detail-name">{person.name} {person.title}</div>
+          <div className="person-detail-name-en">{person.nameEn}</div>
           <div className="person-detail-desc">{person.description}</div>
         </div>
       </div>

@@ -108,7 +108,7 @@ export const DATA: Record<string, TaskData> = {
 
   명함: {
     icon: "💳", label: "명함 신청 방법", badge: "행정",
-    owner: { icon: "💁‍♀️", name: "Emma Song", nameKo: "Emma Song", team: "Reception", contact: "emma.song@cushwake.com" },
+    owner: { icon: "💁‍♀️", name: "Emma Song", nameKo: "송진영 사원", team: "Reception", contact: "emma.song@cushwake.com" },
     flow: ["신규직원 WPR 처리","사이트 로그인","템플릿 선택","3~5일 배송"],
     steps: [
       { n: 1, title: "신규 직원 명함", desc: "신규 입사자 명함은 <strong>WPR팀(Emma Song)</strong>에서 우선 신청하여 준비합니다.", detail: null },
@@ -150,7 +150,7 @@ export const DATA: Record<string, TaskData> = {
 
   화환: {
     icon: "🌸", label: "화환 신청 방법", badge: "지원",
-    owner: { icon: "💁‍♀️", name: "Emma Song", nameKo: "Emma Song", team: "Reception", contact: "emma.song@cushwake.com" },
+    owner: { icon: "💁‍♀️", name: "Emma Song", nameKo: "송진영 사원", team: "Reception", contact: "emma.song@cushwake.com" },
     flow: ["상품 확인 (보산플라워)","신청서 작성","팀장 승인","Emma Song 전달"],
     steps: [
       { n: 1, title: "화환 상품 확인", desc: '<a href="http://bosanflower.com/main/main.php" target="_blank" rel="noopener noreferrer" style="color:#1976d2">bosanflower.com</a> 에서 원하는 상품을 확인합니다.', detail: null },
@@ -269,7 +269,7 @@ export const DATA: Record<string, TaskData> = {
 
   supplier: {
     icon: "💼", label: "Workday Supplier 등록", badge: "IT · 5-Step",
-    owner: { icon: "👥", name: "WPR Team", nameKo: "WPR Team", team: "WPR" },
+    owner: { icon: "💻", name: "Noel Kim", nameKo: "김경만 과장", team: "WPR", contact: "noel.kim@cushwake.com" },
     flow: ["5가지 서류 준비","Create Supplier Request","필수항목 입력","연락처 입력","서류 첨부","제출·승인"],
     steps: [
       { n: 0, title: "사전 준비 서류 (5가지 모두 필수)", desc: "① 3rd party 계약서 &nbsp; ② 사업자등록증 &nbsp; ③ 통장사본 &nbsp; ④ 실사설문지 (공식 영문명 기재 필수) &nbsp; ⑤ 3rd Party Risk Assessment DD Form", detail: null },
@@ -291,7 +291,7 @@ export const DATA: Record<string, TaskData> = {
 
   solstice: {
     icon: "🖥️", label: "Solstice 화면 공유", badge: "IT · 무선",
-    owner: { icon: "💻", name: "IT Team", nameKo: "IT Team", team: "IT" },
+    owner: { icon: "💻", name: "Noel Kim", nameKo: "김경만 과장", team: "WPR", contact: "noel.kim@cushwake.com" },
     flow: ["SolsticeClient 실행","IP 입력","KEY 입력","Desktop 클릭","공유 완료"],
     steps: [
       { n: 1, title: "Solstice Client Application 실행", desc: "파일 탐색기 → Shared (T:) → General → SolsticeClient 폴더 → SolsticeClient.exe 실행", detail: null },
@@ -303,7 +303,7 @@ export const DATA: Record<string, TaskData> = {
 
   canteen: {
     icon: "📹", label: "Canteen 회의실 Teams Room", badge: "IT · 하이브리드",
-    owner: { icon: "📹", name: "WPR Team", nameKo: "WPR Team", team: "WPR" },
+    owner: { icon: "💻", name: "Noel Kim", nameKo: "김경만 과장", team: "WPR", contact: "noel.kim@cushwake.com" },
     flow: ["미팅 생성 + 회의실 초대","옵션 설정","Crestron에서 참가","AirMedia 공유"],
     steps: [
       {
@@ -328,7 +328,7 @@ export const DATA: Record<string, TaskData> = {
 
   printix: {
     icon: "🖨️", label: "Printix 인쇄 방법", badge: "IT · Cloud",
-    owner: { icon: "💻", name: "IT Team", nameKo: "IT Team", team: "IT" },
+    owner: { icon: "💻", name: "Noel Kim", nameKo: "김경만 과장", team: "WPR", contact: "noel.kim@cushwake.com" },
     flow: ["앱 설치","Microsoft 로그인","PC 프린터 설정","인쇄 명령","QR 스캔 → 인쇄"],
     steps: [
       { n: 1, title: "스마트폰 앱 설치", desc: "App Store / Play Store에서 <strong>'Printix app'</strong> 검색 → 설치", detail: null },
