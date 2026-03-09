@@ -1100,6 +1100,393 @@
   transform: scale(0.95);
 }
 
+:root {
+  --siri-color-1: #ff0080;
+  --siri-color-2: #ff4d00;
+  --siri-color-3: #ffcc00;
+  --siri-color-4: #00ff88;
+  --siri-color-5: #00ccff;
+  --siri-color-6: #7c3aed;
+  --siri-panel-width: 200px;
+  --siri-button-size: 52px;
+}
+
+.siri-side-panel {
+  width: var(--siri-panel-width);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 80px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.siri-pulse-container {
+  position: relative;
+  width: var(--siri-button-size);
+  height: var(--siri-button-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.siri-pulse-ring {
+  position: absolute;
+  width: var(--siri-button-size);
+  height: var(--siri-button-size);
+  border-radius: 50%;
+  border: 2px solid rgba(124, 58, 237, 0.6);
+  animation: none;
+  pointer-events: none;
+}
+.siri-on .siri-pulse-ring:nth-child(1) {
+  animation: siri-pulse 2s ease-out infinite;
+}
+.siri-on .siri-pulse-ring:nth-child(2) {
+  animation: siri-pulse 2s ease-out 0.66s infinite;
+}
+.siri-on .siri-pulse-ring:nth-child(3) {
+  animation: siri-pulse 2s ease-out 1.32s infinite;
+}
+
+@keyframes siri-pulse {
+  0% { transform: scale(1); opacity: 0.8; border-color: rgba(124, 58, 237, 0.8); }
+  50% { border-color: rgba(0, 204, 255, 0.5); }
+  100% { transform: scale(2.8); opacity: 0; border-color: rgba(255, 0, 128, 0); }
+}
+
+.siri-button {
+  width: var(--siri-button-size);
+  height: var(--siri-button-size);
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 200ms ease;
+  position: relative;
+  overflow: visible;
+  z-index: 2;
+}
+.siri-button:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 20px rgba(120, 40, 200, 0.3);
+}
+.siri-button:active {
+  transform: scale(0.94);
+}
+
+.siri-button.siri-on {
+  background: conic-gradient(from 0deg, #ff0080, #ff4d00, #ffcc00, #00ff88, #00ccff, #7c3aed, #ff0080);
+  animation: siri-bg-shift 1.5s linear infinite;
+  border-color: transparent;
+}
+.siri-button.siri-on::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: #0a0a1a;
+  z-index: 0;
+}
+.siri-button.siri-on .siri-icon {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes siri-bg-shift {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+.siri-icon {
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.siri-button.siri-on .siri-icon {
+  color: #ffffff;
+  font-size: 18px;
+  font-style: normal;
+}
+
+.siri-label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--ios-secondary);
+  margin-top: 8px;
+  transition: opacity 150ms ease;
+  text-align: center;
+}
+
+.siri-search-container {
+  width: var(--siri-panel-width);
+  margin-top: 16px;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 350ms cubic-bezier(0.4, 0, 0.2, 1), opacity 300ms ease;
+}
+.siri-search-container.open {
+  max-height: 600px;
+  opacity: 1;
+}
+
+.siri-search-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+.siri-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  pointer-events: none;
+  opacity: 0.5;
+}
+.siri-search-input {
+  width: 100%;
+  height: 38px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(124, 58, 237, 0.5);
+  background: rgba(10, 10, 26, 0.8);
+  backdrop-filter: blur(10px);
+  color: #ffffff;
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 0 32px 0 34px;
+  outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.siri-search-input:focus {
+  border-color: rgba(124, 58, 237, 0.9);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.siri-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 12px;
+}
+.siri-search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 150ms ease;
+}
+.siri-search-clear:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.siri-hint {
+  margin-top: 12px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: rgba(142, 142, 147, 0.7);
+  text-align: center;
+  line-height: 1.5;
+  padding: 0 8px;
+}
+
+.siri-empty {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.siri-empty-icon { font-size: 24px; }
+.siri-empty-text {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+}
+.siri-empty-hint {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.siri-results-list {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-height: 380px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 58, 237, 0.4) transparent;
+}
+.siri-result-card {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: background 150ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 150ms ease;
+  animation: slide-in-result 250ms ease forwards;
+  opacity: 0;
+  font-family: var(--font-body);
+  text-align: left;
+}
+.siri-result-card:nth-child(1) { animation-delay: 0ms; }
+.siri-result-card:nth-child(2) { animation-delay: 60ms; }
+.siri-result-card:nth-child(3) { animation-delay: 120ms; }
+.siri-result-card:nth-child(4) { animation-delay: 180ms; }
+.siri-result-card:nth-child(5) { animation-delay: 240ms; }
+.siri-result-card:nth-child(6) { animation-delay: 300ms; }
+
+@keyframes slide-in-result {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.siri-result-card:hover {
+  background: rgba(124, 58, 237, 0.2);
+  border-color: rgba(124, 58, 237, 0.5);
+  transform: translateX(4px);
+}
+.siri-result-card:active,
+.siri-result-card.clicked {
+  transform: scale(0.96) translateX(4px);
+  background: rgba(124, 58, 237, 0.35);
+}
+
+.siri-result-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.siri-result-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.siri-result-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.siri-result-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 24px;
+}
+.siri-result-badge {
+  font-size: 9px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(196, 18, 48, 0.3);
+  color: #ff6b8a;
+  border: 1px solid rgba(196, 18, 48, 0.4);
+}
+.siri-result-badge.badge-행정 { background: rgba(196, 18, 48, 0.25); color: #ff8fa3; border-color: rgba(196, 18, 48, 0.4); }
+.siri-result-badge.badge-지원 { background: rgba(245, 158, 11, 0.25); color: #fcd34d; border-color: rgba(245, 158, 11, 0.4); }
+.siri-result-badge.badge-시설 { background: rgba(16, 185, 129, 0.25); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.4); }
+.siri-result-badge.badge-IT { background: rgba(59, 130, 246, 0.25); color: #93c5fd; border-color: rgba(59, 130, 246, 0.4); }
+
+.siri-result-owner {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.4);
+}
+.siri-result-highlight {
+  color: #a78bfa;
+  font-weight: 700;
+}
+
+.iphone-frame.siri-active {
+  box-shadow:
+    0 0 0 2px #3A3A3C,
+    0 0 15px 2px rgba(255, 0, 128, 0.4),
+    0 0 30px 4px rgba(124, 58, 237, 0.3),
+    0 0 45px 6px rgba(0, 204, 255, 0.2),
+    0 0 60px 8px rgba(0, 255, 136, 0.15);
+  border-color: rgba(124, 58, 237, 0.6);
+  animation: siri-frame-glow 2s ease-in-out infinite alternate;
+  transition: box-shadow 600ms ease, border-color 600ms ease;
+}
+
+@keyframes siri-frame-glow {
+  0% {
+    box-shadow:
+      0 0 0 2px #3A3A3C,
+      0 0 15px 2px rgba(255, 0, 128, 0.4),
+      0 0 30px 4px rgba(124, 58, 237, 0.3),
+      0 0 45px 6px rgba(0, 204, 255, 0.2);
+    border-color: rgba(255, 0, 128, 0.5);
+  }
+  33% {
+    box-shadow:
+      0 0 0 2px #3A3A3C,
+      0 0 15px 2px rgba(0, 204, 255, 0.4),
+      0 0 30px 4px rgba(0, 255, 136, 0.3),
+      0 0 45px 6px rgba(255, 204, 0, 0.2);
+    border-color: rgba(0, 204, 255, 0.5);
+  }
+  66% {
+    box-shadow:
+      0 0 0 2px #3A3A3C,
+      0 0 15px 2px rgba(124, 58, 237, 0.4),
+      0 0 30px 4px rgba(255, 0, 128, 0.3),
+      0 0 45px 6px rgba(255, 77, 0, 0.2);
+    border-color: rgba(124, 58, 237, 0.5);
+  }
+  100% {
+    box-shadow:
+      0 0 0 2px #3A3A3C,
+      0 0 15px 2px rgba(0, 255, 136, 0.4),
+      0 0 30px 4px rgba(0, 204, 255, 0.3),
+      0 0 45px 6px rgba(124, 58, 237, 0.2);
+    border-color: rgba(0, 255, 136, 0.5);
+  }
+}
+
+.iphone-content.navigating {
+  animation: screen-flash 300ms ease;
+}
+@keyframes screen-flash {
+  0% { opacity: 1; }
+  30% { opacity: 0.6; filter: brightness(1.3); }
+  100% { opacity: 1; filter: brightness(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iphone-frame.siri-active { animation: none; }
+  .siri-button.siri-on { animation: none; background: var(--siri-color-6); }
+  .siri-pulse-ring { animation: none !important; display: none; }
+  .siri-result-card { animation: none; opacity: 1; }
+}
+
 .faq-page {
   display: flex;
   justify-content: center;
@@ -1221,15 +1608,20 @@
 }
 
 @media (max-width: 900px) {
+  .siri-side-panel {
+    width: 160px;
+    padding-top: 40px;
+  }
   .iphone-page {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     padding: 10px;
     gap: 12px !important;
+    justify-content: center;
   }
   .iphone-frame {
-    width: 100%;
-    max-width: 393px;
-    height: 700px;
+    width: 280px;
+    height: 600px;
   }
   .side-panel.open,
   .side-panel.task-open {
@@ -1240,7 +1632,26 @@
   }
 }
 
+@media (max-width: 700px) {
+  .siri-side-panel {
+    display: none;
+  }
+  .iphone-page {
+    flex-direction: column;
+    padding: 10px;
+    gap: 12px !important;
+  }
+  .iphone-frame {
+    width: 100%;
+    max-width: 393px;
+    height: 700px;
+  }
+}
+
 @media (max-width: 430px) {
+  .siri-side-panel {
+    display: none;
+  }
   .iphone-page {
     padding: 0;
     min-height: calc(100dvh - 56px);

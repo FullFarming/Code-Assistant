@@ -1,0 +1,1477 @@
+# C&W Korea WPR — Siri 사이드 검색 버튼 구현 가이드
+> 아이폰 목업 좌측 사이드 Siri 버튼 + 무지개 애니메이션 + 인라인 검색 상세 구현 명세
+
+---
+
+## 목차
+
+1. [기능 개요 및 UX 시나리오](#1-기능-개요-및-ux-시나리오)
+2. [전체 레이아웃 구조 변경](#2-전체-레이아웃-구조-변경)
+3. [Siri 버튼 컴포넌트 상세 설계](#3-siri-버튼-컴포넌트-상세-설계)
+4. [무지개 Siri 활성화 애니메이션](#4-무지개-siri-활성화-애니메이션)
+5. [검색 인터페이스 설계](#5-검색-인터페이스-설계)
+6. [검색 결과 리스트 설계](#6-검색-결과-리스트-설계)
+7. [검색 결과 → 앱 내 화면 이동 로직](#7-검색-결과--앱-내-화면-이동-로직)
+8. [상태 관리 (State Machine)](#8-상태-관리-state-machine)
+9. [CSS 애니메이션 전체 명세](#9-css-애니메이션-전체-명세)
+10. [컴포넌트 파일 구조 및 코드 설계](#10-컴포넌트-파일-구조-및-코드-설계)
+11. [인터랙션 타이밍 다이어그램](#11-인터랙션-타이밍-다이어그램)
+12. [접근성 및 엣지케이스 처리](#12-접근성-및-엣지케이스-처리)
+
+---
+
+## 1. 기능 개요 및 UX 시나리오
+
+### 1-1. 기능 한 줄 요약
+> 아이폰 목업 **좌측 여백**에 Siri 버튼을 배치하고, 누르면 목업 테두리가 **무지개 Siri 애니메이션**으로 반응하며, 버튼 아래에 **검색창 + 결과 리스트**가 펼쳐져 업무를 검색하고 탭하면 목업 내 해당 화면으로 즉시 이동한다.
+
+### 1-2. 전체 UX 흐름
+
+```
+[초기 상태]
+  ↓ 사용자가 좌측 Siri 버튼 클릭
+[Siri 활성화]
+  - 버튼: 무지개 펄스 애니메이션
+  - 목업 테두리: 무지개 회전 글로우
+  - 버튼 아래: 검색창 슬라이드 다운
+  ↓ 사용자가 키워드 입력 (예: "출장")
+[실시간 검색 결과]
+  - 검색창 아래 결과 카드 리스트 출현
+  - 매칭 업무 목록 표시 (하이라이트)
+  ↓ 결과 카드 클릭
+[앱 내 이동]
+  - 목업 화면이 해당 업무 슬라이드 패널로 전환
+  - Siri 패널 자동 닫힘
+  - 무지개 애니메이션 페이드아웃
+[완료 상태]
+  - 목업: 해당 업무 상세 화면 표시
+  - Siri 버튼: 기본 상태 복귀
+```
+
+### 1-3. 참조 이미지 분석 (제공 스크린샷)
+사용자가 첨부한 이미지는 **iOS 홈 화면의 Siri 활성화 상태**로, 다음 특성을 구현에 반영한다:
+
+| 관찰 요소 | 구현 반영 사항 |
+|---|---|
+| 화면 가장자리를 따라 흐르는 무지개 빛 | 목업 `border`에 `conic-gradient` 애니메이션 적용 |
+| 빛이 회전하며 연속적으로 흐름 | `@keyframes` `rotate` + `animation: infinite` |
+| 파랑→보라→핑크→노랑→초록 색상 순환 | `conic-gradient` 색상 정지점 5색 정의 |
+| 반투명한 빛 번짐 (글로우) | `filter: blur()` 레이어 + `box-shadow` 중첩 |
+| 화면 안쪽은 정상 콘텐츠 표시 | `overflow: hidden` + 내부 레이어 분리 |
+
+---
+
+## 2. 전체 레이아웃 구조 변경
+
+### 2-1. 변경 전 레이아웃
+
+```
+┌──────────────────────────────────────────────┐
+│              웹 페이지 배경                   │
+│    ┌────────────────────────────────┐        │
+│    │         아이폰 목업             │        │
+│    │                                │        │
+│    └────────────────────────────────┘        │
+└──────────────────────────────────────────────┘
+```
+
+### 2-2. 변경 후 레이아웃 (Siri 사이드 패널 추가)
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                        웹 페이지 배경                         │
+│                                                              │
+│  ┌─────────────────┐   ┌────────────────────────────────┐   │
+│  │  Siri 사이드    │   │       아이폰 목업 프레임          │   │
+│  │  패널 영역      │   │  ┌──────────────────────────┐  │   │
+│  │                 │   │  │    Dynamic Island          │  │   │
+│  │  ┌───────────┐  │   │  ├──────────────────────────┤  │   │
+│  │  │  🎙️       │  │   │  │                          │  │   │
+│  │  │ Siri 버튼  │  │   │  │     콘텐츠 영역            │  │   │
+│  │  └───────────┘  │   │  │                          │  │   │
+│  │                 │   │  ├──────────────────────────┤  │   │
+│  │  [검색창]        │   │  │       하단 탭 바           │  │   │
+│  │                 │   │  └──────────────────────────┘  │   │
+│  │  [결과 카드 1]   │   └────────────────────────────────┘   │
+│  │  [결과 카드 2]   │                                        │
+│  │  [결과 카드 3]   │     ← 목업 테두리: 무지개 글로우 →       │
+│  │  ...            │                                        │
+│  └─────────────────┘                                        │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### 2-3. 레이아웃 치수 명세
+
+```
+전체 페이지
+  width: 100vw
+  min-height: 100vh
+  display: flex
+  align-items: center
+  justify-content: center
+  gap: 24px                        ← Siri 패널과 목업 사이 간격
+
+Siri 사이드 패널 (좌측)
+  width: 220px                     ← 고정 너비
+  min-height: 600px                ← 목업 높이에 맞춤
+  position: relative
+  display: flex
+  flex-direction: column
+  align-items: center
+  padding-top: 80px                ← 버튼이 목업 상단 1/3 지점에 오도록
+
+아이폰 목업 (중앙)
+  width: 393px
+  height: 852px
+  position: relative               ← 무지개 테두리 기준점
+  border-radius: 54px
+  flex-shrink: 0
+
+우측 여백 (선택적)
+  width: 220px                     ← 좌우 대칭을 위한 빈 공간
+```
+
+### 2-4. 반응형 분기점
+
+| 브레이크포인트 | 너비 | Siri 패널 처리 |
+|---|---|---|
+| Desktop Large | ≥ 1200px | 좌측에 완전 표시 |
+| Desktop Medium | 900px ~ 1199px | Siri 패널 너비 180px로 축소 |
+| Tablet | 700px ~ 899px | Siri 패널 목업 위에 절대위치로 겹침 |
+| Mobile | < 700px | Siri 버튼 목업 좌측 베젤에 붙인 floating 버튼으로 전환 |
+
+---
+
+## 3. Siri 버튼 컴포넌트 상세 설계
+
+### 3-1. 버튼 외형 상세
+
+```
+버튼 기본 상태 (Idle):
+  ┌─────────────────────────────────────┐
+  │                                     │
+  │   ╔═════════════════════════════╗   │
+  │   ║   [그라디언트 원형 버튼]     ║   │
+  │   ║                             ║   │
+  │   ║        🎙️                  ║   │
+  │   ║                             ║   │
+  │   ║   56×56px, border-radius:50%║   │
+  │   ╚═════════════════════════════╝   │
+  │                                     │
+  │   Siri                              │  ← 레이블 (12px, 회색)
+  │                                     │
+  └─────────────────────────────────────┘
+```
+
+**버튼 CSS 속성 (Idle):**
+```css
+.siri-button {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    #1a1a2e 0%,
+    #16213e 50%,
+    #0f3460 100%
+  );
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 4px 15px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  transition:
+    transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 200ms ease;
+  position: relative;
+  overflow: visible;
+}
+
+.siri-button:hover {
+  transform: scale(1.08);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(120, 40, 200, 0.3);
+}
+
+.siri-button:active {
+  transform: scale(0.94);
+}
+```
+
+### 3-2. 버튼 상태별 외형 변화
+
+```
+상태 1: Idle (기본)
+  - 배경: 다크 네이비 그라디언트
+  - 아이콘: 🎙️ (마이크)
+  - 테두리: 반투명 흰색 1px
+  - 글로우: 없음
+
+상태 2: Hover
+  - transform: scale(1.08)
+  - 보라빛 외부 글로우 추가
+  - cursor: pointer
+
+상태 3: Active/Siri ON (클릭 후)
+  - 배경: 무지개 conic-gradient 회전 애니메이션
+  - 아이콘: 🎙️ 에서 ✕ 또는 파동 이모지로 전환
+  - 펄싱 글로우 링 추가
+  - 클릭 시 다시 닫힘 (토글)
+
+상태 4: 검색 중 (타이핑)
+  - 버튼 테두리: 흰색 박동 (pulse)
+  - 아이콘: 🎙️ 유지
+```
+
+### 3-3. Siri 버튼 레이블 및 보조 텍스트
+
+```
+┌──────────┐
+│  🎙️      │  ← 버튼 (56px)
+└──────────┘
+  Siri 검색    ← 레이블 (12px, #8E8E93)
+```
+
+- 레이블 위치: 버튼 하단 `8px` 간격
+- 레이블 폰트: `Noto Sans KR`, `12px`, `#8E8E93`
+- Siri 활성 시 레이블: `"닫기"` 로 텍스트 변경
+- 레이블 전환: `opacity` + `transform` 페이드 교체
+
+---
+
+## 4. 무지개 Siri 활성화 애니메이션
+
+### 4-1. 애니메이션 레이어 구조
+
+```
+아이폰 목업 DOM 구조:
+┌─────────────────────────────────────────┐
+│  .iphone-mockup (position: relative)    │
+│  │                                      │
+│  ├── .siri-rainbow-glow  ← 무지개 레이어│
+│  │   (position: absolute, inset: -4px)  │
+│  │   border-radius: 58px (54+4)         │
+│  │   z-index: -1                        │
+│  │                                      │
+│  ├── .iphone-bezel  ← 실제 프레임       │
+│  │   (배경: #1C1C1E)                    │
+│  │                                      │
+│  └── .iphone-screen  ← 화면 콘텐츠     │
+│      (position: absolute, inset: 12px)  │
+└─────────────────────────────────────────┘
+```
+
+### 4-2. 무지개 Glow 레이어 CSS (핵심)
+
+```css
+/* ─────────────────────────────────────────
+   무지개 회전 테두리 (목업 외곽 Siri 글로우)
+───────────────────────────────────────── */
+.siri-rainbow-glow {
+  position: absolute;
+  inset: -5px;                    /* 목업 바깥으로 5px 확장 */
+  border-radius: 59px;            /* iphone border-radius + 5px */
+  z-index: -1;
+  opacity: 0;                     /* 기본: 숨김 */
+  transition: opacity 600ms ease;
+
+  /* 무지개 conic-gradient */
+  background: conic-gradient(
+    from 0deg,
+    #ff0080,   /* 핑크 */
+    #ff4d00,   /* 오렌지-레드 */
+    #ffcc00,   /* 옐로우 */
+    #00ff88,   /* 그린 */
+    #00ccff,   /* 스카이 블루 */
+    #7c3aed,   /* 바이올렛 */
+    #ff0080    /* 핑크 (루프) */
+  );
+
+  /* 회전 애니메이션 */
+  animation: siri-spin 2s linear infinite;
+  animation-play-state: paused;   /* 기본: 정지 */
+}
+
+/* Siri 활성화 시 */
+.siri-active .siri-rainbow-glow {
+  opacity: 1;
+  animation-play-state: running;
+}
+
+/* ─────────────────────────────────────────
+   블러 글로우 레이어 (빛 번짐 효과)
+───────────────────────────────────────── */
+.siri-rainbow-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  filter: blur(12px);              /* 빛 번짐 */
+  opacity: 0.7;
+  z-index: -1;
+}
+
+/* ─────────────────────────────────────────
+   내부 마스크: 프레임 안쪽은 가려서
+   실제 화면 콘텐츠만 보이게
+───────────────────────────────────────── */
+.siri-rainbow-inner-mask {
+  position: absolute;
+  inset: 5px;                     /* 빛 두께만큼 안쪽 */
+  border-radius: 54px;
+  background: #1C1C1E;            /* 베젤 색과 동일 */
+  z-index: 0;
+}
+
+@keyframes siri-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+```
+
+### 4-3. Siri 버튼 자체 무지개 애니메이션
+
+```css
+/* 버튼 테두리 무지개 */
+.siri-button.siri-on {
+  background: conic-gradient(
+    from var(--angle),
+    #ff0080, #ff4d00, #ffcc00, #00ff88, #00ccff, #7c3aed, #ff0080
+  );
+  animation: siri-button-spin 1.5s linear infinite;
+}
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes siri-button-spin {
+  to { --angle: 360deg; }
+}
+
+/* 버튼 내부 아이콘 배경 (버튼 위에 겹쳐 원형 배경 유지) */
+.siri-button.siri-on::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: #0a0a1a;            /* 다크 배경으로 아이콘 가독성 유지 */
+  z-index: 0;
+}
+
+.siri-button.siri-on .siri-icon {
+  position: relative;
+  z-index: 1;
+}
+```
+
+### 4-4. 펄스 링 애니메이션 (버튼 주변 방사)
+
+```css
+/* 펄스 링: Siri ON 상태에서 버튼 주변에 파동 */
+.siri-pulse-ring {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid rgba(124, 58, 237, 0.6);
+  animation: none;
+  pointer-events: none;
+}
+
+.siri-on .siri-pulse-ring:nth-child(1) {
+  animation: siri-pulse 2s ease-out infinite;
+}
+.siri-on .siri-pulse-ring:nth-child(2) {
+  animation: siri-pulse 2s ease-out 0.66s infinite;
+}
+.siri-on .siri-pulse-ring:nth-child(3) {
+  animation: siri-pulse 2s ease-out 1.32s infinite;
+}
+
+@keyframes siri-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+    border-color: rgba(124, 58, 237, 0.8);
+  }
+  50% {
+    border-color: rgba(0, 204, 255, 0.5);
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+    border-color: rgba(255, 0, 128, 0);
+  }
+}
+```
+
+### 4-5. 애니메이션 등장/퇴장 트랜지션
+
+```
+Siri 버튼 클릭 (활성화):
+  T+0ms    버튼 클릭 피드백 (scale 0.9)
+  T+100ms  버튼 무지개 그라디언트 시작
+  T+150ms  목업 테두리 무지개 opacity 0 → 1 (600ms ease)
+  T+200ms  펄스 링 1차 방사 시작
+  T+300ms  검색창 슬라이드 다운 시작 (300ms)
+  T+600ms  무지개 완전히 가시화됨
+
+Siri 버튼 클릭 (비활성화):
+  T+0ms    버튼 클릭
+  T+50ms   검색창 슬라이드 업 (fold)
+  T+100ms  결과 리스트 fade out
+  T+300ms  목업 무지개 opacity 1 → 0 (400ms)
+  T+400ms  버튼 기본 상태 복귀
+  T+700ms  펄스 링 소멸
+```
+
+---
+
+## 5. 검색 인터페이스 설계
+
+### 5-1. 검색창 위치 및 외형
+
+```
+Siri 사이드 패널:
+┌─────────────────────┐
+│                     │
+│   ┌─────────────┐   │  ← Siri 버튼 (56px)
+│   │  🎙️        │   │
+│   └─────────────┘   │
+│     Siri 검색        │  ← 레이블
+│                     │
+│  ╔═══════════════╗  │  ← 검색창 (Siri ON 시 슬라이드 다운)
+│  ║ 🔍  업무 검색  ║  │
+│  ╚═══════════════╝  │
+│                     │
+│  [결과 리스트 영역]  │
+│                     │
+└─────────────────────┘
+```
+
+### 5-2. 검색창 CSS 명세
+
+```css
+.siri-search-container {
+  width: 200px;
+  margin-top: 16px;
+  overflow: hidden;
+  max-height: 0;                  /* 기본: 숨김 */
+  opacity: 0;
+  transition:
+    max-height 350ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 300ms ease;
+}
+
+.siri-search-container.open {
+  max-height: 600px;              /* 결과 포함 최대 높이 */
+  opacity: 1;
+}
+
+.siri-search-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.siri-search-input {
+  width: 100%;
+  height: 40px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(124, 58, 237, 0.5);
+  background: rgba(10, 10, 26, 0.8);
+  backdrop-filter: blur(10px);
+  color: #ffffff;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  padding: 0 12px 0 36px;        /* 좌측 아이콘 공간 */
+  outline: none;
+  box-shadow:
+    0 0 0 0 rgba(124, 58, 237, 0),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.siri-search-input:focus {
+  border-color: rgba(124, 58, 237, 0.9);
+  box-shadow:
+    0 0 0 3px rgba(124, 58, 237, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.siri-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 13px;
+}
+
+/* 검색 아이콘 */
+.siri-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+/* 지우기 버튼 */
+.siri-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 10px;
+  cursor: pointer;
+  display: none;                  /* 텍스트 있을 때만 표시 */
+  align-items: center;
+  justify-content: center;
+  transition: background 150ms ease;
+}
+
+.siri-search-clear:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+```
+
+### 5-3. 검색창 자동 포커스
+
+```
+Siri 버튼 클릭 → 검색창 open → T+350ms(트랜지션 완료) → input.focus() 자동 실행
+```
+
+- `setTimeout(() => searchInputRef.current?.focus(), 360)` 으로 처리
+- 모바일에서는 키보드가 올라올 수 있으므로 `inputmode="search"` 속성 추가
+
+### 5-4. 검색어 처리 로직
+
+```typescript
+// 검색 대상 데이터 구조 (tasks.ts에서 파생)
+interface SearchableTask {
+  key: string;           // "국내출장"
+  label: string;         // "국내 출장"
+  badge: string;         // "지원"
+  icon: string;          // "🚄"
+  keywords: string[];    // ["출장", "국내", "KTX", "교통비", "숙박", "정산"]
+  ownerName: string;     // "김지성 대리"
+  ownerEn: string;       // "Gina Kim"
+}
+
+// 검색 함수: 한글 초성 검색 + 영문 검색 모두 지원
+function searchTasks(query: string, tasks: SearchableTask[]): SearchableTask[] {
+  if (!query.trim()) return [];
+
+  const q = query.toLowerCase().trim();
+
+  return tasks
+    .filter(task => {
+      // 1. 업무명 매칭
+      if (task.label.includes(q)) return true;
+      // 2. 업무 키 매칭
+      if (task.key.includes(q)) return true;
+      // 3. 키워드 매칭
+      if (task.keywords.some(kw => kw.includes(q))) return true;
+      // 4. 담당자명 매칭
+      if (task.ownerName.includes(q)) return true;
+      if (task.ownerEn.toLowerCase().includes(q)) return true;
+      // 5. 카테고리 매칭
+      if (task.badge.includes(q)) return true;
+      return false;
+    })
+    .slice(0, 6);  // 최대 6개 결과
+}
+```
+
+### 5-5. 각 업무별 검색 키워드 확장 테이블
+
+| 업무 키 | label | 추가 키워드 |
+|---|---|---|
+| 공문번호 | 공문번호 발급 | 공문, 번호, 발급, 공식문서, 날인 |
+| 명함 | 명함 신청 | 명함, 비즈니스카드, 카드, 이름 |
+| 계약서 | 보관계약서 | 계약, 계약서, 보관, 서류, 문서 |
+| 화환 | 화환 신청 | 화환, 꽃, 경조사, 결혼, 장례 |
+| 국내출장 | 국내 출장 | 출장, 국내, KTX, 교통, 숙박, 정산, 경비 |
+| 해외출장 | 해외 출장 | 출장, 해외, 항공, 비자, 해외여행, 외국 |
+| 락커 | 락커 사용 | 락커, 사물함, 보관함, locker |
+| 인감 | 인감 날인 | 인감, 날인, Glosign, 전자서명, 서명 |
+| 법인차량 | 법인차량 | 차량, 법인차, 회사차, 자동차, 예약 |
+| supplier | Supplier 등록 | supplier, 공급업체, 거래처, workday, 등록 |
+| solstice | Solstice | solstice, 화면공유, 미러링, 프레젠테이션 |
+| canteen | Canteen Room | canteen, 회의실, 화상회의, teams, 영상통화 |
+| printix | Printix | printix, 프린트, 출력, 인쇄, 프린터 |
+
+---
+
+## 6. 검색 결과 리스트 설계
+
+### 6-1. 결과 카드 레이아웃
+
+```
+검색어: "출장"
+
+┌─────────────────────────────┐
+│ 🚄  국내 출장               │  ← 결과 카드 1
+│     지원 · 김지성 대리      │
+│     국내출장 신청 절차       │  ← 업무 설명 한 줄
+└─────────────────────────────┘
+┌─────────────────────────────┐
+│ ✈️  해외 출장               │  ← 결과 카드 2
+│     지원 · 김지성 대리      │
+└─────────────────────────────┘
+
+     결과 없음 시:
+┌─────────────────────────────┐
+│ 🔍                         │
+│ '"OOO"에 해당하는           │
+│  업무를 찾지 못했어요        │
+└─────────────────────────────┘
+```
+
+### 6-2. 결과 카드 CSS 명세
+
+```css
+.siri-results-list {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 200px;
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 58, 237, 0.4) transparent;
+}
+
+.siri-result-card {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 12px 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition:
+    background 150ms ease,
+    transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 150ms ease;
+  animation: slide-in-result 250ms ease forwards;
+  opacity: 0;                         /* 초기: 투명 */
+}
+
+/* 결과 카드 순차 등장 애니메이션 */
+.siri-result-card:nth-child(1) { animation-delay: 0ms; }
+.siri-result-card:nth-child(2) { animation-delay: 60ms; }
+.siri-result-card:nth-child(3) { animation-delay: 120ms; }
+.siri-result-card:nth-child(4) { animation-delay: 180ms; }
+.siri-result-card:nth-child(5) { animation-delay: 240ms; }
+.siri-result-card:nth-child(6) { animation-delay: 300ms; }
+
+@keyframes slide-in-result {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.siri-result-card:hover {
+  background: rgba(124, 58, 237, 0.2);
+  border-color: rgba(124, 58, 237, 0.5);
+  transform: translateX(4px);         /* 살짝 오른쪽으로 당겨지는 효과 */
+}
+
+.siri-result-card:active {
+  transform: scale(0.96) translateX(4px);
+  background: rgba(124, 58, 237, 0.35);
+}
+
+/* 카드 내부: 이모지 + 텍스트 */
+.siri-result-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.siri-result-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.siri-result-name {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.siri-result-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 26px;            /* icon 너비 + gap 만큼 들여쓰기 */
+}
+
+.siri-result-badge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(196, 18, 48, 0.3);    /* C&W 레드 */
+  color: #ff6b8a;
+  border: 1px solid rgba(196, 18, 48, 0.4);
+}
+
+/* 카테고리별 배지 색상 */
+.siri-result-badge.badge-행정 { background: rgba(196, 18, 48, 0.25); color: #ff8fa3; }
+.siri-result-badge.badge-지원 { background: rgba(245, 158, 11, 0.25); color: #fcd34d; }
+.siri-result-badge.badge-시설 { background: rgba(16, 185, 129, 0.25); color: #6ee7b7; }
+.siri-result-badge.badge-IT   { background: rgba(59, 130, 246, 0.25); color: #93c5fd; }
+
+.siri-result-owner {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* 검색 키워드 하이라이트 */
+.siri-result-highlight {
+  color: #a78bfa;               /* 보라색 강조 */
+  font-weight: 700;
+}
+```
+
+### 6-3. 검색 키워드 하이라이트 함수
+
+```typescript
+// 검색어와 일치하는 부분을 <mark> 또는 span으로 래핑
+function highlightText(text: string, query: string): React.ReactNode {
+  if (!query) return text;
+
+  const parts = text.split(new RegExp(`(${escapeRegex(query)})`, 'gi'));
+
+  return parts.map((part, i) =>
+    part.toLowerCase() === query.toLowerCase()
+      ? <span key={i} className="siri-result-highlight">{part}</span>
+      : part
+  );
+}
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+```
+
+### 6-4. 빈 결과 / 초기 상태 처리
+
+```
+상태 A: 검색어 없음 (Siri 방금 열림)
+  → 결과 리스트 숨김
+  → 힌트 텍스트 표시: "업무명, 담당자, 카테고리로 검색하세요"
+
+상태 B: 검색 중 (타이핑)
+  → debounce 150ms 후 검색 실행
+  → 로딩 중: 버튼 보더 박동
+
+상태 C: 결과 있음
+  → 카드 리스트 순차 등장
+
+상태 D: 결과 없음
+  → 빈 상태 UI 표시
+  ┌─────────────────────┐
+  │  🌀                │
+  │  검색 결과가 없어요  │
+  │  다른 키워드로      │
+  │  검색해보세요       │
+  └─────────────────────┘
+```
+
+---
+
+## 7. 검색 결과 → 앱 내 화면 이동 로직
+
+### 7-1. 이동 플로우 상세
+
+```
+사용자가 결과 카드 클릭
+  │
+  ├─ 1. 결과 카드 클릭 피드백 (scale 0.96, 150ms)
+  │
+  ├─ 2. 무지개 애니메이션 페이드아웃 시작 (600ms)
+  │
+  ├─ 3. 검색 패널 슬라이드 업 (300ms)
+  │
+  ├─ 4. 목업 내부 상태 변경:
+  │      setActiveKey(selectedTask.key)   ← 업무 키 설정
+  │      setPanelOpen(true)               ← 슬라이드 패널 열기
+  │      setCurrentTab("tasks")           ← 탭을 업무목록으로 변경
+  │
+  └─ 5. 목업 화면 전환 (슬라이드 패널 등장, 300ms)
+```
+
+### 7-2. React State 변경 시퀀스
+
+```typescript
+// SiriPanel 컴포넌트에서 호출
+const handleResultClick = (task: SearchableTask) => {
+  // 1. 시각적 피드백
+  setClickedKey(task.key);
+
+  setTimeout(() => {
+    // 2. Siri 패널 닫기
+    setIsSiriOpen(false);
+    setSearchQuery('');
+    setSearchResults([]);
+
+    // 3. 목업 내부 화면 이동 (부모 컴포넌트로 이벤트 전달)
+    onNavigateToTask(task.key);
+  }, 200);
+};
+
+// Home 컴포넌트 (목업 부모)에서 처리
+const handleNavigateToTask = useCallback((taskKey: string) => {
+  // 현재 탭이 어디든 업무 슬라이드 패널 열기
+  setActiveKey(taskKey);
+  setPanelOpen(true);
+  setExpandedDetails(new Set());
+  // 탭은 tasks로 전환 (패널 닫힐 때 보여줄 화면)
+  setCurrentTab('tasks');
+}, []);
+```
+
+### 7-3. Props 인터페이스 (컴포넌트 간 통신)
+
+```typescript
+// SiriSidePanel Props
+interface SiriSidePanelProps {
+  onNavigateToTask: (taskKey: string) => void;  // 목업 화면 이동 콜백
+  isVisible: boolean;                            // 데스크톱에서만 표시
+}
+
+// Home 컴포넌트 상태 (기존 + 추가)
+interface HomeState {
+  // 기존
+  activeKey: string | null;
+  panelOpen: boolean;
+  expandedDetails: Set<string>;
+  copiedField: string | null;
+  viewMode: 'messenger' | 'tasks';
+  selectedPerson: Person | null;
+  // 신규 추가
+  currentTab: 'messenger' | 'tasks' | 'faq';
+}
+```
+
+### 7-4. 목업 화면 전환 애니메이션
+
+결과 클릭 후 목업 내부가 전환될 때 자연스러운 연결감을 위해:
+
+```css
+/* 목업 화면 내부 콘텐츠 전환 시 플래시 효과 */
+.iphone-screen.navigating {
+  animation: screen-flash 300ms ease;
+}
+
+@keyframes screen-flash {
+  0%   { opacity: 1; }
+  30%  { opacity: 0.6; filter: brightness(1.3); }
+  100% { opacity: 1; filter: brightness(1); }
+}
+```
+
+---
+
+## 8. 상태 관리 (State Machine)
+
+### 8-1. Siri 패널 상태 머신
+
+```
+States:
+  IDLE        → 버튼 보임, 검색창 숨김, 무지개 없음
+  OPENING     → 트랜지션 중 (150ms)
+  ACTIVE      → 검색창 열림, 무지개 ON, 검색 가능
+  SEARCHING   → 사용자 타이핑 중, 결과 표시
+  NAVIGATING  → 결과 클릭 후 이동 중 (200ms)
+  CLOSING     → 트랜지션 중 (300ms)
+
+Transitions:
+  IDLE      + [버튼 클릭]  → OPENING
+  OPENING   + [완료]       → ACTIVE
+  ACTIVE    + [버튼 클릭]  → CLOSING
+  ACTIVE    + [타이핑]     → SEARCHING
+  SEARCHING + [결과 클릭]  → NAVIGATING
+  SEARCHING + [지우기]     → ACTIVE
+  NAVIGATING + [완료]      → CLOSING
+  CLOSING   + [완료]       → IDLE
+```
+
+### 8-2. React useReducer 구조
+
+```typescript
+type SiriState = {
+  phase: 'idle' | 'opening' | 'active' | 'searching' | 'navigating' | 'closing';
+  query: string;
+  results: SearchableTask[];
+  clickedKey: string | null;
+};
+
+type SiriAction =
+  | { type: 'OPEN' }
+  | { type: 'OPENED' }
+  | { type: 'CLOSE' }
+  | { type: 'CLOSED' }
+  | { type: 'SET_QUERY'; payload: string }
+  | { type: 'SET_RESULTS'; payload: SearchableTask[] }
+  | { type: 'NAVIGATE'; payload: string }
+  | { type: 'NAVIGATED' };
+
+function siriReducer(state: SiriState, action: SiriAction): SiriState {
+  switch (action.type) {
+    case 'OPEN':
+      return { ...state, phase: 'opening' };
+    case 'OPENED':
+      return { ...state, phase: 'active' };
+    case 'CLOSE':
+      return { ...state, phase: 'closing', query: '', results: [] };
+    case 'CLOSED':
+      return { ...state, phase: 'idle', clickedKey: null };
+    case 'SET_QUERY':
+      return { ...state, query: action.payload,
+               phase: action.payload ? 'searching' : 'active' };
+    case 'SET_RESULTS':
+      return { ...state, results: action.payload };
+    case 'NAVIGATE':
+      return { ...state, phase: 'navigating', clickedKey: action.payload };
+    case 'NAVIGATED':
+      return { ...state, phase: 'closing' };
+    default:
+      return state;
+  }
+}
+```
+
+---
+
+## 9. CSS 애니메이션 전체 명세
+
+### 9-1. 애니메이션 인벤토리
+
+| 애니메이션 이름 | 대상 | 지속시간 | 트리거 |
+|---|---|---|---|
+| `siri-spin` | 목업 테두리 무지개 | `2s linear infinite` | Siri ON |
+| `siri-button-spin` | 버튼 테두리 무지개 | `1.5s linear infinite` | Siri ON |
+| `siri-pulse` | 펄스 링 3개 | `2s ease-out infinite (stagger)` | Siri ON |
+| `slide-in-result` | 결과 카드 | `250ms ease (stagger 60ms)` | 검색 결과 등장 |
+| `screen-flash` | 목업 화면 | `300ms ease` | 결과 클릭 후 이동 |
+| `search-open` | 검색창 컨테이너 | `350ms cubic-bezier` | Siri ON |
+| `search-close` | 검색창 컨테이너 | `250ms ease-in` | Siri OFF |
+| `fade-in` | 결과 전체 래퍼 | `200ms ease` | 결과 표시 |
+| `label-swap` | 버튼 레이블 텍스트 | `150ms ease` | 상태 변경 |
+
+### 9-2. 전체 CSS 변수 (Design Tokens)
+
+```css
+:root {
+  /* Siri 무지개 색상 */
+  --siri-color-1: #ff0080;    /* 핫핑크 */
+  --siri-color-2: #ff4d00;    /* 오렌지레드 */
+  --siri-color-3: #ffcc00;    /* 옐로우 */
+  --siri-color-4: #00ff88;    /* 민트그린 */
+  --siri-color-5: #00ccff;    /* 스카이블루 */
+  --siri-color-6: #7c3aed;    /* 바이올렛 */
+
+  /* 애니메이션 타이밍 */
+  --siri-open-duration: 350ms;
+  --siri-close-duration: 250ms;
+  --siri-rainbow-fade: 600ms;
+  --siri-result-stagger: 60ms;
+  --siri-navigate-delay: 200ms;
+
+  /* Siri 패널 레이아웃 */
+  --siri-panel-width: 220px;
+  --siri-button-size: 56px;
+  --siri-search-width: 200px;
+  --siri-result-card-radius: 14px;
+
+  /* 색상 팔레트 */
+  --siri-bg: rgba(10, 10, 26, 0.85);
+  --siri-card-bg: rgba(255, 255, 255, 0.07);
+  --siri-card-border: rgba(255, 255, 255, 0.1);
+  --siri-text-primary: #ffffff;
+  --siri-text-secondary: rgba(255, 255, 255, 0.4);
+  --siri-accent: #7c3aed;
+}
+```
+
+### 9-3. Reduced Motion 대응
+
+```css
+/* 시스템 설정에서 애니메이션 줄이기 선택 시 */
+@media (prefers-reduced-motion: reduce) {
+  .siri-rainbow-glow {
+    animation: none;
+    background: linear-gradient(135deg, var(--siri-color-6), var(--siri-color-5));
+  }
+
+  .siri-button.siri-on {
+    animation: none;
+    background: var(--siri-accent);
+  }
+
+  .siri-pulse-ring {
+    animation: none;
+    display: none;
+  }
+
+  .siri-result-card {
+    animation: none;
+    opacity: 1;
+  }
+}
+```
+
+---
+
+## 10. 컴포넌트 파일 구조 및 코드 설계
+
+### 10-1. 신규 파일 목록
+
+```
+client/src/
+  ├── components/
+  │   └── siri/
+  │       ├── SiriSidePanel.tsx       ← 전체 Siri 사이드 패널 (버튼+검색+결과)
+  │       ├── SiriButton.tsx          ← 버튼 단독 컴포넌트
+  │       ├── SiriSearchInput.tsx     ← 검색 인풋 컴포넌트
+  │       ├── SiriResultCard.tsx      ← 결과 카드 단일 컴포넌트
+  │       └── SiriResultList.tsx      ← 결과 카드 리스트 컴포넌트
+  │
+  ├── hooks/
+  │   ├── useSiriSearch.ts            ← 검색 로직 (debounce, filtering)
+  │   └── useSiriState.ts             ← 상태 머신 (useReducer)
+  │
+  ├── data/
+  │   ├── tasks.ts                    ← 기존 유지
+  │   ├── persons.ts                  ← 기존 유지
+  │   └── searchIndex.ts              ← 신규: 검색용 키워드 인덱스
+  │
+  └── pages/
+      └── home.tsx                    ← SiriSidePanel 통합
+```
+
+### 10-2. SiriSidePanel.tsx 구조 (의사코드)
+
+```tsx
+// client/src/components/siri/SiriSidePanel.tsx
+
+interface SiriSidePanelProps {
+  onNavigateToTask: (taskKey: string) => void;
+}
+
+export function SiriSidePanel({ onNavigateToTask }: SiriSidePanelProps) {
+  // 상태 관리
+  const [state, dispatch] = useReducer(siriReducer, initialSiriState);
+
+  // 검색 훅 (debounce 150ms)
+  const { results } = useSiriSearch(state.query);
+
+  // 결과 변경 시 상태 업데이트
+  useEffect(() => {
+    dispatch({ type: 'SET_RESULTS', payload: results });
+  }, [results]);
+
+  // 검색창 자동 포커스
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (state.phase === 'active') {
+      setTimeout(() => inputRef.current?.focus(), 360);
+    }
+  }, [state.phase]);
+
+  // 토글 핸들러
+  const handleToggle = () => {
+    if (state.phase === 'idle') {
+      dispatch({ type: 'OPEN' });
+      setTimeout(() => dispatch({ type: 'OPENED' }), 150);
+    } else {
+      dispatch({ type: 'CLOSE' });
+      setTimeout(() => dispatch({ type: 'CLOSED' }), 300);
+    }
+  };
+
+  // 결과 클릭 핸들러
+  const handleResultClick = (taskKey: string) => {
+    dispatch({ type: 'NAVIGATE', payload: taskKey });
+    setTimeout(() => {
+      onNavigateToTask(taskKey);   // 목업 화면 이동
+      dispatch({ type: 'CLOSED' });
+    }, 200);
+  };
+
+  return (
+    <div className="siri-side-panel">
+      {/* 펄스 링 (3개) */}
+      <div className="siri-pulse-container">
+        <div className="siri-pulse-ring" />
+        <div className="siri-pulse-ring" />
+        <div className="siri-pulse-ring" />
+        {/* Siri 버튼 */}
+        <SiriButton
+          isActive={state.phase !== 'idle'}
+          onClick={handleToggle}
+        />
+      </div>
+
+      {/* 레이블 */}
+      <span className="siri-label">
+        {state.phase === 'idle' ? 'Siri 검색' : '닫기'}
+      </span>
+
+      {/* 검색창 + 결과 */}
+      <div className={`siri-search-container ${state.phase !== 'idle' ? 'open' : ''}`}>
+        <SiriSearchInput
+          ref={inputRef}
+          value={state.query}
+          onChange={(q) => dispatch({ type: 'SET_QUERY', payload: q })}
+          onClear={() => dispatch({ type: 'SET_QUERY', payload: '' })}
+        />
+        <SiriResultList
+          results={state.results}
+          query={state.query}
+          clickedKey={state.clickedKey}
+          onResultClick={handleResultClick}
+        />
+      </div>
+    </div>
+  );
+}
+```
+
+### 10-3. home.tsx 통합 포인트
+
+```tsx
+// client/src/pages/home.tsx 변경 부분
+
+export default function Home() {
+  // 기존 상태들 유지
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+  // ... 기존 상태
+
+  // 신규: Siri에서 호출되는 네비게이션 핸들러
+  const handleNavigateToTask = useCallback((taskKey: string) => {
+    setActiveKey(taskKey);
+    setPanelOpen(true);
+    setExpandedDetails(new Set());
+    setCurrentTab('tasks');
+    // 목업 화면 플래시 효과 트리거
+    setIsNavigating(true);
+    setTimeout(() => setIsNavigating(false), 300);
+  }, []);
+
+  return (
+    <div className="app-stage">
+      {/* ← 신규: Siri 사이드 패널 */}
+      <SiriSidePanel onNavigateToTask={handleNavigateToTask} />
+
+      {/* 기존: 아이폰 목업 */}
+      <div className={`iphone-mockup ${isSiriActive ? 'siri-active' : ''}`}>
+        {/* 무지개 글로우 레이어 (목업 외부) */}
+        <div className="siri-rainbow-glow" />
+        <div className="siri-rainbow-inner-mask" />
+
+        {/* 기존 화면 콘텐츠 */}
+        <div className={`iphone-screen ${isNavigating ? 'navigating' : ''}`}>
+          {/* ... 기존 탭/콘텐츠 */}
+        </div>
+      </div>
+
+      {/* 우측 여백 (시각적 균형) */}
+      <div className="right-spacer" aria-hidden="true" />
+    </div>
+  );
+}
+```
+
+### 10-4. useSiriSearch.ts 커스텀 훅
+
+```typescript
+// client/src/hooks/useSiriSearch.ts
+
+import { useState, useEffect, useCallback } from 'react';
+import { searchIndex } from '@/data/searchIndex';
+
+export function useSiriSearch(query: string, debounceMs = 150) {
+  const [results, setResults] = useState<SearchableTask[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const timer = setTimeout(() => {
+      const found = searchTasks(query, searchIndex);
+      setResults(found);
+      setIsSearching(false);
+    }, debounceMs);
+
+    return () => clearTimeout(timer);
+  }, [query, debounceMs]);
+
+  return { results, isSearching };
+}
+```
+
+---
+
+## 11. 인터랙션 타이밍 다이어그램
+
+```
+Timeline (ms)
+│
+│  [Siri 버튼 클릭]
+├─ 0ms    버튼 scale(0.9) → scale(1.08) 스프링
+├─ 100ms  버튼 무지개 그라디언트 시작
+├─ 150ms  목업 테두리 fade in 시작 (600ms duration)
+├─ 200ms  펄스 링 방사 시작
+├─ 300ms  검색창 슬라이드 다운 시작
+├─ 360ms  검색창 열림 완료 → input.focus()
+├─ 600ms  무지개 완전 가시화
+│
+│  [검색어 입력: "출장"]
+├─ +0ms   query 상태 업데이트
+├─ +150ms debounce 완료 → 검색 실행
+├─ +160ms 결과 카드 1 slide-in 시작
+├─ +220ms 결과 카드 2 slide-in
+├─ +280ms 결과 카드 3 slide-in
+│
+│  [결과 카드 클릭]
+├─ +0ms   카드 scale(0.96) 피드백
+├─ +100ms 카드 배경 강조 (보라색)
+├─ +200ms onNavigateToTask() 호출
+├─ +200ms 검색 패널 슬라이드 업 시작
+├─ +200ms 목업 화면 플래시 시작
+├─ +300ms 검색 패널 접힘 완료
+├─ +300ms 슬라이드 패널 등장 시작 (목업 내)
+├─ +500ms 무지개 fade out 시작
+├─ +600ms 슬라이드 패널 등장 완료
+├─ +800ms 무지개 완전 소멸
+└─ +800ms [완료 상태]
+```
+
+---
+
+## 12. 접근성 및 엣지케이스 처리
+
+### 12-1. 접근성 (A11y) 명세
+
+```html
+<!-- Siri 버튼 -->
+<button
+  class="siri-button"
+  aria-label="Siri 검색 열기"
+  aria-expanded="false"           ← Siri ON 시 "true"로 변경
+  aria-controls="siri-search-panel"
+  role="button"
+>
+  🎙️
+</button>
+
+<!-- 검색 패널 -->
+<div
+  id="siri-search-panel"
+  role="search"
+  aria-label="업무 검색"
+  aria-hidden="true"              ← Siri ON 시 "false"로 변경
+>
+  <input
+    type="search"
+    placeholder="업무 검색..."
+    aria-label="업무 검색어 입력"
+    inputmode="search"
+    autocomplete="off"
+    autocorrect="off"
+    spellcheck="false"
+  />
+</div>
+
+<!-- 결과 리스트 -->
+<ul
+  role="listbox"
+  aria-label="검색 결과"
+  aria-live="polite"             ← 결과 변경 시 스크린리더 알림
+  aria-atomic="false"
+>
+  <li role="option" aria-selected="false">...</li>
+</ul>
+```
+
+### 12-2. 키보드 네비게이션
+
+| 키 | 동작 |
+|---|---|
+| `Space` / `Enter` | Siri 버튼 토글 |
+| `Escape` | Siri 패널 닫기 |
+| `↑` / `↓` | 결과 카드 간 이동 |
+| `Enter` (결과 선택 중) | 해당 결과로 네비게이션 |
+| `Tab` | 검색창 → 결과 카드 순차 이동 |
+
+### 12-3. 엣지케이스 처리
+
+| 상황 | 처리 방법 |
+|---|---|
+| 모바일에서 키보드 올라옴 | `window.innerHeight` 변화 감지 → 결과 리스트 `max-height` 동적 조정 |
+| 검색 결과 0건 | 빈 상태 UI 표시, 힌트 메시지 제공 |
+| Siri 패널 열린 채 목업 탭 클릭 | Siri 패널 자동 닫힘 |
+| 긴 업무명 (16자 초과) | `text-overflow: ellipsis` 처리 |
+| 검색어에 특수문자 입력 | `escapeRegex()` 로 안전하게 처리 |
+| 빠른 연속 클릭 | `phase !== 'idle'` 조건으로 중복 실행 방지 |
+| `@keyframes --angle` 미지원 브라우저 | `@supports` 분기로 정적 그라디언트 폴백 |
+
+### 12-4. 브라우저 호환성
+
+```css
+/* conic-gradient 미지원 시 폴백 */
+@supports not (background: conic-gradient(red, blue)) {
+  .siri-rainbow-glow {
+    background: linear-gradient(
+      90deg,
+      #ff0080, #7c3aed, #00ccff, #00ff88, #ffcc00, #ff0080
+    );
+  }
+}
+
+/* @property 미지원 시 폴백 (Firefox) */
+@supports not (animation-timeline: auto) {
+  .siri-button.siri-on {
+    background: linear-gradient(135deg, #7c3aed, #00ccff, #ff0080);
+    animation: siri-bg-shift 1.5s linear infinite;
+  }
+
+  @keyframes siri-bg-shift {
+    0%   { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+  }
+}
+```
+
+---
+
+## 부록 A: 검색 인덱스 전체 데이터 (`searchIndex.ts`)
+
+```typescript
+// client/src/data/searchIndex.ts
+export const searchIndex: SearchableTask[] = [
+  {
+    key: '공문번호', label: '공문번호 발급', badge: '행정', icon: '📄',
+    keywords: ['공문', '번호', '발급', '공식문서', '날인', '승인', '문서번호'],
+    ownerName: '김지성 대리', ownerEn: 'gina kim',
+  },
+  {
+    key: '명함', label: '명함 신청', badge: '행정', icon: '💳',
+    keywords: ['명함', '비즈니스카드', '카드', '이름', '인쇄', '제작'],
+    ownerName: '송진영 사원', ownerEn: 'emma song',
+  },
+  {
+    key: '계약서', label: '보관계약서', badge: '행정', icon: '📁',
+    keywords: ['계약', '계약서', '보관', '서류', '문서', '열람', '사본'],
+    ownerName: '김지성 대리', ownerEn: 'gina kim',
+  },
+  {
+    key: '화환', label: '화환 신청', badge: '지원', icon: '🌸',
+    keywords: ['화환', '꽃', '경조사', '결혼', '장례', '축하', '부의'],
+    ownerName: '송진영 사원', ownerEn: 'emma song',
+  },
+  {
+    key: '국내출장', label: '국내 출장', badge: '지원', icon: '🚄',
+    keywords: ['출장', '국내', 'ktx', '교통', '숙박', '정산', '경비', '기차', '국내출장'],
+    ownerName: '김지성 대리', ownerEn: 'gina kim',
+  },
+  {
+    key: '해외출장', label: '해외 출장', badge: '지원', icon: '✈️',
+    keywords: ['출장', '해외', '항공', '비자', '여권', '외국', '해외출장', '호텔', '환율'],
+    ownerName: '김지성 대리', ownerEn: 'gina kim',
+  },
+  {
+    key: '락커', label: '락커 사용', badge: '시설', icon: '🔐',
+    keywords: ['락커', '사물함', '보관함', 'locker', '자물쇠', '열쇠'],
+    ownerName: '김지성 대리', ownerEn: 'gina kim',
+  },
+  {
+    key: '인감', label: '비대면 인감 날인', badge: '시설', icon: '🖊️',
+    keywords: ['인감', '날인', 'glosign', '전자서명', '서명', '도장', '비대면'],
+    ownerName: '김경만 과장', ownerEn: 'noel kim',
+  },
+  {
+    key: '법인차량', label: '법인차량', badge: '시설', icon: '🚗',
+    keywords: ['차량', '법인차', '회사차', '자동차', '예약', '운전', '차'],
+    ownerName: '송진영 사원', ownerEn: 'emma song',
+  },
+  {
+    key: 'supplier', label: 'Supplier 등록', badge: 'IT', icon: '💼',
+    keywords: ['supplier', '공급업체', '거래처', 'workday', '등록', '벤더', 'vendor'],
+    ownerName: '김지성 대리', ownerEn: 'gina kim',
+  },
+  {
+    key: 'solstice', label: 'Solstice', badge: 'IT', icon: '🖥️',
+    keywords: ['solstice', '화면공유', '미러링', '프레젠테이션', '무선', '디스플레이'],
+    ownerName: '김경만 과장', ownerEn: 'noel kim',
+  },
+  {
+    key: 'canteen', label: 'Canteen Room', badge: 'IT', icon: '📹',
+    keywords: ['canteen', '회의실', '화상회의', 'teams', '영상통화', '미팅룸', '칸틴'],
+    ownerName: '김경만 과장', ownerEn: 'noel kim',
+  },
+  {
+    key: 'printix', label: 'Printix', badge: 'IT', icon: '🖨️',
+    keywords: ['printix', '프린트', '출력', '인쇄', '프린터', '복합기', '스캔'],
+    ownerName: '김경만 과장', ownerEn: 'noel kim',
+  },
+];
+```
+
+---
+
+## 부록 B: 색상 레퍼런스 (무지개 그라디언트 변형)
+
+| 용도 | 색상 순서 | 속도 |
+|---|---|---|
+| 목업 테두리 글로우 | 핑크→오렌지→옐로우→그린→스카이→바이올렛 | `2s` |
+| 버튼 테두리 | 동일 (더 빠름) | `1.5s` |
+| 펄스 링 1차 | 바이올렛 → 스카이블루 → 투명 | `2s, delay 0` |
+| 펄스 링 2차 | 동일 | `2s, delay 0.66s` |
+| 펄스 링 3차 | 동일 | `2s, delay 1.32s` |
+
+---
+
+*본 문서는 C&W Korea WPR 가이드 앱의 Siri 사이드 검색 버튼 구현을 위한 상세 기술 명세입니다.*
+*이전 리디자인 제안서(벤토 디자인 × 스마트폰 UI)와 함께 사용하세요.*
+*문서 버전: v1.0 | 작성일: 2026-03-09*

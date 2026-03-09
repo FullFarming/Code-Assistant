@@ -1,8 +1,62 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect, useReducer } from "react";
 import { DATA, type TaskData } from "@/data/tasks";
 import { persons, type Person } from "@/data/persons";
+import { searchIndex, searchTasks, type SearchableTask } from "@/data/searchIndex";
 
 type TabType = "messenger" | "tasks";
+
+type SiriPhase = 'idle' | 'opening' | 'active' | 'searching' | 'navigating' | 'closing';
+
+interface SiriState {
+  phase: SiriPhase;
+  query: string;
+  results: SearchableTask[];
+  clickedKey: string | null;
+}
+
+type SiriAction =
+  | { type: 'OPEN' }
+  | { type: 'OPENED' }
+  | { type: 'CLOSE' }
+  | { type: 'CLOSED' }
+  | { type: 'SET_QUERY'; payload: string }
+  | { type: 'SET_RESULTS'; payload: SearchableTask[] }
+  | { type: 'NAVIGATE'; payload: string };
+
+const initialSiriState: SiriState = {
+  phase: 'idle', query: '', results: [], clickedKey: null,
+};
+
+function siriReducer(state: SiriState, action: SiriAction): SiriState {
+  switch (action.type) {
+    case 'OPEN': return { ...state, phase: 'opening' };
+    case 'OPENED': return { ...state, phase: 'active' };
+    case 'CLOSE': return { ...state, phase: 'closing', query: '', results: [] };
+    case 'CLOSED': return { ...state, phase: 'idle', clickedKey: null };
+    case 'SET_QUERY': return { ...state, query: action.payload, phase: action.payload ? 'searching' : 'active' };
+    case 'SET_RESULTS': return { ...state, results: action.payload };
+    case 'NAVIGATE': return { ...state, phase: 'navigating', clickedKey: action.payload };
+    default: return state;
+  }
+}
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function highlightText(text: string, query: string): any {
+  if (!query) return text;
+  try {
+    const parts = text.split(new RegExp(`(${escapeRegex(query)})`, 'gi'));
+    return parts.map((part, i) =>
+      part.toLowerCase() === query.toLowerCase()
+        ? <span key={i} className="siri-result-highlight">{part}</span>
+        : part
+    );
+  } catch {
+    return text;
+  }
+}
 
 interface BentoItem {
   key: string;
@@ -37,7 +91,58 @@ export default function Home() {
   const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set());
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [isNavigating, setIsNavigating] = useState(false);
   const panelBodyRef = useRef<HTMLDivElement>(null);
+  const siriInputRef = useRef<HTMLInputElement>(null);
+  const [siri, siriDispatch] = useReducer(siriReducer, initialSiriState);
+
+  const isSiriActive = siri.phase !== 'idle';
+
+  useEffect(() => {
+    if (!siri.query.trim()) {
+      siriDispatch({ type: 'SET_RESULTS', payload: [] });
+      return;
+    }
+    const timer = setTimeout(() => {
+      const found = searchTasks(siri.query, searchIndex);
+      siriDispatch({ type: 'SET_RESULTS', payload: found });
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [siri.query]);
+
+  useEffect(() => {
+    if (siri.phase === 'active') {
+      setTimeout(() => siriInputRef.current?.focus(), 360);
+    }
+  }, [siri.phase]);
+
+  const handleSiriToggle = useCallback(() => {
+    if (siri.phase === 'idle') {
+      siriDispatch({ type: 'OPEN' });
+      setTimeout(() => siriDispatch({ type: 'OPENED' }), 150);
+    } else if (siri.phase !== 'opening' && siri.phase !== 'closing') {
+      siriDispatch({ type: 'CLOSE' });
+      setTimeout(() => siriDispatch({ type: 'CLOSED' }), 300);
+    }
+  }, [siri.phase]);
+
+  const handleSiriNavigate = useCallback((taskKey: string) => {
+    siriDispatch({ type: 'NAVIGATE', payload: taskKey });
+    setTimeout(() => {
+      setSelectedPerson(null);
+      setActiveKey(taskKey);
+      setPanelOpen(true);
+      setExpandedDetails(new Set());
+      setActiveTab('tasks');
+      setIsNavigating(true);
+      setTimeout(() => setIsNavigating(false), 300);
+      setTimeout(() => {
+        if (panelBodyRef.current) panelBodyRef.current.scrollTop = 0;
+      }, 50);
+      siriDispatch({ type: 'CLOSE' });
+      setTimeout(() => siriDispatch({ type: 'CLOSED' }), 300);
+    }, 200);
+  }, []);
 
   const activeData = activeKey ? DATA[activeKey] : null;
 
@@ -103,7 +208,89 @@ export default function Home() {
 
   return (
     <div className={`iphone-page${hasSlideOpen ? " slide-active" : ""}`} data-testid="iphone-page">
-      <div className="iphone-frame" data-testid="iphone-frame">
+      <div className="siri-side-panel" data-testid="siri-side-panel">
+        <div className={`siri-pulse-container${isSiriActive ? " siri-on" : ""}`}>
+          <div className="siri-pulse-ring" />
+          <div className="siri-pulse-ring" />
+          <div className="siri-pulse-ring" />
+          <button
+            className={`siri-button${isSiriActive ? " siri-on" : ""}`}
+            onClick={handleSiriToggle}
+            aria-label={isSiriActive ? "검색 닫기" : "Siri 검색 열기"}
+            aria-expanded={isSiriActive}
+            data-testid="siri-button"
+          >
+            <span className="siri-icon">{isSiriActive ? "✕" : "🎙️"}</span>
+          </button>
+        </div>
+        <span className="siri-label" data-testid="siri-label">
+          {isSiriActive ? '닫기' : 'Siri 검색'}
+        </span>
+        <div className={`siri-search-container${isSiriActive ? " open" : ""}`} data-testid="siri-search-panel">
+          <div className="siri-search-input-wrapper">
+            <span className="siri-search-icon">🔍</span>
+            <input
+              ref={siriInputRef}
+              className="siri-search-input"
+              type="search"
+              placeholder="업무 검색..."
+              value={siri.query}
+              onChange={(e) => siriDispatch({ type: 'SET_QUERY', payload: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') handleSiriToggle();
+              }}
+              inputMode="search"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              data-testid="siri-search-input"
+            />
+            {siri.query && (
+              <button
+                className="siri-search-clear"
+                onClick={() => siriDispatch({ type: 'SET_QUERY', payload: '' })}
+                data-testid="siri-search-clear"
+              >✕</button>
+            )}
+          </div>
+          {siri.query && siri.results.length === 0 && (
+            <div className="siri-empty" data-testid="siri-empty">
+              <span className="siri-empty-icon">🌀</span>
+              <span className="siri-empty-text">검색 결과가 없어요</span>
+              <span className="siri-empty-hint">다른 키워드로 검색해보세요</span>
+            </div>
+          )}
+          {!siri.query && isSiriActive && (
+            <div className="siri-hint" data-testid="siri-hint">
+              업무명, 담당자, 카테고리로 검색하세요
+            </div>
+          )}
+          {siri.results.length > 0 && (
+            <div className="siri-results-list" data-testid="siri-results-list" role="listbox" aria-label="검색 결과">
+              {siri.results.map((task) => (
+                <button
+                  className={`siri-result-card${siri.clickedKey === task.key ? " clicked" : ""}`}
+                  key={task.key}
+                  onClick={() => handleSiriNavigate(task.key)}
+                  role="option"
+                  data-testid={`siri-result-${task.key}`}
+                >
+                  <div className="siri-result-header">
+                    <span className="siri-result-icon">{task.icon}</span>
+                    <span className="siri-result-name">{highlightText(task.label, siri.query)}</span>
+                  </div>
+                  <div className="siri-result-meta">
+                    <span className={`siri-result-badge badge-${task.badge}`}>{task.badge}</span>
+                    <span className="siri-result-owner">{task.ownerName}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className={`iphone-frame${isSiriActive ? " siri-active" : ""}`} data-testid="iphone-frame">
         <div className="iphone-notch" data-testid="dynamic-island">
           <div className="dynamic-island" />
         </div>
@@ -112,7 +299,7 @@ export default function Home() {
           <span className="iphone-nav-title">{navTitle}</span>
         </div>
 
-        <div className="iphone-content" data-testid="iphone-content">
+        <div className={`iphone-content${isNavigating ? " navigating" : ""}`} data-testid="iphone-content">
           <div className={`tab-view${activeTab === "messenger" ? " active" : ""}`}>
             <MessengerList
               onSelectPerson={setSelectedPerson}
