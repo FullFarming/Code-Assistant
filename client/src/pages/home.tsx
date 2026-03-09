@@ -211,7 +211,11 @@ export default function Home() {
     <div className={`iphone-page${hasSlideOpen ? " slide-active" : ""}`} data-testid="iphone-page">
       <div className={`iphone-frame${isSiriActive ? " siri-active" : ""}`} data-testid="iphone-frame">
         <div className="iphone-notch" data-testid="dynamic-island">
-          <div className="dynamic-island" />
+          <div className="dynamic-island">
+            <div className="di-video-circle">
+              <video src="/dynamic-island-video.mp4" autoPlay loop muted playsInline data-testid="di-video" />
+            </div>
+          </div>
         </div>
 
         <div className="iphone-nav-bar" data-testid="nav-bar">
