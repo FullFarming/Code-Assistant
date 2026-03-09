@@ -8,32 +8,36 @@ Interactive web application for Cushman & Wakefield Korea employees to navigate 
 - **Backend**: Express.js (minimal, serving static files)
 - **Styling**: Tailwind CSS + custom CSS (iOS design language)
 - **State Management**: React useState/useCallback (no global state needed)
+- **Routing**: wouter (/ for WPR home, /faq for FAQ page)
 
 ## Design System (v3 — iPhone Mockup + Bento)
-- **Frame**: iPhone 14 Pro mockup (393×852px) centered on page with Dynamic Island
+- **Frame**: iPhone 14 Pro mockup at 80% scale (314×682px) centered on page with Dynamic Island
 - **Background**: Lavender-gray gradient (#E8E8ED → #F0F0F5)
 - **Colors**: iOS system colors — bg #F2F2F7, surface #FFFFFF, label #1C1C1E, secondary #8E8E93, C&W red #C41230
 - **Fonts**: Noto Sans KR (body), SF Pro Text / system (English)
 - **Shadows**: Subtle iOS-style (no offset comic shadows)
-- **Layout**: Bottom tab bar (팀원/업무목록/FAQ), messenger-style staff list, bento grid cards
+- **Header**: White bar with C&W logo (left) + WPR/FAQ navigation buttons (right), red underline on active
+- **Layout**: Bottom tab bar (팀원/업무목록), messenger-style staff list, bento grid cards
+- **Side panel**: 380px wide, 682px tall, slides right of iPhone frame on desktop
 
 ## Key Features
-- iPhone mockup frame with Dynamic Island, bottom tab bar, home indicator
+- Header with C&W logo and WPR/FAQ navigation
+- iPhone mockup frame (80% scale) with Dynamic Island, bottom tab bar, home indicator
 - **팀원 탭** (default): Messenger-style staff list cards → click → person detail slide panel → click task → task detail slide
 - **업무목록 탭**: Bento grid (2-col) with small (1×1) and wide (2×1) cards, pastel gradients, category badges
-- **FAQ 탭**: iOS accordion with Q/A items, smooth max-height transitions
-- Task detail slide panels (100% width within iPhone frame) with steps + email templates
+- **FAQ page** (/faq route): Standalone iOS-style accordion with Q/A badges, separate from iPhone mockup
+- Task detail slide panels with steps + email templates
 - Staff name badges (red chips) in email to/cc with mailto links
 - Individual copy buttons for email fields + body copy + full copy
 - Responsive: on narrow screens (≤430px), iPhone frame becomes full-screen
 
 ## File Structure
-- `client/src/pages/home.tsx` - Main single-page component with all tabs + slide panels
-- `client/src/pages/faq.tsx` - Legacy FAQ page (unused, FAQ integrated into home)
+- `client/src/App.tsx` - App shell with Header (logo + WPR/FAQ nav) + wouter routing
+- `client/src/pages/home.tsx` - iPhone mockup with 팀원/업무목록 tabs + slide panels
+- `client/src/pages/faq.tsx` - Standalone FAQ page with iOS-style accordion
 - `client/src/data/tasks.ts` - All task workflow data (13 tasks) with owner info
 - `client/src/data/persons.ts` - 4 WPR staff person data with R&R mappings to task keys
-- `client/src/index.css` - Complete iOS-style CSS
-- `client/src/App.tsx` - Simplified app shell (no header, no routing)
+- `client/src/index.css` - Complete iOS-style CSS including header, FAQ page, responsive styles
 
 ## Task Categories & Bento Card Sizes
 - **행정** (#C41230): 공문번호, 명함, 계약서 — small cards

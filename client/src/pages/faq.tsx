@@ -57,8 +57,10 @@ export default function Faq() {
   return (
     <div className="faq-page" data-testid="faq-page">
       <div className="faq-container">
-        <h1 className="faq-title" data-testid="faq-title">자주 묻는 질문 (FAQ)</h1>
-        <p className="faq-subtitle">업무 관련 궁금한 점을 빠르게 확인하세요</p>
+        <div className="faq-header-section">
+          <h1 className="faq-title" data-testid="faq-title">자주 묻는 질문</h1>
+          <p className="faq-subtitle">업무 관련 궁금한 점을 빠르게 확인하세요</p>
+        </div>
         <div className="faq-list">
           {FAQ_ITEMS.map((item, i) => (
             <div
@@ -71,13 +73,13 @@ export default function Faq() {
                 onClick={() => setOpenIndex(openIndex === i ? null : i)}
                 data-testid={`faq-toggle-${i}`}
               >
-                <span className="faq-q-icon">Q.</span>
+                <span className="faq-q-badge">Q</span>
                 <span className="faq-q-text">{item.q}</span>
-                <span className="faq-arrow">{openIndex === i ? "▲" : "▼"}</span>
+                <span className="faq-arrow">{openIndex === i ? "−" : "+"}</span>
               </button>
               <div className={`faq-answer${openIndex === i ? " visible" : ""}`}>
-                <span className="faq-a-icon">A.</span>
-                <span>{item.a}</span>
+                <span className="faq-a-badge">A</span>
+                <span className="faq-a-text">{item.a}</span>
               </div>
             </div>
           ))}
