@@ -68,10 +68,8 @@ export default function Home() {
 
   const closePanel = useCallback(() => {
     setPanelOpen(false);
-    setTimeout(() => {
-      setActiveKey(null);
-      setExpandedDetails(new Set());
-    }, 300);
+    setActiveKey(null);
+    setExpandedDetails(new Set());
   }, []);
 
   const closePersonDetail = useCallback(() => {
@@ -117,8 +115,10 @@ export default function Home() {
 
   const navTitle = activeTab === "messenger" ? "WPR Team" : activeTab === "tasks" ? "WPR 업무 가이드" : "자주 묻는 질문";
 
+  const hasSlideOpen = !!(selectedPerson || panelOpen);
+
   return (
-    <div className="iphone-page" data-testid="iphone-page">
+    <div className={`iphone-page${hasSlideOpen ? " slide-active" : ""}`} data-testid="iphone-page">
       <div className="iphone-frame" data-testid="iphone-frame">
         <div className="iphone-notch" data-testid="dynamic-island">
           <div className="dynamic-island" />
@@ -139,110 +139,6 @@ export default function Home() {
           </div>
           <div className={`tab-view${activeTab === "faq" ? " active" : ""}`}>
             <FaqList openIndex={faqOpen} onToggle={(i) => setFaqOpen(faqOpen === i ? null : i)} />
-          </div>
-
-          <div className={`person-slide${selectedPerson ? " open" : ""}`} data-testid="person-slide">
-            {selectedPerson && (
-              <PersonDetailSlide
-                person={selectedPerson}
-                onBack={closePersonDetail}
-                onSelectTask={(key) => {
-                  openPanel(key);
-                }}
-              />
-            )}
-          </div>
-
-          <div className={`task-slide${panelOpen ? " open" : ""}`} data-testid="task-slide">
-            {activeData && (
-              <>
-                <div className="ts-header" data-testid="ts-header">
-                  <button className="ts-back" onClick={closePanel} data-testid="back-btn">
-                    ← 뒤로
-                  </button>
-                  <div className="ts-title-wrap">
-                    <span className="ts-icon">{activeData.icon}</span>
-                    <span className="ts-title" data-testid="panel-title">{activeData.label}</span>
-                  </div>
-                </div>
-                <div className="ts-body" ref={panelBodyRef} data-testid="panel-body">
-                  <OwnerCard owner={activeData.owner} />
-                  {activeData.flow && activeData.flow.length > 0 && (
-                    <div className="flow-timeline" data-testid="flow-timeline">
-                      {activeData.flow.map((item, idx) => (
-                        <div className="flow-node" key={idx}>
-                          <div className={`flow-dot${idx === 0 ? " first" : ""}${idx === activeData.flow.length - 1 ? " last" : ""}`} />
-                          <span className="flow-text">{item}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {activeData.steps.length > 0 && (
-                    <div className="steps-container">
-                      {activeData.steps.map((step) => {
-                        const detailId = `${activeKey}-step-${step.n}`;
-                        const isExpanded = expandedDetails.has(detailId);
-                        return (
-                          <div className="step" key={step.n} data-testid={`step-${step.n}`}>
-                            <div className="step-num">{step.n}</div>
-                            <div className="step-body">
-                              <div className="step-title">{step.title}</div>
-                              {step.desc && (
-                                <div className="step-desc" dangerouslySetInnerHTML={{ __html: step.desc }} />
-                              )}
-                              {step.detail && (
-                                <>
-                                  <button
-                                    className="expand-btn"
-                                    onClick={() => toggleDetail(detailId)}
-                                    data-testid={`expand-btn-${step.n}`}
-                                  >
-                                    {isExpanded ? "▲ 닫기" : "▶ 상세 보기"}
-                                  </button>
-                                  <div
-                                    className={`expand-detail${isExpanded ? " open" : ""}`}
-                                    dangerouslySetInnerHTML={{ __html: step.detail }}
-                                  />
-                                </>
-                              )}
-                              {step.email && (
-                                <EmailBox
-                                  email={step.email}
-                                  stepKey={`${activeKey}-${step.n}`}
-                                  copiedField={copiedField}
-                                  onCopy={handleCopy}
-                                />
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {activeData.infoGrid && (
-                    <>
-                      <hr className="sec-div" />
-                      <InfoGrid cards={activeData.infoGrid} />
-                    </>
-                  )}
-                  {activeData.table && (
-                    <>
-                      <hr className="sec-div" />
-                      <PolicyTable table={activeData.table} />
-                    </>
-                  )}
-                  {activeData.warn && (
-                    <div className="warn">
-                      <span>⚠️</span>
-                      <div>{activeData.warn}</div>
-                    </div>
-                  )}
-                  {activeData.note && (
-                    <div className="note" data-testid="note">{activeData.note}</div>
-                  )}
-                </div>
-              </>
-            )}
           </div>
         </div>
 
@@ -274,6 +170,107 @@ export default function Home() {
         </div>
 
         <div className="iphone-home-indicator" />
+      </div>
+
+      <div className={`side-panel${selectedPerson ? " open" : ""}${panelOpen ? " task-open" : ""}`} data-testid="side-panel">
+        {selectedPerson && !panelOpen && (
+          <PersonDetailSlide
+            person={selectedPerson}
+            onBack={closePersonDetail}
+            onSelectTask={(key) => {
+              openPanel(key);
+            }}
+          />
+        )}
+        {activeData && panelOpen && (
+          <div className="sp-task" data-testid="task-slide">
+            <div className="ts-header" data-testid="ts-header">
+              <button className="ts-back" onClick={closePanel} data-testid="back-btn">
+                ← 뒤로
+              </button>
+              <div className="ts-title-wrap">
+                <span className="ts-icon">{activeData.icon}</span>
+                <span className="ts-title" data-testid="panel-title">{activeData.label}</span>
+              </div>
+            </div>
+            <div className="ts-body" ref={panelBodyRef} data-testid="panel-body">
+              <OwnerCard owner={activeData.owner} />
+              {activeData.flow && activeData.flow.length > 0 && (
+                <div className="flow-timeline" data-testid="flow-timeline">
+                  {activeData.flow.map((item, idx) => (
+                    <div className="flow-node" key={idx}>
+                      <div className={`flow-dot${idx === 0 ? " first" : ""}${idx === activeData.flow.length - 1 ? " last" : ""}`} />
+                      <span className="flow-text">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {activeData.steps.length > 0 && (
+                <div className="steps-container">
+                  {activeData.steps.map((step) => {
+                    const detailId = `${activeKey}-step-${step.n}`;
+                    const isExpanded = expandedDetails.has(detailId);
+                    return (
+                      <div className="step" key={step.n} data-testid={`step-${step.n}`}>
+                        <div className="step-num">{step.n}</div>
+                        <div className="step-body">
+                          <div className="step-title">{step.title}</div>
+                          {step.desc && (
+                            <div className="step-desc" dangerouslySetInnerHTML={{ __html: step.desc }} />
+                          )}
+                          {step.detail && (
+                            <>
+                              <button
+                                className="expand-btn"
+                                onClick={() => toggleDetail(detailId)}
+                                data-testid={`expand-btn-${step.n}`}
+                              >
+                                {isExpanded ? "▲ 닫기" : "▶ 상세 보기"}
+                              </button>
+                              <div
+                                className={`expand-detail${isExpanded ? " open" : ""}`}
+                                dangerouslySetInnerHTML={{ __html: step.detail }}
+                              />
+                            </>
+                          )}
+                          {step.email && (
+                            <EmailBox
+                              email={step.email}
+                              stepKey={`${activeKey}-${step.n}`}
+                              copiedField={copiedField}
+                              onCopy={handleCopy}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {activeData.infoGrid && (
+                <>
+                  <hr className="sec-div" />
+                  <InfoGrid cards={activeData.infoGrid} />
+                </>
+              )}
+              {activeData.table && (
+                <>
+                  <hr className="sec-div" />
+                  <PolicyTable table={activeData.table} />
+                </>
+              )}
+              {activeData.warn && (
+                <div className="warn">
+                  <span>⚠️</span>
+                  <div>{activeData.warn}</div>
+                </div>
+              )}
+              {activeData.note && (
+                <div className="note" data-testid="note">{activeData.note}</div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
