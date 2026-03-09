@@ -278,6 +278,9 @@
   flex-shrink: 0;
   position: relative;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 .iphone-nav-title {
   font-size: 22px;
@@ -1100,147 +1103,72 @@
   transform: scale(0.95);
 }
 
-:root {
-  --siri-color-1: #ff0080;
-  --siri-color-2: #ff4d00;
-  --siri-color-3: #ffcc00;
-  --siri-color-4: #00ff88;
-  --siri-color-5: #00ccff;
-  --siri-color-6: #7c3aed;
-  --siri-panel-width: 200px;
-  --siri-button-size: 52px;
-}
-
-.siri-side-panel {
-  width: var(--siri-panel-width);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 80px;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 10;
-}
-
-.siri-pulse-container {
-  position: relative;
-  width: var(--siri-button-size);
-  height: var(--siri-button-size);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.siri-pulse-ring {
-  position: absolute;
-  width: var(--siri-button-size);
-  height: var(--siri-button-size);
+.siri-tab-button {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  border: 2px solid rgba(124, 58, 237, 0.6);
-  animation: none;
-  pointer-events: none;
-}
-.siri-on .siri-pulse-ring:nth-child(1) {
-  animation: siri-pulse 2s ease-out infinite;
-}
-.siri-on .siri-pulse-ring:nth-child(2) {
-  animation: siri-pulse 2s ease-out 0.66s infinite;
-}
-.siri-on .siri-pulse-ring:nth-child(3) {
-  animation: siri-pulse 2s ease-out 1.32s infinite;
-}
-
-@keyframes siri-pulse {
-  0% { transform: scale(1); opacity: 0.8; border-color: rgba(124, 58, 237, 0.8); }
-  50% { border-color: rgba(0, 204, 255, 0.5); }
-  100% { transform: scale(2.8); opacity: 0; border-color: rgba(255, 0, 128, 0); }
-}
-
-.siri-button {
-  width: var(--siri-button-size);
-  height: var(--siri-button-size);
-  border-radius: 50%;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: none;
+  background: transparent;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 200ms ease;
+  padding: 0;
+  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
-  overflow: visible;
-  z-index: 2;
+  margin: 0 4px;
+  flex-shrink: 0;
 }
-.siri-button:hover {
-  transform: scale(1.08);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 20px rgba(120, 40, 200, 0.3);
+.siri-tab-button:hover {
+  transform: scale(1.1);
 }
-.siri-button:active {
-  transform: scale(0.94);
+.siri-tab-button:active {
+  transform: scale(0.92);
 }
-
-.siri-button.siri-on {
-  background: conic-gradient(from 0deg, #ff0080, #ff4d00, #ffcc00, #00ff88, #00ccff, #7c3aed, #ff0080);
-  animation: siri-bg-shift 1.5s linear infinite;
-  border-color: transparent;
+.siri-tab-button.siri-on {
+  animation: siri-tab-glow 1.5s ease-in-out infinite alternate;
 }
-.siri-button.siri-on::before {
-  content: '';
-  position: absolute;
-  inset: 3px;
-  border-radius: 50%;
-  background: #0a0a1a;
-  z-index: 0;
+@keyframes siri-tab-glow {
+  0% { filter: drop-shadow(0 0 4px rgba(255, 0, 128, 0.6)); }
+  50% { filter: drop-shadow(0 0 6px rgba(0, 204, 255, 0.6)); }
+  100% { filter: drop-shadow(0 0 4px rgba(124, 58, 237, 0.6)); }
 }
-.siri-button.siri-on .siri-icon {
-  position: relative;
-  z-index: 1;
+.siri-tab-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
+  pointer-events: none;
 }
 
-@keyframes siri-bg-shift {
-  0% { filter: hue-rotate(0deg); }
-  100% { filter: hue-rotate(360deg); }
-}
-
-.siri-icon {
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.siri-button.siri-on .siri-icon {
-  color: #ffffff;
-  font-size: 18px;
-  font-style: normal;
-}
-
-.siri-label {
+.siri-close-nav {
+  background: none;
+  border: none;
   font-family: var(--font-body);
-  font-size: 11px;
-  color: var(--ios-secondary);
-  margin-top: 8px;
-  transition: opacity 150ms ease;
-  text-align: center;
+  font-size: 13px;
+  color: #007AFF;
+  cursor: pointer;
+  font-weight: 500;
+  padding: 4px 8px;
+}
+.siri-close-nav:active {
+  opacity: 0.6;
 }
 
-.siri-search-container {
-  width: var(--siri-panel-width);
-  margin-top: 16px;
-  overflow: hidden;
-  max-height: 0;
-  opacity: 0;
-  transition: max-height 350ms cubic-bezier(0.4, 0, 0.2, 1), opacity 300ms ease;
-}
-.siri-search-container.open {
-  max-height: 600px;
-  opacity: 1;
+.siri-inner-panel {
+  padding: 8px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #1a1a2e;
 }
 
 .siri-search-input-wrapper {
   position: relative;
   width: 100%;
+  flex-shrink: 0;
 }
 .siri-search-icon {
   position: absolute;
@@ -1253,10 +1181,10 @@
 }
 .siri-search-input {
   width: 100%;
-  height: 38px;
-  border-radius: 12px;
+  height: 36px;
+  border-radius: 10px;
   border: 1.5px solid rgba(124, 58, 237, 0.5);
-  background: rgba(10, 10, 26, 0.8);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
   color: #ffffff;
   font-family: var(--font-body);
@@ -1268,7 +1196,7 @@
 }
 .siri-search-input:focus {
   border-color: rgba(124, 58, 237, 0.9);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 .siri-search-input::placeholder {
   color: rgba(255, 255, 255, 0.3);
@@ -1297,27 +1225,27 @@
 }
 
 .siri-hint {
-  margin-top: 12px;
+  margin-top: 24px;
   font-family: var(--font-body);
-  font-size: 11px;
-  color: rgba(142, 142, 147, 0.7);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
   text-align: center;
-  line-height: 1.5;
-  padding: 0 8px;
+  line-height: 1.6;
+  padding: 0 16px;
 }
 
 .siri-empty {
-  margin-top: 16px;
+  margin-top: 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   text-align: center;
 }
-.siri-empty-icon { font-size: 24px; }
+.siri-empty-icon { font-size: 28px; }
 .siri-empty-text {
   font-family: var(--font-body);
-  font-size: 12px;
+  font-size: 13px;
   color: rgba(255, 255, 255, 0.5);
   font-weight: 600;
 }
@@ -1328,12 +1256,12 @@
 }
 
 .siri-results-list {
-  margin-top: 12px;
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  max-height: 380px;
+  flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
@@ -1343,7 +1271,7 @@
   width: 100%;
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 10px 12px;
   cursor: pointer;
   display: flex;
@@ -1354,6 +1282,7 @@
   opacity: 0;
   font-family: var(--font-body);
   text-align: left;
+  flex-shrink: 0;
 }
 .siri-result-card:nth-child(1) { animation-delay: 0ms; }
 .siri-result-card:nth-child(2) { animation-delay: 60ms; }
@@ -1363,18 +1292,17 @@
 .siri-result-card:nth-child(6) { animation-delay: 300ms; }
 
 @keyframes slide-in-result {
-  from { opacity: 0; transform: translateX(-12px); }
-  to { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .siri-result-card:hover {
   background: rgba(124, 58, 237, 0.2);
   border-color: rgba(124, 58, 237, 0.5);
-  transform: translateX(4px);
 }
 .siri-result-card:active,
 .siri-result-card.clicked {
-  transform: scale(0.96) translateX(4px);
+  transform: scale(0.96);
   background: rgba(124, 58, 237, 0.35);
 }
 
@@ -1480,10 +1408,16 @@
   100% { opacity: 1; filter: brightness(1); }
 }
 
+.iphone-frame.siri-active .iphone-nav-bar {
+  background: #1a1a2e;
+}
+.iphone-frame.siri-active .iphone-nav-title {
+  color: #ffffff;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .iphone-frame.siri-active { animation: none; }
-  .siri-button.siri-on { animation: none; background: var(--siri-color-6); }
-  .siri-pulse-ring { animation: none !important; display: none; }
+  .siri-tab-button.siri-on { animation: none; }
   .siri-result-card { animation: none; opacity: 1; }
 }
 
@@ -1608,10 +1542,6 @@
 }
 
 @media (max-width: 900px) {
-  .siri-side-panel {
-    width: 160px;
-    padding-top: 40px;
-  }
   .iphone-page {
     flex-direction: row;
     flex-wrap: wrap;
@@ -1633,9 +1563,6 @@
 }
 
 @media (max-width: 700px) {
-  .siri-side-panel {
-    display: none;
-  }
   .iphone-page {
     flex-direction: column;
     padding: 10px;
@@ -1649,9 +1576,6 @@
 }
 
 @media (max-width: 430px) {
-  .siri-side-panel {
-    display: none;
-  }
   .iphone-page {
     padding: 0;
     min-height: calc(100dvh - 56px);

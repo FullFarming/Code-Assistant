@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect, useReducer } from "react";
 import { DATA, type TaskData } from "@/data/tasks";
 import { persons, type Person } from "@/data/persons";
 import { searchIndex, searchTasks, type SearchableTask } from "@/data/searchIndex";
+const siriImg = "/siri-icon.png";
 
 type TabType = "messenger" | "tasks";
 
@@ -208,120 +209,119 @@ export default function Home() {
 
   return (
     <div className={`iphone-page${hasSlideOpen ? " slide-active" : ""}`} data-testid="iphone-page">
-      <div className="siri-side-panel" data-testid="siri-side-panel">
-        <div className={`siri-pulse-container${isSiriActive ? " siri-on" : ""}`}>
-          <div className="siri-pulse-ring" />
-          <div className="siri-pulse-ring" />
-          <div className="siri-pulse-ring" />
-          <button
-            className={`siri-button${isSiriActive ? " siri-on" : ""}`}
-            onClick={handleSiriToggle}
-            aria-label={isSiriActive ? "검색 닫기" : "Siri 검색 열기"}
-            aria-expanded={isSiriActive}
-            data-testid="siri-button"
-          >
-            <span className="siri-icon">{isSiriActive ? "✕" : "🎙️"}</span>
-          </button>
-        </div>
-        <span className="siri-label" data-testid="siri-label">
-          {isSiriActive ? '닫기' : 'Siri 검색'}
-        </span>
-        <div className={`siri-search-container${isSiriActive ? " open" : ""}`} data-testid="siri-search-panel">
-          <div className="siri-search-input-wrapper">
-            <span className="siri-search-icon">🔍</span>
-            <input
-              ref={siriInputRef}
-              className="siri-search-input"
-              type="search"
-              placeholder="업무 검색..."
-              value={siri.query}
-              onChange={(e) => siriDispatch({ type: 'SET_QUERY', payload: e.target.value })}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') handleSiriToggle();
-              }}
-              inputMode="search"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-              data-testid="siri-search-input"
-            />
-            {siri.query && (
-              <button
-                className="siri-search-clear"
-                onClick={() => siriDispatch({ type: 'SET_QUERY', payload: '' })}
-                data-testid="siri-search-clear"
-              >✕</button>
-            )}
-          </div>
-          {siri.query && siri.results.length === 0 && (
-            <div className="siri-empty" data-testid="siri-empty">
-              <span className="siri-empty-icon">🌀</span>
-              <span className="siri-empty-text">검색 결과가 없어요</span>
-              <span className="siri-empty-hint">다른 키워드로 검색해보세요</span>
-            </div>
-          )}
-          {!siri.query && isSiriActive && (
-            <div className="siri-hint" data-testid="siri-hint">
-              업무명, 담당자, 카테고리로 검색하세요
-            </div>
-          )}
-          {siri.results.length > 0 && (
-            <div className="siri-results-list" data-testid="siri-results-list" role="listbox" aria-label="검색 결과">
-              {siri.results.map((task) => (
-                <button
-                  className={`siri-result-card${siri.clickedKey === task.key ? " clicked" : ""}`}
-                  key={task.key}
-                  onClick={() => handleSiriNavigate(task.key)}
-                  role="option"
-                  data-testid={`siri-result-${task.key}`}
-                >
-                  <div className="siri-result-header">
-                    <span className="siri-result-icon">{task.icon}</span>
-                    <span className="siri-result-name">{highlightText(task.label, siri.query)}</span>
-                  </div>
-                  <div className="siri-result-meta">
-                    <span className={`siri-result-badge badge-${task.badge}`}>{task.badge}</span>
-                    <span className="siri-result-owner">{task.ownerName}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
       <div className={`iphone-frame${isSiriActive ? " siri-active" : ""}`} data-testid="iphone-frame">
         <div className="iphone-notch" data-testid="dynamic-island">
           <div className="dynamic-island" />
         </div>
 
         <div className="iphone-nav-bar" data-testid="nav-bar">
-          <span className="iphone-nav-title">{navTitle}</span>
+          <span className="iphone-nav-title">
+            {isSiriActive ? "검색" : navTitle}
+          </span>
+          {isSiriActive && (
+            <button className="siri-close-nav" onClick={handleSiriToggle} data-testid="siri-close-nav">닫기</button>
+          )}
         </div>
 
         <div className={`iphone-content${isNavigating ? " navigating" : ""}`} data-testid="iphone-content">
-          <div className={`tab-view${activeTab === "messenger" ? " active" : ""}`}>
-            <MessengerList
-              onSelectPerson={setSelectedPerson}
-            />
-          </div>
-          <div className={`tab-view${activeTab === "tasks" ? " active" : ""}`}>
-            <BentoGrid onSelectTask={openPanel} />
-          </div>
+          {isSiriActive ? (
+            <div className="siri-inner-panel" data-testid="siri-search-panel">
+              <div className="siri-search-input-wrapper">
+                <span className="siri-search-icon">🔍</span>
+                <input
+                  ref={siriInputRef}
+                  className="siri-search-input"
+                  type="search"
+                  placeholder="업무 검색..."
+                  value={siri.query}
+                  onChange={(e) => siriDispatch({ type: 'SET_QUERY', payload: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') handleSiriToggle();
+                  }}
+                  inputMode="search"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  data-testid="siri-search-input"
+                />
+                {siri.query && (
+                  <button
+                    className="siri-search-clear"
+                    onClick={() => siriDispatch({ type: 'SET_QUERY', payload: '' })}
+                    data-testid="siri-search-clear"
+                  >✕</button>
+                )}
+              </div>
+              {siri.query && siri.results.length === 0 && (
+                <div className="siri-empty" data-testid="siri-empty">
+                  <span className="siri-empty-icon">🌀</span>
+                  <span className="siri-empty-text">검색 결과가 없어요</span>
+                  <span className="siri-empty-hint">다른 키워드로 검색해보세요</span>
+                </div>
+              )}
+              {!siri.query && (
+                <div className="siri-hint" data-testid="siri-hint">
+                  업무명, 담당자, 카테고리로 검색하세요
+                </div>
+              )}
+              {siri.results.length > 0 && (
+                <div className="siri-results-list" data-testid="siri-results-list" role="listbox" aria-label="검색 결과">
+                  {siri.results.map((task) => (
+                    <button
+                      className={`siri-result-card${siri.clickedKey === task.key ? " clicked" : ""}`}
+                      key={task.key}
+                      onClick={() => handleSiriNavigate(task.key)}
+                      role="option"
+                      data-testid={`siri-result-${task.key}`}
+                    >
+                      <div className="siri-result-header">
+                        <span className="siri-result-icon">{task.icon}</span>
+                        <span className="siri-result-name">{highlightText(task.label, siri.query)}</span>
+                      </div>
+                      <div className="siri-result-meta">
+                        <span className={`siri-result-badge badge-${task.badge}`}>{task.badge}</span>
+                        <span className="siri-result-owner">{task.ownerName}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className={`tab-view${activeTab === "messenger" ? " active" : ""}`}>
+                <MessengerList
+                  onSelectPerson={setSelectedPerson}
+                />
+              </div>
+              <div className={`tab-view${activeTab === "tasks" ? " active" : ""}`}>
+                <BentoGrid onSelectTask={openPanel} />
+              </div>
+            </>
+          )}
         </div>
 
         <div className="bottom-tab-bar" data-testid="bottom-tab-bar">
           <button
-            className={`tab-item${activeTab === "messenger" ? " active" : ""}`}
-            onClick={() => handleTabChange("messenger")}
+            className={`tab-item${!isSiriActive && activeTab === "messenger" ? " active" : ""}`}
+            onClick={() => { if (isSiriActive) handleSiriToggle(); handleTabChange("messenger"); }}
             data-testid="tab-messenger"
           >
             <span className="tab-icon">💬</span>
             <span className="tab-label">팀원</span>
           </button>
           <button
-            className={`tab-item${activeTab === "tasks" ? " active" : ""}`}
-            onClick={() => handleTabChange("tasks")}
+            className={`siri-tab-button${isSiriActive ? " siri-on" : ""}`}
+            onClick={handleSiriToggle}
+            aria-label={isSiriActive ? "검색 닫기" : "Siri 검색 열기"}
+            aria-expanded={isSiriActive}
+            data-testid="siri-button"
+          >
+            <img src={siriImg} alt="Siri" className="siri-tab-img" />
+          </button>
+          <button
+            className={`tab-item${!isSiriActive && activeTab === "tasks" ? " active" : ""}`}
+            onClick={() => { if (isSiriActive) handleSiriToggle(); handleTabChange("tasks"); }}
             data-testid="tab-tasks"
           >
             <span className="tab-icon">📋</span>
