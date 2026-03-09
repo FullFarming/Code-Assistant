@@ -134,7 +134,6 @@ export default function Home() {
       setActiveKey(taskKey);
       setPanelOpen(true);
       setExpandedDetails(new Set());
-      setActiveTab('tasks');
       setIsNavigating(true);
       setTimeout(() => setIsNavigating(false), 300);
       setTimeout(() => {
@@ -142,7 +141,7 @@ export default function Home() {
       }, 50);
       siriDispatch({ type: 'CLOSE' });
       setTimeout(() => siriDispatch({ type: 'CLOSED' }), 300);
-    }, 200);
+    }, 180);
   }, []);
 
   const activeData = activeKey ? DATA[activeKey] : null;
@@ -209,7 +208,7 @@ export default function Home() {
 
   return (
     <div className={`iphone-page${hasSlideOpen ? " slide-active" : ""}`} data-testid="iphone-page">
-      <div className={`iphone-frame${isSiriActive ? " siri-active" : ""}`} data-testid="iphone-frame">
+      <div className={`iphone-frame${isSiriActive ? " siri-dimmed" : ""}`} data-testid="iphone-frame">
         <div className="iphone-notch" data-testid="dynamic-island">
           <div className="dynamic-island">
             <div className="di-video-circle">
@@ -219,23 +218,80 @@ export default function Home() {
         </div>
 
         <div className="iphone-nav-bar" data-testid="nav-bar">
-          <span className="iphone-nav-title">
-            {isSiriActive ? "검색" : navTitle}
-          </span>
-          {isSiriActive && (
-            <button className="siri-close-nav" onClick={handleSiriToggle} data-testid="siri-close-nav">닫기</button>
-          )}
+          <span className="iphone-nav-title">{navTitle}</span>
         </div>
 
-        <div className={`iphone-content${isNavigating ? " navigating" : ""}`} data-testid="iphone-content">
-          {isSiriActive ? (
-            <div className="siri-inner-panel" data-testid="siri-search-panel">
-              <div className="siri-search-input-wrapper">
-                <span className="siri-search-icon">🔍</span>
+        <div className={`iphone-content${isNavigating ? " navigating" : ""}${isSiriActive ? " siri-blurred" : ""}`} data-testid="iphone-content">
+          <div className={`tab-view${activeTab === "messenger" ? " active" : ""}`}>
+            <MessengerList onSelectPerson={setSelectedPerson} />
+          </div>
+          <div className={`tab-view${activeTab === "tasks" ? " active" : ""}`}>
+            <BentoGrid onSelectTask={openPanel} />
+          </div>
+        </div>
+
+        {isSiriActive && (
+          <div
+            className="siri-overlay"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) handleSiriToggle();
+            }}
+            data-testid="siri-overlay"
+          >
+            <div className="siri-popup" data-testid="siri-popup">
+              {!siri.query && (
+                <div className="siri-popup-hint" data-testid="siri-hint">
+                  <span className="siri-hint-icon">🔍</span>
+                  <span>업무명, 담당자, 카테고리로 검색하세요</span>
+                </div>
+              )}
+              {siri.query && siri.results.length === 0 && (
+                <div className="siri-popup-empty" data-testid="siri-empty">
+                  <span className="siri-empty-icon">🌀</span>
+                  <span className="siri-empty-text">검색 결과가 없어요</span>
+                  <span className="siri-empty-hint">다른 키워드로 검색해보세요</span>
+                </div>
+              )}
+              {siri.results.length > 0 && (
+                <div className="siri-results-list" role="listbox" aria-label="검색 결과" data-testid="siri-results-list">
+                  <div className="siri-results-header">
+                    <span>{siri.results.length}개 업무 발견</span>
+                  </div>
+                  {siri.results.map((task, idx) => (
+                    <button
+                      key={task.key}
+                      className={`siri-result-card${siri.clickedKey === task.key ? " clicked" : ""}`}
+                      style={{ animationDelay: `${idx * 40}ms` }}
+                      onClick={() => handleSiriNavigate(task.key)}
+                      role="option"
+                      data-testid={`siri-result-${task.key}`}
+                    >
+                      <div className="siri-result-left">
+                        <div className="siri-result-icon-wrap">
+                          <span className="siri-result-icon">{task.icon}</span>
+                        </div>
+                        <div className="siri-result-text">
+                          <span className="siri-result-name">{highlightText(task.label, siri.query)}</span>
+                          <span className="siri-result-owner">{task.ownerName}</span>
+                        </div>
+                      </div>
+                      <div className="siri-result-right">
+                        <span className={`siri-result-badge badge-${task.badge}`}>{task.badge}</span>
+                        <span className="siri-result-chevron">›</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="siri-float-search" data-testid="siri-float-search">
+              <div className="siri-search-bar">
+                <span className="siri-search-icon-left">🔍</span>
                 <input
                   ref={siriInputRef}
-                  className="siri-search-input"
                   type="search"
+                  className="siri-search-input"
                   placeholder="업무 검색..."
                   value={siri.query}
                   onChange={(e) => siriDispatch({ type: 'SET_QUERY', payload: e.target.value })}
@@ -246,64 +302,27 @@ export default function Home() {
                   autoComplete="off"
                   autoCorrect="off"
                   spellCheck={false}
+                  aria-label="업무 검색어 입력"
                   data-testid="siri-search-input"
                 />
-                {siri.query && (
+                {siri.query ? (
                   <button
                     className="siri-search-clear"
                     onClick={() => siriDispatch({ type: 'SET_QUERY', payload: '' })}
+                    aria-label="검색어 지우기"
                     data-testid="siri-search-clear"
                   >✕</button>
+                ) : (
+                  <button
+                    className="siri-search-cancel"
+                    onClick={handleSiriToggle}
+                    data-testid="siri-search-cancel"
+                  >취소</button>
                 )}
               </div>
-              {siri.query && siri.results.length === 0 && (
-                <div className="siri-empty" data-testid="siri-empty">
-                  <span className="siri-empty-icon">🌀</span>
-                  <span className="siri-empty-text">검색 결과가 없어요</span>
-                  <span className="siri-empty-hint">다른 키워드로 검색해보세요</span>
-                </div>
-              )}
-              {!siri.query && (
-                <div className="siri-hint" data-testid="siri-hint">
-                  업무명, 담당자, 카테고리로 검색하세요
-                </div>
-              )}
-              {siri.results.length > 0 && (
-                <div className="siri-results-list" data-testid="siri-results-list" role="listbox" aria-label="검색 결과">
-                  {siri.results.map((task) => (
-                    <button
-                      className={`siri-result-card${siri.clickedKey === task.key ? " clicked" : ""}`}
-                      key={task.key}
-                      onClick={() => handleSiriNavigate(task.key)}
-                      role="option"
-                      data-testid={`siri-result-${task.key}`}
-                    >
-                      <div className="siri-result-header">
-                        <span className="siri-result-icon">{task.icon}</span>
-                        <span className="siri-result-name">{highlightText(task.label, siri.query)}</span>
-                      </div>
-                      <div className="siri-result-meta">
-                        <span className={`siri-result-badge badge-${task.badge}`}>{task.badge}</span>
-                        <span className="siri-result-owner">{task.ownerName}</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
-          ) : (
-            <>
-              <div className={`tab-view${activeTab === "messenger" ? " active" : ""}`}>
-                <MessengerList
-                  onSelectPerson={setSelectedPerson}
-                />
-              </div>
-              <div className={`tab-view${activeTab === "tasks" ? " active" : ""}`}>
-                <BentoGrid onSelectTask={openPanel} />
-              </div>
-            </>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="bottom-tab-bar" data-testid="bottom-tab-bar">
           <button

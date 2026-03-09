@@ -1,0 +1,1122 @@
+# C&W Korea WPR — Siri 플로팅 검색 팝업 구현 가이드
+> Apple Human Interface Guidelines 기반 · 탭 전환 없이 현재 화면 위에 오버레이되는 검색 경험
+
+---
+
+## 현재 코드 분석 및 문제 진단
+
+### 현재 구조 (As-Is) — 무엇이 문제인가
+
+```
+home.tsx 핵심 로직:
+
+iphone-content 영역에서:
+  if (isSiriActive) → <SiriInnerPanel /> 렌더링   ← ❌ 화면 전체 교체
+  else              → <MessengerList /> or <BentoGrid />
+
+결과: Siri 버튼 클릭 시 현재 화면이 사라지고
+      검색 전용 화면으로 '탭 전환'된 것처럼 느껴짐
+```
+
+**문제가 되는 코드 블록 (home.tsx 라인 157~207):**
+
+```tsx
+// ❌ 현재: isSiriActive면 전체 콘텐츠를 교체
+<div className="iphone-content">
+  {isSiriActive ? (
+    <div className="siri-inner-panel">    {/* 전체 교체 */}
+      <input ... />
+      {results}
+    </div>
+  ) : (
+    <>탭 콘텐츠</>
+  )}
+</div>
+```
+
+---
+
+### 목표 구조 (To-Be) — 오버레이 방식
+
+```
+┌─────────────────────────────────────┐
+│          iphone-frame               │
+│  ┌───────────────────────────────┐  │
+│  │   iphone-content (항상 표시)   │  │  ← 기존 콘텐츠 유지
+│  │   (Siri ON 시 blur + dim)      │  │
+│  └───────────────────────────────┘  │
+│                                     │
+│  ┌───────────────────────────────┐  │  ← Siri ON 시만 표시
+│  │   .siri-overlay               │  │    position: absolute
+│  │   (backdrop-filter: blur)      │  │    bottom: 83px (탭바 위)
+│  │                               │  │
+│  │   ╔═══════════════════════╗   │  │
+│  │   ║  검색결과 팝업 모달   ║   │  │  ← 결과 목록 (위에서 아래로)
+│  │   ╚═══════════════════════╝   │  │
+│  │                               │  │
+│  │   ╔═══════════════════════╗   │  │
+│  │   ║  🔍  업무 검색...     ║   │  │  ← 검색창 (하단 고정)
+│  │   ╚═══════════════════════╝   │  │
+│  └───────────────────────────────┘  │
+│                                     │
+│  ┌───────────────────────────────┐  │  ← bottom-tab-bar (항상 표시)
+│  │  💬팀원  [🎙️Siri]  📋업무목록  │  │
+│  └───────────────────────────────┘  │
+└─────────────────────────────────────┘
+```
+
+---
+
+## 전체 변경 파일 목록
+
+| 파일 | 변경 유형 | 변경 범위 |
+|---|---|---|
+| `client/src/pages/home.tsx` | 수정 | `iphone-content` JSX 구조 + Siri 오버레이 분리 |
+| `client/src/index.css` | 수정 + 추가 | `.siri-overlay`, `.siri-float-search`, `.siri-popup` 신규 + 기존 삭제 |
+
+---
+
+## 1. home.tsx 변경 명세
+
+### 1-1. 삭제할 코드
+
+```tsx
+// ❌ 삭제: isSiriActive 분기로 전체 교체하던 로직
+<div className={`iphone-content${isNavigating ? " navigating" : ""}`}>
+  {isSiriActive ? (
+    <div className="siri-inner-panel">          // ← 이 블록 전체 삭제
+      <div className="siri-search-input-wrapper">
+        ...
+      </div>
+      {/* 결과 / 힌트 / 빈 상태 */}
+    </div>
+  ) : (
+    <>탭 콘텐츠</>
+  )}
+</div>
+
+// ❌ 삭제: nav-bar 내 isSiriActive 분기
+{isSiriActive && (
+  <button className="siri-close-nav" onClick={handleSiriToggle}>닫기</button>
+)}
+
+// ❌ 삭제: nav-title 텍스트 조건부 변경
+{isSiriActive ? "검색" : navTitle}
+```
+
+### 1-2. 추가할 코드 구조
+
+```tsx
+// ✅ 변경 후: 오버레이 방식
+
+return (
+  <div className={`iphone-page${hasSlideOpen ? " slide-active" : ""}`}>
+    <div className={`iphone-frame${isSiriActive ? " siri-dimmed" : ""}`}>
+
+      {/* 1. Dynamic Island — 변경 없음 */}
+      <div className="iphone-notch"> ... </div>
+
+      {/* 2. 네비게이션 바 — isSiriActive 분기 완전 제거 */}
+      <div className="iphone-nav-bar">
+        <span className="iphone-nav-title">{navTitle}</span>
+        {/* 닫기 버튼 제거 → Siri 버튼 재클릭으로 닫기 */}
+      </div>
+
+      {/* 3. 콘텐츠 영역 — 항상 렌더링, 조건부 교체 없음 */}
+      <div className={`iphone-content${isNavigating ? " navigating" : ""}${isSiriActive ? " siri-blurred" : ""}`}>
+        <div className={`tab-view${activeTab === "messenger" ? " active" : ""}`}>
+          <MessengerList onSelectPerson={setSelectedPerson} />
+        </div>
+        <div className={`tab-view${activeTab === "tasks" ? " active" : ""}`}>
+          <BentoGrid onSelectTask={openPanel} />
+        </div>
+      </div>
+
+      {/* ✅ 신규: Siri 플로팅 오버레이 — iphone-frame 내부 absolute */}
+      {isSiriActive && (
+        <div
+          className="siri-overlay"
+          onClick={(e) => {
+            // 오버레이 배경 클릭 시 닫기
+            if (e.target === e.currentTarget) handleSiriToggle();
+          }}
+          data-testid="siri-overlay"
+        >
+          {/* 검색 결과 팝업 (검색창 위에 표시) */}
+          <div className="siri-popup" data-testid="siri-popup">
+            {/* 상태 A: 검색어 없음 — 힌트 */}
+            {!siri.query && (
+              <div className="siri-popup-hint" data-testid="siri-hint">
+                <span className="siri-hint-icon">🔍</span>
+                <span>업무명, 담당자, 카테고리로 검색하세요</span>
+              </div>
+            )}
+
+            {/* 상태 B: 결과 없음 */}
+            {siri.query && siri.results.length === 0 && (
+              <div className="siri-popup-empty" data-testid="siri-empty">
+                <span className="siri-empty-icon">🌀</span>
+                <span className="siri-empty-text">검색 결과가 없어요</span>
+                <span className="siri-empty-hint">다른 키워드로 검색해보세요</span>
+              </div>
+            )}
+
+            {/* 상태 C: 결과 목록 */}
+            {siri.results.length > 0 && (
+              <div
+                className="siri-results-list"
+                role="listbox"
+                aria-label="검색 결과"
+                data-testid="siri-results-list"
+              >
+                <div className="siri-results-header">
+                  <span>{siri.results.length}개 업무 발견</span>
+                </div>
+                {siri.results.map((task, idx) => (
+                  <button
+                    key={task.key}
+                    className={`siri-result-card${siri.clickedKey === task.key ? " clicked" : ""}`}
+                    style={{ animationDelay: `${idx * 40}ms` }}
+                    onClick={() => handleSiriNavigate(task.key)}
+                    role="option"
+                    data-testid={`siri-result-${task.key}`}
+                  >
+                    <div className="siri-result-left">
+                      <div className="siri-result-icon-wrap">
+                        <span className="siri-result-icon">{task.icon}</span>
+                      </div>
+                      <div className="siri-result-text">
+                        <span className="siri-result-name">
+                          {highlightText(task.label, siri.query)}
+                        </span>
+                        <span className="siri-result-owner">{task.ownerName}</span>
+                      </div>
+                    </div>
+                    <div className="siri-result-right">
+                      <span className={`siri-result-badge badge-${task.badge}`}>
+                        {task.badge}
+                      </span>
+                      <span className="siri-result-chevron">›</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 검색창 — 팝업 아래, 탭바 바로 위 */}
+          <div className="siri-float-search" data-testid="siri-float-search">
+            <div className="siri-search-bar">
+              <span className="siri-search-icon-left">🔍</span>
+              <input
+                ref={siriInputRef}
+                type="search"
+                className="siri-search-input"
+                placeholder="업무 검색..."
+                value={siri.query}
+                onChange={(e) =>
+                  siriDispatch({ type: 'SET_QUERY', payload: e.target.value })
+                }
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') handleSiriToggle();
+                }}
+                inputMode="search"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                aria-label="업무 검색어 입력"
+                data-testid="siri-search-input"
+              />
+              {siri.query ? (
+                <button
+                  className="siri-search-clear"
+                  onClick={() =>
+                    siriDispatch({ type: 'SET_QUERY', payload: '' })
+                  }
+                  aria-label="검색어 지우기"
+                  data-testid="siri-search-clear"
+                >
+                  ✕
+                </button>
+              ) : (
+                <button
+                  className="siri-search-cancel"
+                  onClick={handleSiriToggle}
+                  data-testid="siri-search-cancel"
+                >
+                  취소
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. 하단 탭 바 — 변경 없음 */}
+      <div className="bottom-tab-bar"> ... </div>
+      <div className="iphone-home-indicator" />
+    </div>
+
+    {/* 슬라이드 패널 — 변경 없음 */}
+    <div className="side-panel ..."> ... </div>
+  </div>
+);
+```
+
+### 1-3. handleSiriNavigate 수정
+
+현재 코드에서 `setActiveTab('tasks')` 로 탭을 강제 이동하는 부분을 제거합니다. 검색으로 이동한 후에는 **이전 탭 상태를 유지**하면서 슬라이드 패널만 열립니다.
+
+```tsx
+// ❌ 현재
+const handleSiriNavigate = useCallback((taskKey: string) => {
+  ...
+  setActiveTab('tasks');   // ← 이 줄 제거
+  ...
+}, []);
+
+// ✅ 변경 후
+const handleSiriNavigate = useCallback((taskKey: string) => {
+  siriDispatch({ type: 'NAVIGATE', payload: taskKey });
+  setTimeout(() => {
+    setSelectedPerson(null);
+    setActiveKey(taskKey);
+    setPanelOpen(true);
+    setExpandedDetails(new Set());
+    // activeTab은 변경하지 않음 — 현재 탭 유지
+    setIsNavigating(true);
+    setTimeout(() => setIsNavigating(false), 300);
+    setTimeout(() => {
+      if (panelBodyRef.current) panelBodyRef.current.scrollTop = 0;
+    }, 50);
+    siriDispatch({ type: 'CLOSE' });
+    setTimeout(() => siriDispatch({ type: 'CLOSED' }), 300);
+  }, 180);
+}, []);
+```
+
+### 1-4. CSS 클래스명 변경 대조표
+
+| 제거 | 추가 | 용도 |
+|---|---|---|
+| `.siri-inner-panel` | `.siri-overlay` | 오버레이 전체 컨테이너 |
+| `.siri-active` (frame) | `.siri-dimmed` (frame) | 프레임 dimming |
+| — | `.siri-blurred` (content) | 콘텐츠 blur |
+| — | `.siri-float-search` | 플로팅 검색창 |
+| — | `.siri-popup` | 결과 팝업 박스 |
+| — | `.siri-results-header` | "N개 발견" 헤더 |
+| — | `.siri-search-bar` | 검색창 내부 행 |
+| — | `.siri-search-icon-left` | 왼쪽 돋보기 아이콘 |
+| — | `.siri-search-cancel` | 취소 버튼 |
+| — | `.siri-result-left` | 카드 좌측 그룹 |
+| — | `.siri-result-right` | 카드 우측 그룹 |
+| — | `.siri-result-icon-wrap` | 이모지 배경 원 |
+| — | `.siri-result-chevron` | 우측 화살표 |
+| — | `.siri-popup-hint` | 힌트 박스 |
+| — | `.siri-popup-empty` | 빈 상태 박스 |
+
+---
+
+## 2. index.css 변경 명세
+
+### 2-1. 삭제할 CSS 블록
+
+```css
+/* ❌ 삭제: 화면 전체 대체 방식의 내부 패널 */
+.siri-inner-panel { ... }
+.siri-close-nav { ... }
+.siri-close-nav:active { ... }
+
+/* ❌ 삭제: 기존 siri-active frame 스타일 (이름 변경) */
+.iphone-frame.siri-active { ... }
+@keyframes siri-frame-glow { ... }
+.iphone-frame.siri-active .iphone-nav-bar { ... }
+.iphone-frame.siri-active .iphone-nav-title { ... }
+
+/* ❌ 삭제: 기존 hint / empty (위치 변경으로 스타일 재작성) */
+.siri-hint { ... }
+.siri-empty { ... }
+.siri-empty-icon { ... }
+.siri-empty-text { ... }
+.siri-empty-hint { ... }
+```
+
+### 2-2. 추가할 CSS 블록 (전체)
+
+```css
+/* ═══════════════════════════════════════════════════════
+   SIRI OVERLAY SYSTEM
+   Apple HIG — 플로팅 검색 + 팝업 결과
+═══════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────
+   프레임 Dimming (기존 콘텐츠 유지, 뒤로 빠짐)
+───────────────────────────────────── */
+.iphone-frame.siri-dimmed {
+  /* 무지개 Siri 글로우 효과 */
+  box-shadow:
+    0 0 0 2px #3A3A3C,
+    0 16px 48px rgba(0,0,0,0.35),
+    0 0 0 4px transparent,
+    0 0 40px 8px rgba(124, 58, 237, 0.25),
+    0 0 80px 16px rgba(0, 204, 255, 0.12);
+  animation: siri-frame-rainbow 3s linear infinite;
+}
+
+@keyframes siri-frame-rainbow {
+  0%   { box-shadow: 0 0 0 2px #3A3A3C, 0 16px 48px rgba(0,0,0,0.35), 0 0 40px 8px rgba(124,58,237,0.3), 0 0 80px 20px rgba(0,204,255,0.15); }
+  25%  { box-shadow: 0 0 0 2px #3A3A3C, 0 16px 48px rgba(0,0,0,0.35), 0 0 40px 8px rgba(0,204,255,0.3), 0 0 80px 20px rgba(0,255,136,0.15); }
+  50%  { box-shadow: 0 0 0 2px #3A3A3C, 0 16px 48px rgba(0,0,0,0.35), 0 0 40px 8px rgba(255,0,128,0.3), 0 0 80px 20px rgba(255,200,0,0.15); }
+  75%  { box-shadow: 0 0 0 2px #3A3A3C, 0 16px 48px rgba(0,0,0,0.35), 0 0 40px 8px rgba(0,255,136,0.3), 0 0 80px 20px rgba(124,58,237,0.15); }
+  100% { box-shadow: 0 0 0 2px #3A3A3C, 0 16px 48px rgba(0,0,0,0.35), 0 0 40px 8px rgba(124,58,237,0.3), 0 0 80px 20px rgba(0,204,255,0.15); }
+}
+
+/* 콘텐츠 영역 블러 (오버레이 뒤의 기존 화면) */
+.iphone-content.siri-blurred {
+  filter: blur(2px) brightness(0.75);
+  pointer-events: none;           /* 블러 상태에서 클릭 방지 */
+  transition: filter 250ms ease;
+  transform: scale(0.98);         /* 살짝 축소로 깊이감 */
+  transition: filter 250ms ease, transform 250ms ease;
+}
+
+/* ─────────────────────────────────────
+   오버레이 컨테이너
+   position: absolute → iphone-frame 내부 전체 덮음
+───────────────────────────────────── */
+.siri-overlay {
+  position: absolute;
+  inset: 0;
+  bottom: 83px;                   /* 탭바 높이만큼 띄움 */
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;      /* 검색창이 하단 고정 */
+  padding: 0 12px 12px;
+  gap: 8px;
+
+  /* 등장 애니메이션 */
+  animation: overlay-appear 250ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+@keyframes overlay-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ─────────────────────────────────────
+   검색 결과 팝업 (검색창 위에 위치)
+   Apple Spotlight 스타일
+───────────────────────────────────── */
+.siri-popup {
+  width: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+
+  /* Apple 특유 유리 형태 (Glassmorphism) */
+  background: rgba(28, 28, 30, 0.82);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  /* 팝업 등장 — 아래에서 위로 */
+  animation: popup-rise 280ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  transform-origin: bottom center;
+}
+
+@keyframes popup-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ─────────────────────────────────────
+   팝업 내부: 힌트 상태
+───────────────────────────────────── */
+.siri-popup-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  color: rgba(255, 255, 255, 0.45);
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+
+.siri-hint-icon {
+  font-size: 16px;
+  opacity: 0.6;
+}
+
+/* ─────────────────────────────────────
+   팝업 내부: 빈 상태
+───────────────────────────────────── */
+.siri-popup-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.siri-empty-icon {
+  font-size: 28px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.siri-empty-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: var(--font-body);
+}
+
+.siri-empty-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+  font-family: var(--font-body);
+}
+
+/* ─────────────────────────────────────
+   팝업 내부: 결과 헤더 ("N개 업무 발견")
+───────────────────────────────────── */
+.siri-results-header {
+  padding: 12px 16px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  font-family: var(--font-en);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ─────────────────────────────────────
+   팝업 내부: 결과 리스트
+───────────────────────────────────── */
+.siri-results-list {
+  max-height: 280px;              /* 스크롤 가능 최대 높이 */
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: none;          /* Firefox */
+}
+
+.siri-results-list::-webkit-scrollbar {
+  display: none;                  /* Chrome/Safari */
+}
+
+/* ─────────────────────────────────────
+   결과 카드
+───────────────────────────────────── */
+.siri-result-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  gap: 12px;
+  position: relative;
+
+  /* 카드 간 구분선 */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+  /* 등장 애니메이션 */
+  animation: result-slide-in 240ms ease forwards;
+  opacity: 0;
+
+  /* 클릭 전환 */
+  transition:
+    background 120ms ease,
+    transform 120ms ease;
+}
+
+.siri-result-card:last-child {
+  border-bottom: none;
+}
+
+@keyframes result-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Hover / Active 상태 */
+.siri-result-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.siri-result-card:active,
+.siri-result-card.clicked {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(0.985);
+}
+
+/* ─────────────────────────────────────
+   결과 카드 내부: 좌측 (아이콘 + 텍스트)
+───────────────────────────────────── */
+.siri-result-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;                   /* ellipsis 작동을 위해 */
+}
+
+.siri-result-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.siri-result-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.siri-result-name {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.siri-result-owner {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 검색 키워드 하이라이트 */
+.siri-result-highlight {
+  color: #7dd3fc;                 /* Apple Blue Light */
+  font-weight: 700;
+}
+
+/* ─────────────────────────────────────
+   결과 카드 내부: 우측 (배지 + 화살표)
+───────────────────────────────────── */
+.siri-result-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.siri-result-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  letter-spacing: 0.3px;
+  font-family: var(--font-body);
+}
+
+/* 카테고리별 배지 색상 — 다크 테마에 맞게 조정 */
+.siri-result-badge.badge-행정 {
+  background: rgba(196, 18, 48, 0.3);
+  color: #fca5a5;
+  border-color: rgba(196, 18, 48, 0.5);
+}
+.siri-result-badge.badge-지원 {
+  background: rgba(245, 158, 11, 0.3);
+  color: #fde68a;
+  border-color: rgba(245, 158, 11, 0.5);
+}
+.siri-result-badge.badge-시설 {
+  background: rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.5);
+}
+.siri-result-badge.badge-IT {
+  background: rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.siri-result-chevron {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.2);
+  line-height: 1;
+  font-weight: 300;
+}
+
+/* ─────────────────────────────────────
+   플로팅 검색창 (하단 고정)
+   Apple Spotlight 검색창 스타일
+───────────────────────────────────── */
+.siri-float-search {
+  width: 100%;
+  animation: search-float-in 220ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+@keyframes search-float-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.siri-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;                   /* Apple 표준 터치 타깃 */
+  padding: 0 14px;
+  border-radius: 14px;
+
+  /* Apple 유리 효과 */
+  background: rgba(28, 28, 30, 0.88);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.45),
+    0 1px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    /* Siri 무지개 글로우 */
+    0 0 20px rgba(124, 58, 237, 0.2),
+    0 0 40px rgba(0, 204, 255, 0.1);
+
+  /* 무지개 테두리 빛 애니메이션 */
+  animation: search-bar-glow 3s linear infinite;
+}
+
+@keyframes search-bar-glow {
+  0%   { border-color: rgba(124, 58, 237, 0.5); box-shadow: 0 4px 24px rgba(0,0,0,0.45), 0 0 20px rgba(124,58,237,0.25), 0 0 40px rgba(0,204,255,0.1); }
+  33%  { border-color: rgba(0, 204, 255, 0.5);  box-shadow: 0 4px 24px rgba(0,0,0,0.45), 0 0 20px rgba(0,204,255,0.25), 0 0 40px rgba(0,255,136,0.1); }
+  66%  { border-color: rgba(255, 0, 128, 0.5);  box-shadow: 0 4px 24px rgba(0,0,0,0.45), 0 0 20px rgba(255,0,128,0.25), 0 0 40px rgba(255,200,0,0.1); }
+  100% { border-color: rgba(124, 58, 237, 0.5); box-shadow: 0 4px 24px rgba(0,0,0,0.45), 0 0 20px rgba(124,58,237,0.25), 0 0 40px rgba(0,204,255,0.1); }
+}
+
+.siri-search-icon-left {
+  font-size: 15px;
+  flex-shrink: 0;
+  opacity: 0.6;
+  pointer-events: none;
+  user-select: none;
+}
+
+.siri-search-input {
+  flex: 1;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: 15px;                /* Apple 표준 body size */
+  color: #ffffff;
+  caret-color: #7c3aed;           /* 보라색 커서 */
+  min-width: 0;
+
+  /* iOS 네이티브 느낌 */
+  -webkit-appearance: none;
+}
+
+.siri-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 15px;
+}
+
+/* 검색어 지우기 버튼 (✕) */
+.siri-search-clear {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 150ms ease, transform 150ms ease;
+  line-height: 1;
+}
+
+.siri-search-clear:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.siri-search-clear:active {
+  transform: scale(0.9);
+}
+
+/* 취소 버튼 (검색어 없을 때) */
+.siri-search-cancel {
+  background: none;
+  border: none;
+  color: #7c3aed;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 4px;
+  flex-shrink: 0;
+  transition: opacity 150ms ease;
+}
+
+.siri-search-cancel:hover {
+  opacity: 0.75;
+}
+
+.siri-search-cancel:active {
+  opacity: 0.5;
+}
+
+/* ─────────────────────────────────────
+   Siri 버튼 (탭바 내부) — 활성 상태 업데이트
+───────────────────────────────────── */
+.siri-tab-button {
+  /* 기존 스타일 유지 */
+}
+
+.siri-tab-button.siri-on {
+  /* 무지개 회전 글로우로 업데이트 */
+  animation: siri-btn-pulse 1.5s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.6));
+}
+
+@keyframes siri-btn-pulse {
+  0% {
+    filter: drop-shadow(0 0 6px rgba(124, 58, 237, 0.5))
+            drop-shadow(0 0 12px rgba(0, 204, 255, 0.3));
+  }
+  33% {
+    filter: drop-shadow(0 0 6px rgba(0, 204, 255, 0.5))
+            drop-shadow(0 0 12px rgba(0, 255, 136, 0.3));
+  }
+  66% {
+    filter: drop-shadow(0 0 6px rgba(255, 0, 128, 0.5))
+            drop-shadow(0 0 12px rgba(255, 200, 0, 0.3));
+  }
+  100% {
+    filter: drop-shadow(0 0 6px rgba(124, 58, 237, 0.5))
+            drop-shadow(0 0 12px rgba(0, 204, 255, 0.3));
+  }
+}
+
+/* ─────────────────────────────────────
+   접근성: Reduced Motion 대응
+───────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .iphone-frame.siri-dimmed {
+    animation: none;
+    box-shadow: 0 0 0 2px #3A3A3C, 0 16px 48px rgba(0,0,0,0.35), 0 0 30px rgba(124,58,237,0.3);
+  }
+
+  .siri-overlay,
+  .siri-popup,
+  .siri-float-search {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .siri-result-card {
+    animation: none;
+    opacity: 1;
+  }
+
+  .siri-search-bar {
+    animation: none;
+    border-color: rgba(124, 58, 237, 0.5);
+  }
+
+  .siri-tab-button.siri-on {
+    animation: none;
+    filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.6));
+  }
+}
+```
+
+---
+
+## 3. 변경 전/후 시각 비교
+
+### Before — 탭 전환 방식
+
+```
+[Siri 클릭]
+  ↓
+iphone-content 영역:
+  ┌─────────────────────────┐
+  │  siri-inner-panel       │  ← 기존 탭 콘텐츠 완전 교체
+  │  ┌───────────────────┐  │
+  │  │ 🔍 업무 검색...    │  │  ← 검색창이 상단에 있음
+  │  └───────────────────┘  │
+  │  [결과 리스트]           │
+  └─────────────────────────┘
+nav-bar: "검색" + "닫기" 버튼   ← 네비게이션도 교체
+```
+
+### After — 오버레이 방식
+
+```
+[Siri 클릭]
+  ↓
+iphone-content (흐림+어둠):    ← 기존 콘텐츠 유지 (뒤에서 보임)
+  ┌─────────────────────────┐
+  │  [MessengerList 흐림]    │
+  └─────────────────────────┘
+
+siri-overlay (iphone-frame absolute):
+  ┌─────────────────────────┐
+  │                         │
+  │  siri-popup:            │  ← 유리 팝업이 위에 뜸
+  │  ┌───────────────────┐  │
+  │  │ 💼 Supplier 등록  │  │
+  │  │ 🚄 국내 출장      │  │
+  │  └───────────────────┘  │
+  │                         │
+  │  siri-float-search:     │
+  │  ┌───────────────────┐  │  ← 검색창이 하단에 고정
+  │  │ 🔍 출장...   [취소]│  │
+  │  └───────────────────┘  │
+  └─────────────────────────┘
+
+nav-bar: 변경 없음 (WPR Team 유지) ← 네비게이션 변경 없음
+```
+
+---
+
+## 4. 인터랙션 시나리오별 동작
+
+### 시나리오 1: 검색 → 결과 클릭
+
+```
+1. 사용자: [Siri 버튼 탭]
+   → siri-overlay 등장 (250ms fade+slide)
+   → iphone-content blur + scale(0.98)
+   → siri-float-search 등장 (220ms)
+   → siri-search-input.focus() 자동 실행 (360ms 후)
+   → 검색창 무지개 글로우 시작
+
+2. 사용자: "출장" 입력
+   → 150ms debounce 후 searchTasks() 실행
+   → siri-popup 등장 (280ms)
+   → 결과 카드 순차 slide-in (40ms 간격)
+   → "2개 업무 발견" 헤더 표시
+
+3. 사용자: [국내 출장 카드 탭]
+   → 카드 scale(0.985) 피드백 (120ms)
+   → handleSiriNavigate('국내출장') 호출
+   → 180ms 후:
+     - siri-overlay 사라짐
+     - iphone-content blur 해제
+     - side-panel 슬라이드 오픈 (국내출장 상세)
+     - activeTab 변경 없음 (messenger 유지)
+```
+
+### 시나리오 2: 오버레이 배경 클릭으로 닫기
+
+```
+1. 사용자: [siri-overlay 배경 클릭]
+   → e.target === e.currentTarget 조건 체크
+   → handleSiriToggle() 호출
+   → siri-overlay 사라짐
+   → iphone-content 정상 복귀
+```
+
+### 시나리오 3: ESC 키로 닫기
+
+```
+1. 사용자: [ESC 키 입력] (검색창 포커스 중)
+   → onKeyDown에서 Escape 감지
+   → handleSiriToggle() 호출
+   → 검색창 닫힘
+```
+
+### 시나리오 4: 취소 버튼 클릭
+
+```
+1. 사용자: 검색어 없이 [취소] 버튼 클릭
+   → handleSiriToggle() 호출
+   → siri-overlay 사라짐
+
+2. 사용자: 검색어 입력 후 [✕] 버튼 클릭
+   → SET_QUERY('')로 query 초기화
+   → 결과 리스트 사라짐
+   → siri-popup: 힌트 상태로 복귀
+   → [취소] 버튼 재등장
+```
+
+---
+
+## 5. 타이밍 다이어그램
+
+```
+ms │  동작
+───┼──────────────────────────────────────────────────
+ 0 │  Siri 버튼 클릭
+10 │  isSiriActive = true (state 업데이트)
+20 │  iphone-content.siri-blurred 클래스 추가
+   │  → filter: blur(2px) + scale(0.98) 시작 (250ms ease)
+30 │  siri-overlay 렌더링 시작
+   │  → animation: overlay-appear 250ms
+50 │  siri-float-search 렌더링
+   │  → animation: search-float-in 220ms
+   │  siri-popup (힌트 상태) 렌더링
+   │  → animation: popup-rise 280ms
+   │  siri-dimmed → 무지개 frame glow 시작
+220│  search-float-in 완료
+250│  overlay-appear 완료
+280│  popup-rise 완료
+360│  siriInputRef.current.focus() 실행
+   │  (iOS 소프트 키보드 고려: 약간의 딜레이)
+
+   │  [사용자 입력: "출장"]
++0 │  SET_QUERY 액션
++150│ debounce 완료 → searchTasks()
++160│ SET_RESULTS 액션
++170│ siri-results-list 렌더링
+    │  → result-card 1: delay 0ms
+    │  → result-card 2: delay 40ms
++210│ 카드 1 slide-in 완료
++250│ 카드 2 slide-in 완료
+
+   │  [결과 카드 클릭]
++0 │  card.active → scale(0.985) (120ms)
++120│ NAVIGATE 액션, clickedKey 설정
++180│ handleSiriNavigate 실행:
+    │  - siriDispatch CLOSE
+    │  - setActiveKey(taskKey)
+    │  - setPanelOpen(true)
++180│ isSiriActive = false
+    │  - siri-overlay 사라짐 (opacity)
+    │  - iphone-content blur 해제 (250ms ease)
++480│ 슬라이드 패널 완전 오픈
+```
+
+---
+
+## 6. 수정하지 않는 부분 (기존 유지)
+
+| 컴포넌트 / 로직 | 유지 이유 |
+|---|---|
+| `siriReducer` 함수 전체 | 상태 머신 로직 변경 없음 |
+| `handleSiriToggle` | 토글 로직 동일 |
+| `searchTasks` / `searchIndex` | 검색 엔진 그대로 사용 |
+| `highlightText` | 하이라이트 유틸 그대로 사용 |
+| `.siri-tab-button` 기본 스타일 | 탭바 버튼 기본 형태 유지 |
+| `siri-result-highlight` | 하이라이트 색상 유지 |
+| `MessengerList` 컴포넌트 | 변경 없음 |
+| `BentoGrid` 컴포넌트 | 변경 없음 |
+| `PersonDetailSlide` 컴포넌트 | 변경 없음 |
+| `side-panel` + 슬라이드 로직 | 변경 없음 |
+| `searchIndex.ts` 전체 | 데이터 변경 없음 |
+
+---
+
+## 7. 핵심 CSS 설계 원칙 — Apple HIG 차용
+
+### 7-1. 소재 (Materials) 계층
+
+| 레이어 | 소재 | backdrop-filter |
+|---|---|---|
+| 기존 화면 (뒤) | blur + dim | `filter: blur(2px) brightness(0.75)` |
+| siri-popup | Ultra Thin Material Dark | `blur(40px) saturate(180%)` |
+| siri-float-search | Regular Material Dark | `blur(40px) saturate(200%)` |
+
+이 3단 레이어가 Apple의 **깊이감(depth)** 을 만들어냅니다.
+
+### 7-2. 모션 커브 (Easing)
+
+| 애니메이션 종류 | 커브 | 이유 |
+|---|---|---|
+| 등장 (appear) | `cubic-bezier(0.32, 0.72, 0, 1)` | Apple Spring — 빠르게 열리고 탁 멈춤 |
+| 퇴장 (dismiss) | `ease-in` | 빠르게 사라져야 자연스러움 |
+| 누름 (press) | `ease` 120ms | 즉각적인 피드백 |
+| 필터 전환 | `ease` 250ms | 부드러운 블러 전환 |
+
+### 7-3. 색상 철학
+
+```
+배경 콘텐츠 (뒤):  흐림 + 어둠 → 뒤로 물러나는 느낌
+팝업 배경:        rgba(28, 28, 30, 0.82) → iOS 다크 소재 기본값
+텍스트:           #ffffff / rgba(255,255,255,0.4) → 다크 소재 위 Apple 표준
+강조색:           #7c3aed (보라) → Siri 브랜드 컬러
+하이라이트:       #7dd3fc (스카이블루) → Apple 검색 하이라이트 컬러
+무지개 사이클:    보라→스카이→핑크 3색 순환 (3s)
+```
+
+---
+
+## 부록: 변경 요약 체크리스트
+
+### home.tsx
+
+- [ ] `iphone-content`의 `{isSiriActive ? <SiriInnerPanel> : <탭>}` 분기 제거
+- [ ] `iphone-content`에 `siri-blurred` 조건부 클래스 추가
+- [ ] `iphone-frame`에 `siri-dimmed` 조건부 클래스 추가 (`siri-active` 대체)
+- [ ] `iphone-nav-bar` 내 `isSiriActive` 분기 전체 제거
+- [ ] `nav-title`의 `isSiriActive ? "검색" : navTitle` 조건 제거 → `navTitle` 고정
+- [ ] `{isSiriActive && <div className="siri-overlay">}` 블록 신규 추가 (iphone-frame 내부)
+- [ ] `siri-overlay` 내부에 `siri-popup` + `siri-float-search` 구조 작성
+- [ ] `handleSiriNavigate`에서 `setActiveTab('tasks')` 줄 삭제
+
+### index.css
+
+- [ ] `.siri-inner-panel` 블록 삭제
+- [ ] `.siri-close-nav`, `.siri-close-nav:active` 블록 삭제
+- [ ] `.iphone-frame.siri-active` → `.iphone-frame.siri-dimmed` 으로 교체 및 내용 재작성
+- [ ] `.iphone-content.siri-blurred` 신규 추가
+- [ ] `.siri-overlay` 신규 추가
+- [ ] `.siri-popup` 신규 추가 (glassmorphism)
+- [ ] `.siri-popup-hint`, `.siri-popup-empty` 신규 추가
+- [ ] `.siri-results-header` 신규 추가
+- [ ] `.siri-float-search`, `.siri-search-bar` 신규 추가
+- [ ] `.siri-search-icon-left`, `.siri-search-cancel` 신규 추가
+- [ ] `.siri-result-left`, `.siri-result-right`, `.siri-result-icon-wrap`, `.siri-result-chevron` 신규 추가
+- [ ] `@keyframes siri-frame-rainbow`, `popup-rise`, `overlay-appear`, `search-float-in`, `result-slide-in`, `search-bar-glow`, `siri-btn-pulse` 신규 추가
+- [ ] `@media (prefers-reduced-motion)` 블록 업데이트
+
+---
+
+*C&W Korea WPR — Siri 플로팅 검색 팝업 구현 가이드 v2.0*
+*레포지토리 최신 커밋 `e0f16b9` 기준 분석 · 2026-03-09*

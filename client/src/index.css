@@ -1146,14 +1146,6 @@
 .siri-tab-button:active {
   transform: scale(0.92);
 }
-.siri-tab-button.siri-on {
-  animation: siri-tab-glow 1.5s ease-in-out infinite alternate;
-}
-@keyframes siri-tab-glow {
-  0% { filter: drop-shadow(0 0 4px rgba(255, 0, 128, 0.6)); }
-  50% { filter: drop-shadow(0 0 6px rgba(0, 204, 255, 0.6)); }
-  100% { filter: drop-shadow(0 0 4px rgba(124, 58, 237, 0.6)); }
-}
 .siri-tab-img {
   width: 36px;
   height: 36px;
@@ -1162,262 +1154,335 @@
   pointer-events: none;
 }
 
-.siri-close-nav {
-  background: none;
-  border: none;
+.iphone-frame.siri-dimmed {
+  box-shadow:
+    0 0 0 2px #3A3A3C,
+    0 16px 48px rgba(0,0,0,0.35),
+    0 0 40px 8px rgba(124, 58, 237, 0.25),
+    0 0 80px 16px rgba(0, 204, 255, 0.12);
+  animation: siri-frame-rainbow 3s linear infinite;
+}
+
+@keyframes siri-frame-rainbow {
+  0%   { box-shadow: 0 0 0 2px #3A3A3C, 0 16px 48px rgba(0,0,0,0.35), 0 0 40px 8px rgba(124,58,237,0.3), 0 0 80px 20px rgba(0,204,255,0.15); }
+  25%  { box-shadow: 0 0 0 2px #3A3A3C, 0 16px 48px rgba(0,0,0,0.35), 0 0 40px 8px rgba(0,204,255,0.3), 0 0 80px 20px rgba(0,255,136,0.15); }
+  50%  { box-shadow: 0 0 0 2px #3A3A3C, 0 16px 48px rgba(0,0,0,0.35), 0 0 40px 8px rgba(255,0,128,0.3), 0 0 80px 20px rgba(255,200,0,0.15); }
+  75%  { box-shadow: 0 0 0 2px #3A3A3C, 0 16px 48px rgba(0,0,0,0.35), 0 0 40px 8px rgba(0,255,136,0.3), 0 0 80px 20px rgba(124,58,237,0.15); }
+  100% { box-shadow: 0 0 0 2px #3A3A3C, 0 16px 48px rgba(0,0,0,0.35), 0 0 40px 8px rgba(124,58,237,0.3), 0 0 80px 20px rgba(0,204,255,0.15); }
+}
+
+.iphone-content.siri-blurred {
+  filter: blur(2px) brightness(0.75);
+  pointer-events: none;
+  transform: scale(0.98);
+  transition: filter 250ms ease, transform 250ms ease;
+}
+
+.siri-overlay {
+  position: absolute;
+  inset: 0;
+  bottom: 58px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 12px 12px;
+  gap: 8px;
+  animation: overlay-appear 250ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+@keyframes overlay-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.siri-popup {
+  width: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(28, 28, 30, 0.82);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  animation: popup-rise 280ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  transform-origin: bottom center;
+}
+
+@keyframes popup-rise {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.siri-popup-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  color: rgba(255, 255, 255, 0.45);
   font-family: var(--font-body);
   font-size: 13px;
-  color: #007AFF;
-  cursor: pointer;
-  font-weight: 500;
-  padding: 4px 8px;
 }
-.siri-close-nav:active {
+.siri-hint-icon {
+  font-size: 16px;
   opacity: 0.6;
 }
 
-.siri-inner-panel {
-  padding: 8px 12px 12px;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  background: #1a1a2e;
-}
-
-.siri-search-input-wrapper {
-  position: relative;
-  width: 100%;
-  flex-shrink: 0;
-}
-.siri-search-icon {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 13px;
-  pointer-events: none;
-  opacity: 0.5;
-}
-.siri-search-input {
-  width: 100%;
-  height: 36px;
-  border-radius: 10px;
-  border: 1.5px solid rgba(124, 58, 237, 0.5);
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(10px);
-  color: #ffffff;
-  font-family: var(--font-body);
-  font-size: 13px;
-  padding: 0 32px 0 34px;
-  outline: none;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  transition: border-color 200ms ease, box-shadow 200ms ease;
-}
-.siri-search-input:focus {
-  border-color: rgba(124, 58, 237, 0.9);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-.siri-search-input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 12px;
-}
-.siri-search-clear {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  border: none;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 150ms ease;
-}
-.siri-search-clear:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-.siri-hint {
-  margin-top: 24px;
-  font-family: var(--font-body);
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
-  text-align: center;
-  line-height: 1.6;
-  padding: 0 16px;
-}
-
-.siri-empty {
-  margin-top: 32px;
+.siri-popup-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  padding: 24px 16px;
   text-align: center;
 }
-.siri-empty-icon { font-size: 28px; }
+.siri-empty-icon { font-size: 28px; display: block; margin-bottom: 4px; }
 .siri-empty-text {
-  font-family: var(--font-body);
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
   font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: var(--font-body);
 }
 .siri-empty-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
   font-family: var(--font-body);
+}
+
+.siri-results-header {
+  padding: 12px 16px 4px;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.3);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  font-family: var(--font-en);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .siri-results-list {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-  flex: 1;
+  max-height: 280px;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(124, 58, 237, 0.4) transparent;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
 }
+.siri-results-list::-webkit-scrollbar { display: none; }
+
 .siri-result-card {
   width: 100%;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 10px 12px;
-  cursor: pointer;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  transition: background 150ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 150ms ease;
-  animation: slide-in-result 250ms ease forwards;
-  opacity: 0;
-  font-family: var(--font-body);
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
   text-align: left;
-  flex-shrink: 0;
+  gap: 12px;
+  position: relative;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  animation: result-slide-in 240ms ease forwards;
+  opacity: 0;
+  transition: background 120ms ease, transform 120ms ease;
 }
-.siri-result-card:nth-child(1) { animation-delay: 0ms; }
-.siri-result-card:nth-child(2) { animation-delay: 60ms; }
-.siri-result-card:nth-child(3) { animation-delay: 120ms; }
-.siri-result-card:nth-child(4) { animation-delay: 180ms; }
-.siri-result-card:nth-child(5) { animation-delay: 240ms; }
-.siri-result-card:nth-child(6) { animation-delay: 300ms; }
+.siri-result-card:last-child { border-bottom: none; }
 
-@keyframes slide-in-result {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes result-slide-in {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .siri-result-card:hover {
-  background: rgba(124, 58, 237, 0.2);
-  border-color: rgba(124, 58, 237, 0.5);
+  background: rgba(255, 255, 255, 0.06);
 }
 .siri-result-card:active,
 .siri-result-card.clicked {
-  transform: scale(0.96);
-  background: rgba(124, 58, 237, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(0.985);
 }
 
-.siri-result-header {
+.siri-result-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
 }
-.siri-result-icon {
-  font-size: 16px;
+.siri-result-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  font-size: 18px;
+}
+.siri-result-icon { font-size: 18px; }
+.siri-result-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 .siri-result-name {
-  font-size: 12px;
+  font-family: var(--font-body);
+  font-size: 14px;
   font-weight: 600;
   color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.siri-result-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: 24px;
-}
-.siri-result-badge {
-  font-size: 9px;
-  font-weight: 500;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(196, 18, 48, 0.3);
-  color: #ff6b8a;
-  border: 1px solid rgba(196, 18, 48, 0.4);
-}
-.siri-result-badge.badge-행정 { background: rgba(196, 18, 48, 0.25); color: #ff8fa3; border-color: rgba(196, 18, 48, 0.4); }
-.siri-result-badge.badge-지원 { background: rgba(245, 158, 11, 0.25); color: #fcd34d; border-color: rgba(245, 158, 11, 0.4); }
-.siri-result-badge.badge-시설 { background: rgba(16, 185, 129, 0.25); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.4); }
-.siri-result-badge.badge-IT { background: rgba(59, 130, 246, 0.25); color: #93c5fd; border-color: rgba(59, 130, 246, 0.4); }
-
 .siri-result-owner {
-  font-size: 9px;
+  font-family: var(--font-body);
+  font-size: 11px;
   color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .siri-result-highlight {
-  color: #a78bfa;
+  color: #7dd3fc;
   font-weight: 700;
 }
 
-.iphone-frame.siri-active {
-  box-shadow:
-    0 0 0 2px #3A3A3C,
-    0 0 15px 2px rgba(255, 0, 128, 0.4),
-    0 0 30px 4px rgba(124, 58, 237, 0.3),
-    0 0 45px 6px rgba(0, 204, 255, 0.2),
-    0 0 60px 8px rgba(0, 255, 136, 0.15);
-  border-color: rgba(124, 58, 237, 0.6);
-  animation: siri-frame-glow 2s ease-in-out infinite alternate;
-  transition: box-shadow 600ms ease, border-color 600ms ease;
+.siri-result-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.siri-result-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  letter-spacing: 0.3px;
+  font-family: var(--font-body);
+}
+.siri-result-badge.badge-행정 { background: rgba(196, 18, 48, 0.3); color: #fca5a5; border-color: rgba(196, 18, 48, 0.5); }
+.siri-result-badge.badge-지원 { background: rgba(245, 158, 11, 0.3); color: #fde68a; border-color: rgba(245, 158, 11, 0.5); }
+.siri-result-badge.badge-시설 { background: rgba(16, 185, 129, 0.3); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.5); }
+.siri-result-badge.badge-IT { background: rgba(59, 130, 246, 0.3); color: #93c5fd; border-color: rgba(59, 130, 246, 0.5); }
+.siri-result-chevron {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.2);
+  line-height: 1;
+  font-weight: 300;
 }
 
-@keyframes siri-frame-glow {
-  0% {
-    box-shadow:
-      0 0 0 2px #3A3A3C,
-      0 0 15px 2px rgba(255, 0, 128, 0.4),
-      0 0 30px 4px rgba(124, 58, 237, 0.3),
-      0 0 45px 6px rgba(0, 204, 255, 0.2);
-    border-color: rgba(255, 0, 128, 0.5);
-  }
-  33% {
-    box-shadow:
-      0 0 0 2px #3A3A3C,
-      0 0 15px 2px rgba(0, 204, 255, 0.4),
-      0 0 30px 4px rgba(0, 255, 136, 0.3),
-      0 0 45px 6px rgba(255, 204, 0, 0.2);
-    border-color: rgba(0, 204, 255, 0.5);
-  }
-  66% {
-    box-shadow:
-      0 0 0 2px #3A3A3C,
-      0 0 15px 2px rgba(124, 58, 237, 0.4),
-      0 0 30px 4px rgba(255, 0, 128, 0.3),
-      0 0 45px 6px rgba(255, 77, 0, 0.2);
-    border-color: rgba(124, 58, 237, 0.5);
-  }
-  100% {
-    box-shadow:
-      0 0 0 2px #3A3A3C,
-      0 0 15px 2px rgba(0, 255, 136, 0.4),
-      0 0 30px 4px rgba(0, 204, 255, 0.3),
-      0 0 45px 6px rgba(124, 58, 237, 0.2);
-    border-color: rgba(0, 255, 136, 0.5);
-  }
+.siri-float-search {
+  width: 100%;
+  animation: search-float-in 220ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+@keyframes search-float-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.siri-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: rgba(28, 28, 30, 0.88);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.45),
+    0 1px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 20px rgba(124, 58, 237, 0.2),
+    0 0 40px rgba(0, 204, 255, 0.1);
+  animation: search-bar-glow 3s linear infinite;
+}
+
+@keyframes search-bar-glow {
+  0%   { border-color: rgba(124, 58, 237, 0.5); box-shadow: 0 4px 24px rgba(0,0,0,0.45), 0 0 20px rgba(124,58,237,0.25), 0 0 40px rgba(0,204,255,0.1); }
+  33%  { border-color: rgba(0, 204, 255, 0.5);  box-shadow: 0 4px 24px rgba(0,0,0,0.45), 0 0 20px rgba(0,204,255,0.25), 0 0 40px rgba(0,255,136,0.1); }
+  66%  { border-color: rgba(255, 0, 128, 0.5);  box-shadow: 0 4px 24px rgba(0,0,0,0.45), 0 0 20px rgba(255,0,128,0.25), 0 0 40px rgba(255,200,0,0.1); }
+  100% { border-color: rgba(124, 58, 237, 0.5); box-shadow: 0 4px 24px rgba(0,0,0,0.45), 0 0 20px rgba(124,58,237,0.25), 0 0 40px rgba(0,204,255,0.1); }
+}
+
+.siri-search-icon-left {
+  font-size: 15px;
+  flex-shrink: 0;
+  opacity: 0.6;
+  pointer-events: none;
+  user-select: none;
+}
+
+.siri-search-input {
+  flex: 1;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: #ffffff;
+  caret-color: #7c3aed;
+  min-width: 0;
+  -webkit-appearance: none;
+}
+.siri-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 15px;
+}
+
+.siri-search-clear {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 150ms ease, transform 150ms ease;
+  line-height: 1;
+}
+.siri-search-clear:hover { background: rgba(255, 255, 255, 0.3); }
+.siri-search-clear:active { transform: scale(0.9); }
+
+.siri-search-cancel {
+  background: none;
+  border: none;
+  color: #7c3aed;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 4px;
+  flex-shrink: 0;
+  transition: opacity 150ms ease;
+}
+.siri-search-cancel:hover { opacity: 0.75; }
+.siri-search-cancel:active { opacity: 0.5; }
+
+.siri-tab-button.siri-on {
+  animation: siri-btn-pulse 1.5s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.6));
+}
+@keyframes siri-btn-pulse {
+  0%   { filter: drop-shadow(0 0 6px rgba(124,58,237,0.5)) drop-shadow(0 0 12px rgba(0,204,255,0.3)); }
+  33%  { filter: drop-shadow(0 0 6px rgba(0,204,255,0.5)) drop-shadow(0 0 12px rgba(0,255,136,0.3)); }
+  66%  { filter: drop-shadow(0 0 6px rgba(255,0,128,0.5)) drop-shadow(0 0 12px rgba(255,200,0,0.3)); }
+  100% { filter: drop-shadow(0 0 6px rgba(124,58,237,0.5)) drop-shadow(0 0 12px rgba(0,204,255,0.3)); }
 }
 
 .iphone-content.navigating {
@@ -1429,17 +1494,12 @@
   100% { opacity: 1; filter: brightness(1); }
 }
 
-.iphone-frame.siri-active .iphone-nav-bar {
-  background: #1a1a2e;
-}
-.iphone-frame.siri-active .iphone-nav-title {
-  color: #ffffff;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .iphone-frame.siri-active { animation: none; }
-  .siri-tab-button.siri-on { animation: none; }
+  .iphone-frame.siri-dimmed { animation: none; box-shadow: 0 0 0 2px #3A3A3C, 0 16px 48px rgba(0,0,0,0.35), 0 0 30px rgba(124,58,237,0.3); }
+  .siri-overlay, .siri-popup, .siri-float-search { animation: none; opacity: 1; transform: none; }
   .siri-result-card { animation: none; opacity: 1; }
+  .siri-search-bar { animation: none; border-color: rgba(124, 58, 237, 0.5); }
+  .siri-tab-button.siri-on { animation: none; filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.6)); }
 }
 
 .faq-page {

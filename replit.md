@@ -41,15 +41,18 @@ Interactive web application for Cushman & Wakefield Korea employees to navigate 
 - `client/src/data/searchIndex.ts` - Search index with keywords per task for Siri search
 - `client/src/index.css` - Complete iOS-style CSS including header, Siri, FAQ page, responsive styles
 
-## Siri Search
-- Siri button in bottom tab bar (center, between 팀원/업무목록), uses provided Siri icon image (`client/public/siri-icon.png`)
-- Search UI renders inside iPhone content area with dark theme (#1a1a2e)
+## Siri Search (Floating Overlay — Apple HIG)
+- Siri button in bottom tab bar (center, between 팀원/업무목록), uses Siri icon image (`client/public/siri-icon.png`)
+- **Overlay approach**: existing content stays visible but blurred (`siri-blurred` class: blur(2px) + brightness(0.75) + scale(0.98))
+- `.siri-overlay` (position: absolute, z-index: 50) renders above content, below tab bar (bottom: 58px)
+- **Glassmorphism popup** (`.siri-popup`): rgba(28,28,30,0.82) + backdrop-filter blur(40px) saturate(180%)
+- **Floating search bar** (`.siri-float-search`): pinned at bottom of overlay with rainbow glow animation
 - State machine: idle → opening → active → searching → navigating → closing
 - Debounced search (150ms) across task labels, keys, keywords, owner names, categories
-- Max 6 results, staggered card animation (slide-up)
-- Rainbow glow animation on iPhone frame border when active
-- Nav bar shows "검색" title + blue "닫기" close button when active
-- Click result → auto-navigate to task detail, switch to 업무목록 tab
+- Result cards: icon wrap + name + owner (left) + badge + chevron (right), staggered slide-in
+- Rainbow glow on iPhone frame (`.siri-dimmed`) with cycling box-shadow
+- Nav bar unchanged when Siri active; close via Siri button toggle, cancel button, ESC, or overlay background click
+- Click result → auto-navigate to task detail (current tab preserved)
 
 ## Task Categories & Bento Card Sizes
 - **행정** (#C41230): 공문번호, 명함, 계약서 — small cards
