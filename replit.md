@@ -1,50 +1,47 @@
 # C&W Korea WPR Interactive Employee Guide
 
 ## Project Overview
-Interactive web application for Cushman & Wakefield Korea employees to navigate internal business processes (document issuance, business trip applications, contracts, etc.) through an animated, webtoon-style interface.
+Interactive web application for Cushman & Wakefield Korea employees to navigate internal business processes (document issuance, business trip applications, contracts, etc.) through an iOS-style iPhone mockup interface with bento grid layout.
 
 ## Architecture
 - **Frontend**: React 18 + TypeScript with Vite
 - **Backend**: Express.js (minimal, serving static files)
-- **Styling**: Tailwind CSS + custom CSS (webtoon/comic style)
+- **Styling**: Tailwind CSS + custom CSS (iOS design language)
 - **State Management**: React useState/useCallback (no global state needed)
 
-## Design System (v2)
-- **Theme**: Webtoon/comic style with ink (#111), paper (#f7f5f0), accent red (#c41230)
-- **Fonts**: Nanum Pen Script (brush/headings), Noto Sans KR (body text)
-- **Shadows**: Offset box shadows (4px 4px 0px) for comic effect
-- **Layout**: Full-width video (80%) with monitor overlay containing folder grid; right slide-in panel for task details
+## Design System (v3 — iPhone Mockup + Bento)
+- **Frame**: iPhone 14 Pro mockup (393×852px) centered on page with Dynamic Island
+- **Background**: Lavender-gray gradient (#E8E8ED → #F0F0F5)
+- **Colors**: iOS system colors — bg #F2F2F7, surface #FFFFFF, label #1C1C1E, secondary #8E8E93, C&W red #C41230
+- **Fonts**: Noto Sans KR (body), SF Pro Text / system (English)
+- **Shadows**: Subtle iOS-style (no offset comic shadows)
+- **Layout**: Bottom tab bar (팀원/업무목록/FAQ), messenger-style staff list, bento grid cards
 
 ## Key Features
-- Looping animation video as main visual (80% size, dark background)
-- Monitor overlay with 13 folder icon buttons in a 4-column grid (macOS-style titlebar)
-- **Tab bar** inside monitor overlay: "기능별 분류" (folder grid) / "담당자별 분류" (person cards)
-- **담당자별 분류 탭**: 4 staff person cards (2×2 grid) → click → R&R responsibility list → click → opens same slide panel as folder icons
-- Slide-in right panel (50% width, fixed position) for task details with ← back button
-- Video blurs/dims when panel is open
-- Step-by-step workflow guides with numbered steps
-- Outlook-style email templates with copy functionality (to/cc/subject/body individual copy + full copy)
-- WPR staff names in email to/cc highlighted as red badge chips (clickable mailto links)
-- Owner/contact person cards for each task
-- Header with C&W logo + WPR/FAQ navigation tabs
-- FAQ page with Korean Q&A accordion (12 questions)
-- Responsive design (desktop 50% panel, tablet full-width panel, mobile 2-col folders; person grid 1-col on mobile)
+- iPhone mockup frame with Dynamic Island, bottom tab bar, home indicator
+- **팀원 탭** (default): Messenger-style staff list cards → click → person detail slide panel → click task → task detail slide
+- **업무목록 탭**: Bento grid (2-col) with small (1×1) and wide (2×1) cards, pastel gradients, category badges
+- **FAQ 탭**: iOS accordion with Q/A items, smooth max-height transitions
+- Task detail slide panels (100% width within iPhone frame) with steps + email templates
+- Staff name badges (red chips) in email to/cc with mailto links
+- Individual copy buttons for email fields + body copy + full copy
+- Responsive: on narrow screens (≤430px), iPhone frame becomes full-screen
 
 ## File Structure
-- `client/src/pages/home.tsx` - Main WPR page with video + monitor overlay + slide panel
-- `client/src/pages/faq.tsx` - FAQ accordion page
+- `client/src/pages/home.tsx` - Main single-page component with all tabs + slide panels
+- `client/src/pages/faq.tsx` - Legacy FAQ page (unused, FAQ integrated into home)
 - `client/src/data/tasks.ts` - All task workflow data (13 tasks) with owner info
 - `client/src/data/persons.ts` - 4 WPR staff person data with R&R mappings to task keys
-- `client/src/index.css` - Complete styling (v2 design system)
-- `client/src/App.tsx` - App routing + header component
+- `client/src/index.css` - Complete iOS-style CSS
+- `client/src/App.tsx` - Simplified app shell (no header, no routing)
 
-## Task Categories
-- Administrative (행정): 공문번호, 명함, 계약서
-- Support (지원): 화환, 국내출장, 해외출장
-- Facilities (시설): 락커, 인감, 법인차량
-- IT: Supplier, Solstice, Canteen Room, Printix
+## Task Categories & Bento Card Sizes
+- **행정** (#C41230): 공문번호, 명함, 계약서 — small cards
+- **지원** (#F59E0B): 화환 (small), 국내출장 (wide), 해외출장 (wide)
+- **시설** (#10B981): 락커, 인감, 법인차량 — small cards
+- **IT** (#3B82F6): Supplier (wide), Solstice, Canteen Room, Printix — small
 
-## Staff (담당자별 분류 순서)
+## Staff (담당자별 순서)
 - 권희원 이사 (Grace Kwon): WPR팀 총괄
 - 김경만 과장 (Noel Kim): 인감(Glosign), Solstice, Canteen Room, Printix
 - 김지성 대리 (Gina Kim): 공문번호, 계약서, 국내출장, 해외출장, 락커, Supplier
