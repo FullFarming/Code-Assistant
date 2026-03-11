@@ -37,7 +37,6 @@ export interface TaskData {
   label: string;
   badge: string;
   owner: Owner;
-  flow: string[];
   steps: Step[];
   infoGrid?: InfoCard[];
   table?: TableData;
@@ -75,7 +74,6 @@ export const DATA: Record<string, TaskData> = {
   공문번호: {
     icon: "📄", label: "공문번호 발급", badge: "행정",
     owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR", contact: "gina.kim@cushwake.com" },
-    flow: ["공문 작성","승인 요청 메일","공문번호 회신","번호 기재","글로싸인 날인"],
     steps: [
       {
         n: 1, title: "공문 작성",
@@ -109,7 +107,6 @@ export const DATA: Record<string, TaskData> = {
   명함: {
     icon: "💳", label: "명함 신청 방법", badge: "행정",
     owner: { icon: "💁‍♀️", name: "Emma Song", nameKo: "송진영 사원", team: "Reception", contact: "emma.song@cushwake.com" },
-    flow: ["신규직원 WPR 처리","사이트 로그인","템플릿 선택","3~5일 배송"],
     steps: [
       { n: 1, title: "신규 직원 명함", desc: "신규 입사자 명함은 <strong>WPR팀(Emma Song)</strong>에서 우선 신청하여 준비합니다.", detail: null },
       {
@@ -129,7 +126,6 @@ export const DATA: Record<string, TaskData> = {
   계약서: {
     icon: "📁", label: "보관계약서 열람", badge: "행정",
     owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR", contact: "gina.kim@cushwake.com" },
-    flow: ["Gina Kim 메일 요청","형태 선택 (스캔/실물)","계약서 수령"],
     steps: [
       {
         n: 1, title: "Gina Kim에게 열람 요청 메일",
@@ -151,7 +147,6 @@ export const DATA: Record<string, TaskData> = {
   화환: {
     icon: "🌸", label: "화환 신청 방법", badge: "지원",
     owner: { icon: "💁‍♀️", name: "Emma Song", nameKo: "송진영 사원", team: "Reception", contact: "emma.song@cushwake.com" },
-    flow: ["상품 확인 (보산플라워)","신청서 작성","팀장 승인","Emma Song 전달"],
     steps: [
       { n: 1, title: "화환 상품 확인", desc: '<a href="http://bosanflower.com/main/main.php" target="_blank" rel="noopener noreferrer" style="color:#1976d2">bosanflower.com</a> 에서 원하는 상품을 확인합니다.', detail: null },
       { n: 2, title: "화환 신청서 작성", desc: "신청서 바로가기 링크를 통해 작성합니다. (*표시 항목 필수)", detail: null },
@@ -163,7 +158,6 @@ export const DATA: Record<string, TaskData> = {
   국내출장: {
     icon: "🚄", label: "국내 출장 신청", badge: "지원",
     owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR", contact: "gina.kim@cushwake.com" },
-    flow: ["신청서 작성","팀장·대표 승인","Gina Kim에 제출","예약 완료 수령"],
     steps: [
       { n: 1, title: "국내 출장 신청서 작성", desc: "국내 출장 신청서 링크를 통해 작성합니다.", detail: null },
       { n: 2, title: "팀장님 및 대표님 승인", desc: "", detail: null },
@@ -184,7 +178,6 @@ export const DATA: Record<string, TaskData> = {
   해외출장: {
     icon: "✈️", label: "해외 출장 신청", badge: "지원 · APAC",
     owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR", contact: "gina.kim@cushwake.com" },
-    flow: ["신청서 작성","팀장·대표 승인","APAC 승인 (Gina Kim)","항공·호텔 예약","확인 수령"],
     steps: [
       { n: 1, title: "해외 출장 신청서 작성", desc: "", detail: null },
       { n: 2, title: "팀장님 및 대표님 국내 승인", desc: "", detail: null },
@@ -210,7 +203,6 @@ export const DATA: Record<string, TaskData> = {
   락커: {
     icon: "🔐", label: "락커 사용 방법 (ML81PA)", badge: "시설",
     owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR", contact: "gina.kim@cushwake.com" },
-    flow: [],
     infoGrid: [
       { title: "🔒 잠글 때 (일회성)", items: ["문 닫고 비밀번호(4자리) 입력","솔도~ + 적색 LED 3회 → 완료","5~12자리: ⊞ + PW + ⊞"] },
       { title: "🔓 열 때 (일회성)", items: ["등록 비밀번호 입력","도미솔~ + 녹색 LED 3회","⚠️ 해제 후 비밀번호 자동 삭제"] },
@@ -225,7 +217,6 @@ export const DATA: Record<string, TaskData> = {
   인감: {
     icon: "🖊️", label: "비대면 인감 날인 (Glosign)", badge: "시설",
     owner: { icon: "💻", name: "Noel Kim", nameKo: "김경만 과장", team: "WPR", contact: "noel.kim@cushwake.com" },
-    flow: ["계약 시작하기","파일 업로드","계약명 입력","비대면 선택","결재자 설정","날인 위치","최종 확인"],
     steps: [
       { n: 1, title: "Glosign 접속 → [계약 시작하기]", desc: "", detail: null },
       { n: 2, title: "계약서 파일 업로드", desc: "hwp, pdf, jpg, doc, docx / 10MB 이하 | Google Drive, DropBox 업로드 가능", detail: null },
@@ -244,7 +235,6 @@ export const DATA: Record<string, TaskData> = {
   법인차량: {
     icon: "🚗", label: "법인차량 이용", badge: "시설 · 커넥트프로",
     owner: { icon: "💁‍♀️", name: "Emma Song", nameKo: "송진영 사원", team: "WPR", contact: "emma.song@cushwake.com" },
-    flow: ["앱 설치 및 법인 연결","차량 예약","승인 확인","차량 이용","운행일지 작성","사용 종료"],
     steps: [
       {
         n: 1, title: "앱 설치 및 법인 연결",
@@ -270,7 +260,6 @@ export const DATA: Record<string, TaskData> = {
   supplier: {
     icon: "💼", label: "Workday Supplier 등록", badge: "IT · 5-Step",
     owner: { icon: "👩‍💼", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR", contact: "gina.kim@cushwake.com" },
-    flow: ["5가지 서류 준비","Create Supplier Request","필수항목 입력","연락처 입력","서류 첨부","제출·승인"],
     steps: [
       { n: 0, title: "사전 준비 서류 (5가지 모두 필수)", desc: "① 3rd party 계약서 &nbsp; ② 사업자등록증 &nbsp; ③ 통장사본 &nbsp; ④ 실사설문지 (공식 영문명 기재 필수) &nbsp; ⑤ 3rd Party Risk Assessment DD Form", detail: null },
       { n: 1, title: "Workday 검색창에 'Create Supplier Request'", desc: "", detail: null },
@@ -292,7 +281,6 @@ export const DATA: Record<string, TaskData> = {
   solstice: {
     icon: "🖥️", label: "Solstice 화면 공유", badge: "IT · 무선",
     owner: { icon: "💻", name: "Noel Kim", nameKo: "김경만 과장", team: "WPR", contact: "noel.kim@cushwake.com" },
-    flow: ["SolsticeClient 실행","IP 입력","KEY 입력","Desktop 클릭","공유 완료"],
     steps: [
       { n: 1, title: "Solstice Client Application 실행", desc: "파일 탐색기 → Shared (T:) → General → SolsticeClient 폴더 → SolsticeClient.exe 실행", detail: null },
       { n: 2, title: "Enter IP 탭에서 IP 입력", desc: 'IP: <strong>10.196.72.101</strong> 입력 후 [Go] 클릭', detail: null },
@@ -304,7 +292,6 @@ export const DATA: Record<string, TaskData> = {
   canteen: {
     icon: "📹", label: "Canteen 회의실 Teams Room", badge: "IT · 하이브리드",
     owner: { icon: "💻", name: "Noel Kim", nameKo: "김경만 과장", team: "WPR", contact: "noel.kim@cushwake.com" },
-    flow: ["미팅 생성 + 회의실 초대","옵션 설정","Crestron에서 참가","AirMedia 공유"],
     steps: [
       {
         n: 1, title: "Teams / Outlook 미팅 생성 + 회의실 초대 (필수)",
@@ -329,7 +316,6 @@ export const DATA: Record<string, TaskData> = {
   printix: {
     icon: "🖨️", label: "Printix 인쇄 방법", badge: "IT · Cloud",
     owner: { icon: "💻", name: "Noel Kim", nameKo: "김경만 과장", team: "WPR", contact: "noel.kim@cushwake.com" },
-    flow: ["앱 설치","Microsoft 로그인","PC 프린터 설정","인쇄 명령","QR 스캔 → 인쇄"],
     steps: [
       { n: 1, title: "스마트폰 앱 설치", desc: "App Store / Play Store에서 <strong>'Printix app'</strong> 검색 → 설치", detail: null },
       { n: 2, title: "Microsoft로 로그인", desc: "[Sign in with Microsoft] → CWK 이메일 계정으로 로그인", detail: null },

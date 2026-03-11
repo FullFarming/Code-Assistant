@@ -385,16 +385,6 @@ export default function Home() {
             </div>
             <div className="ts-body" ref={panelBodyRef} data-testid="panel-body">
               <OwnerCard owner={activeData.owner} />
-              {activeData.flow && activeData.flow.length > 0 && (
-                <div className="flow-timeline" data-testid="flow-timeline">
-                  {activeData.flow.map((item, idx) => (
-                    <div className="flow-node" key={idx}>
-                      <div className={`flow-dot${idx === 0 ? " first" : ""}${idx === activeData.flow.length - 1 ? " last" : ""}`} />
-                      <span className="flow-text">{item}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
               {activeData.steps.length > 0 && (
                 <div className="steps-container">
                   {activeData.steps.map((step) => {
