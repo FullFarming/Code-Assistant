@@ -204,6 +204,13 @@ export default function Home() {
 
   const navTitle = activeTab === "messenger" ? "WPR Team" : "WPR 업무 가이드";
 
+  const handleSelectPerson = useCallback((p: Person) => {
+    setPanelOpen(false);
+    setActiveKey(null);
+    setExpandedDetails(new Set());
+    setSelectedPerson(p);
+  }, []);
+
   const hasSlideOpen = !!(selectedPerson || panelOpen);
 
   return (
@@ -223,7 +230,7 @@ export default function Home() {
 
         <div className={`iphone-content${isNavigating ? " navigating" : ""}${isSiriActive ? " siri-blurred" : ""}`} data-testid="iphone-content">
           <div className={`tab-view${activeTab === "messenger" ? " active" : ""}`}>
-            <MessengerList onSelectPerson={setSelectedPerson} />
+            <MessengerList onSelectPerson={handleSelectPerson} />
           </div>
           <div className={`tab-view${activeTab === "tasks" ? " active" : ""}`}>
             <BentoGrid onSelectTask={openPanel} />
