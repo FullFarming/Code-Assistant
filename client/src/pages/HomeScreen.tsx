@@ -3,7 +3,7 @@ import { DEPARTMENTS } from "@/data/departments";
 import FolderIcon from "@/components/FolderIcon";
 import DockBar from "@/components/DockBar";
 import HomeIndicator from "@/components/HomeIndicator";
-import wallpaperImg from "@assets/image_1773214709475.png";
+import wallpaperImg from "@assets/image_1773215947432.png";
 
 interface Props {
   onOpenDepartment: (deptId: string) => void;
