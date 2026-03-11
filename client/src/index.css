@@ -1589,12 +1589,12 @@
 
 /* ──── Home Screen ──── */
 .home-screen {
-  width: 100%;
-  flex: 1;
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  position: relative;
   overflow: hidden;
+  z-index: 15;
 }
 .home-wallpaper {
   position: absolute;
@@ -1608,7 +1608,7 @@
   position: relative;
   z-index: 1;
   text-align: center;
-  padding-top: 24px;
+  padding-top: 52px;
   color: #FFFFFF;
 }
 .clock-time {
