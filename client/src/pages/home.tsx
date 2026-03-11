@@ -2,8 +2,11 @@ import { useState, useCallback, useRef, useEffect, useReducer } from "react";
 import { DATA, type TaskData } from "@/data/tasks";
 import { persons, type Person } from "@/data/persons";
 import { searchIndex, searchTasks, type SearchableTask } from "@/data/searchIndex";
+import HomeScreen from "@/pages/HomeScreen";
+import HomeIndicator from "@/components/HomeIndicator";
 const siriImg = "/siri-icon.png";
 
+type ViewMode = "home" | "app";
 type TabType = "messenger" | "tasks";
 
 type SiriPhase = 'idle' | 'opening' | 'active' | 'searching' | 'navigating' | 'closing';
@@ -86,6 +89,7 @@ const BENTO_ITEMS: BentoItem[] = [
 ];
 
 export default function Home() {
+  const [viewMode, setViewMode] = useState<ViewMode>("home");
   const [activeTab, setActiveTab] = useState<TabType>("messenger");
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -98,6 +102,16 @@ export default function Home() {
   const [siri, siriDispatch] = useReducer(siriReducer, initialSiriState);
 
   const isSiriActive = siri.phase !== 'idle';
+
+  const handleGoHome = useCallback(() => {
+    setPanelOpen(false);
+    setActiveKey(null);
+    setExpandedDetails(new Set());
+    setSelectedPerson(null);
+    siriDispatch({ type: 'CLOSE' });
+    setTimeout(() => siriDispatch({ type: 'CLOSED' }), 300);
+    setViewMode("home");
+  }, []);
 
   useEffect(() => {
     if (!siri.query.trim()) {
@@ -212,6 +226,7 @@ export default function Home() {
   }, []);
 
   const hasSlideOpen = !!(selectedPerson || panelOpen);
+  const isAppMode = viewMode === "app";
 
   return (
     <div className={`iphone-page${hasSlideOpen ? " slide-active" : ""}`} data-testid="iphone-page">
@@ -224,6 +239,16 @@ export default function Home() {
           </div>
         </div>
 
+        {!isAppMode && (
+          <HomeScreen onOpenDepartment={(deptId) => {
+            if (deptId === "wpr") {
+              setViewMode("app");
+            }
+          }} activeDeptId="wpr" />
+        )}
+
+        {isAppMode && (
+          <>
         <div className="iphone-nav-bar" data-testid="nav-bar">
           <span className="iphone-nav-title">{navTitle}</span>
         </div>
@@ -359,7 +384,9 @@ export default function Home() {
           </button>
         </div>
 
-        <div className="iphone-home-indicator" />
+        <HomeIndicator onTap={handleGoHome} />
+          </>
+        )}
       </div>
 
       <div className={`side-panel${selectedPerson ? " open" : ""}${panelOpen ? " task-open" : ""}`} data-testid="side-panel">

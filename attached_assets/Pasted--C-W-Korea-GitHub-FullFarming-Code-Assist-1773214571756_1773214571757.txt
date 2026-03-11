@@ -1,0 +1,869 @@
+# C&W Korea 멀티부서 앱 — 아이폰 홈 화면 아키텍처 제작 가이드
+
+> **현재 코드베이스 분석 기반** | GitHub: `FullFarming/Code-Assistant`  
+> React 18 + TypeScript + Vite + Tailwind CSS + Wouter
+
+---
+
+## 1. 현재 코드베이스 구조 요약
+
+제작 가이드를 이해하기 위해 현재 앱의 핵심 구조를 먼저 파악합니다.
+
+```
+client/src/
+├── App.tsx                   ← 라우터 + 헤더 (WPR/FAQ 탭)
+├── pages/
+│   ├── home.tsx              ← WPR 메인 페이지 (698줄)
+│   │     [iphone-frame]
+│   │       ├── dynamic-island (Dynamic Island 노치)
+│   │       ├── nav-bar (상단 타이틀 + Siri 버튼)
+│   │       ├── tab-content
+│   │       │     ├── "messenger" 탭 → MessengerList 컴포넌트
+│   │       │     ├── "tasks" 탭    → BentoGrid 컴포넌트
+│   │       │     └── "faq" 탭      → FAQ 아코디언
+│   │       ├── side-panel (우측 슬라이드 패널)
+│   │       │     ├── PersonDetailSlide (직원 상세)
+│   │       │     └── TaskDetailPanel (업무 상세 + 이메일)
+│   │       └── bottom-tab-bar (💬 팀원 / 📋 업무목록 / ❓FAQ)
+│   └── faq.tsx               ← 별도 FAQ 페이지 (현재 미사용)
+├── data/
+│   ├── tasks.ts              ← 13개 WPR 업무 데이터 (TaskData 인터페이스)
+│   ├── persons.ts            ← 4명 WPR 직원 데이터 (Person 인터페이스)
+│   └── searchIndex.ts        ← Siri 검색 인덱스
+└── index.css                 ← iOS 디자인 토큰 + 모든 스타일
+```
+
+### 핵심 상태 구조 (home.tsx)
+
+```typescript
+// 현재 home.tsx의 주요 상태값
+const [activeTab, setActiveTab]           // "messenger" | "tasks" | "faq"
+const [activeKey, setActiveKey]           // 선택된 업무 키 (예: "공문번호")
+const [panelOpen, setPanelOpen]           // 업무 상세 패널 열림 여부
+const [selectedPerson, setSelectedPerson] // 선택된 직원 객체
+const [siri, siriDispatch]                // Siri 검색 상태 (reducer)
+```
+
+---
+
+## 2. 목표 아키텍처: 아이폰 홈 화면
+
+### 2-1. 전체 화면 계층 구조
+
+```
+[웹 브라우저]
+  └── [아이폰 프레임 (iphone-frame)] ← 고정, 항상 표시
+        ├── Dynamic Island
+        ├── [Layer 0: 홈 화면 (HomeScreen)]       ← 배경화면 + 폴더 + Dock
+        ├── [Layer 1: 앱 전체화면 (AppScreen)]    ← 부서 앱 실행 시 위로 슬라이드
+        └── [Layer 2: 슬라이드 패널]              ← 기존 side-panel 유지
+```
+
+### 2-2. 홈 화면 레이아웃
+
+```
+┌─────────────────────────────────┐
+│     🕐 09:41   📶 🔋           │  ← 상태바 (status bar)
+│           Dynamic Island        │
+├─────────────────────────────────┤
+│                                 │
+│  [배경화면: 다크 그라디언트]      │  ← 배경
+│                                 │
+│   ┌──────────┐ ┌──────────┐    │
+│   │  📂 WPR  │ │  📂 HR   │    │  ← 부서 폴더 아이콘
+│   │  Folder  │ │  Folder  │    │
+│   └──────────┘ └──────────┘    │
+│                                 │
+│  (향후 추가 부서 폴더 공간)       │
+│                                 │
+│                                 │
+├─────────────────────────────────┤
+│  ┌─────────────────────────┐   │
+│  │  📞   💬   🌐          │   │  ← Dock (하단 고정)
+│  │  전화  메세지  Safari    │   │
+│  └─────────────────────────┘   │
+│  ───── (홈 인디케이터 바) ─────  │  ← 탭하면 홈으로
+└─────────────────────────────────┘
+```
+
+### 2-3. 부서 앱 실행 후 레이아웃
+
+```
+┌─────────────────────────────────┐
+│     🕐 09:41   📶 🔋           │
+│           Dynamic Island        │
+├─────────────────────────────────┤
+│  ← [WPR팀 가이드]   [Siri 🎤]  │  ← 앱 내비 바
+├─────────────────────────────────┤
+│                                 │
+│  [부서별 콘텐츠]                 │
+│  (기존 MessengerList /          │
+│   BentoGrid / FAQ)              │
+│                                 │
+├─────────────────────────────────┤
+│  💬 팀원  📋 업무목록  ❓FAQ    │  ← 앱 하단 탭바
+├─────────────────────────────────┤
+│  ─────── (홈 인디케이터 바) ─── │  ← 탭하면 홈 화면으로 복귀
+└─────────────────────────────────┘
+```
+
+---
+
+## 3. 신규 파일 구조
+
+기존 파일을 최대한 유지하면서 새로운 파일만 추가합니다.
+
+```
+client/src/
+├── App.tsx                       ← 수정: 헤더 제거, HomeScreen 렌더링
+├── pages/
+│   ├── HomeScreen.tsx            ← 신규: 아이폰 홈 화면
+│   ├── home.tsx                  ← 수정: AppScreen으로 감싸기 + 홈 버튼
+│   └── faq.tsx                   ← 유지
+├── data/
+│   ├── tasks.ts                  ← 유지 (WPR 업무 데이터)
+│   ├── persons.ts                ← 유지 (WPR 직원 데이터)
+│   ├── hr/
+│   │   ├── hrTasks.ts            ← 신규: HR 업무 데이터
+│   │   └── hrPersons.ts          ← 신규: HR 직원 데이터
+│   └── departments.ts            ← 신규: 부서 메타데이터 레지스트리
+├── components/
+│   ├── IPhoneFrame.tsx           ← 신규: 아이폰 프레임 래퍼
+│   ├── DockBar.tsx               ← 신규: 하단 Dock 컴포넌트
+│   ├── FolderIcon.tsx            ← 신규: 부서 폴더 아이콘
+│   └── HomeIndicator.tsx         ← 신규: 홈 인디케이터 바
+└── index.css                     ← 수정: 홈 화면 스타일 추가
+```
+
+---
+
+## 4. 데이터 모델 설계
+
+### 4-1. 부서 레지스트리 (`departments.ts`)
+
+```typescript
+// client/src/data/departments.ts
+
+export interface Department {
+  id: string;           // 고유 ID ("wpr" | "hr" | ...)
+  name: string;         // 표시 이름 ("WPR")
+  fullName: string;     // 전체 이름 ("Workplace Resources")
+  nameKo: string;       // 한국어 이름 ("WPR팀")
+  icon: string;         // 앱 아이콘 이모지
+  iconBg: string;       // 아이콘 배경색 (hex)
+  iconColor: string;    // 아이콘 전경색 (hex)
+  color: string;        // 부서 테마 컬러
+  description: string;  // 간단 설명
+}
+
+export const DEPARTMENTS: Department[] = [
+  {
+    id: "wpr",
+    name: "WPR",
+    fullName: "Workplace Resources",
+    nameKo: "WPR팀",
+    icon: "🏢",
+    iconBg: "#C41230",
+    iconColor: "#FFFFFF",
+    color: "#C41230",
+    description: "시설·행정·IT 지원",
+  },
+  {
+    id: "hr",
+    name: "HR",
+    fullName: "Human Resources",
+    nameKo: "HR팀",
+    icon: "👥",
+    iconBg: "#2563EB",
+    iconColor: "#FFFFFF",
+    color: "#2563EB",
+    description: "인사·채용·복지",
+  },
+  // 향후 추가 부서
+  // { id: "finance", name: "Finance", ... },
+  // { id: "legal", name: "Legal", ... },
+];
+```
+
+### 4-2. HR 데이터 (`hr/hrTasks.ts`)
+
+기존 `tasks.ts`의 `TaskData` 인터페이스를 **그대로 재사용**합니다.
+
+```typescript
+// client/src/data/hr/hrTasks.ts
+import type { TaskData } from "../tasks"; // 인터페이스 재사용
+
+export const HR_DATA: Record<string, TaskData> = {
+  입사서류: {
+    icon: "📋", label: "입사 서류", badge: "온보딩",
+    owner: { icon: "👩‍💼", name: "HR Manager", nameKo: "HR 담당자", team: "HR" },
+    flow: ["서류 제출", "검토", "시스템 등록", "완료"],
+    steps: [
+      { n: 1, title: "필요 서류 확인", desc: "입사 필요 서류 목록을 확인합니다." },
+      // ...
+    ],
+  },
+  연차신청: {
+    icon: "🌴", label: "연차 신청", badge: "휴가",
+    // ...
+  },
+  // HR 업무 목록 계속 추가
+};
+```
+
+### 4-3. HR 직원 데이터 (`hr/hrPersons.ts`)
+
+기존 `persons.ts`의 `Person` 인터페이스를 **그대로 재사용**합니다.
+
+```typescript
+// client/src/data/hr/hrPersons.ts
+import type { Person } from "../persons"; // 인터페이스 재사용
+
+export const hrPersons: Person[] = [
+  {
+    id: "hr_person_1",
+    name: "홍길동",
+    nameEn: "Gildong Hong",
+    title: "팀장",
+    team: "HR팀",
+    emoji: "👔",
+    color: "#2563EB",
+    avatarInitial: "홍",
+    description: "HR팀 총괄",
+    responsibilities: [
+      { label: "입사 서류 안내", taskKey: "입사서류", description: "..." },
+    ],
+  },
+  // ...
+];
+```
+
+---
+
+## 5. 핵심 컴포넌트 구현 명세
+
+### 5-1. `App.tsx` 수정
+
+**현재 구조** (헤더 + 라우터)를 **아이폰 프레임 단일 컴포넌트**로 교체합니다.
+
+```tsx
+// client/src/App.tsx (수정 후)
+import { useState } from "react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/queryClient";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster";
+import IPhoneFrame from "@/components/IPhoneFrame";
+import HomeScreen from "@/pages/HomeScreen";
+import DepartmentApp from "@/pages/DepartmentApp";
+
+type AppView =
+  | { type: "home" }
+  | { type: "department"; deptId: string };
+
+function App() {
+  const [view, setView] = useState<AppView>({ type: "home" });
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <IPhoneFrame>
+          {view.type === "home" ? (
+            <HomeScreen
+              onOpenDepartment={(deptId) =>
+                setView({ type: "department", deptId })
+              }
+            />
+          ) : (
+            <DepartmentApp
+              deptId={view.deptId}
+              onGoHome={() => setView({ type: "home" })}
+            />
+          )}
+        </IPhoneFrame>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
+```
+
+> **핵심 포인트**: 라우팅 라이브러리(Wouter) 없이 `useState`로 화면 전환을 관리합니다. URL이 바뀌지 않아도 되는 앱 내부 내비게이션이므로 이 방식이 가장 간단합니다.
+
+---
+
+### 5-2. `IPhoneFrame.tsx` 신규 생성
+
+아이폰 외관(베젤, Dynamic Island)을 렌더링하는 컴포넌트입니다.
+
+```tsx
+// client/src/components/IPhoneFrame.tsx
+
+export default function IPhoneFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="iphone-stage">          {/* 페이지 전체 배경 */}
+      <div className="iphone-bezel">        {/* 스틸 블랙 베젤 */}
+        <div className="iphone-screen">     {/* 실제 화면 영역 */}
+
+          {/* 상태바 */}
+          <div className="status-bar">
+            <span className="status-time">09:41</span>
+            <div className="dynamic-island" />
+            <div className="status-icons">
+              <span>📶</span><span>🔋</span>
+            </div>
+          </div>
+
+          {/* 콘텐츠 영역 */}
+          <div className="screen-content">
+            {children}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+### 5-3. `HomeScreen.tsx` 신규 생성
+
+아이폰 홈 화면: 배경화면 + 폴더 아이콘 + Dock
+
+```tsx
+// client/src/pages/HomeScreen.tsx
+import { useState } from "react";
+import { DEPARTMENTS } from "@/data/departments";
+import DockBar from "@/components/DockBar";
+import FolderIcon from "@/components/FolderIcon";
+import HomeIndicator from "@/components/HomeIndicator";
+
+interface Props {
+  onOpenDepartment: (deptId: string) => void;
+}
+
+export default function HomeScreen({ onOpenDepartment }: Props) {
+  return (
+    <div className="home-screen">
+
+      {/* 배경화면 */}
+      <div className="home-wallpaper" />
+
+      {/* 시계 위젯 */}
+      <div className="home-clock">
+        <div className="clock-time">9:41</div>
+        <div className="clock-date">수요일, 3월 11일</div>
+      </div>
+
+      {/* 앱/폴더 그리드 */}
+      <div className="home-app-grid">
+        {DEPARTMENTS.map((dept) => (
+          <FolderIcon
+            key={dept.id}
+            dept={dept}
+            onClick={() => onOpenDepartment(dept.id)}
+          />
+        ))}
+      </div>
+
+      {/* 하단 Dock */}
+      <DockBar />
+
+      {/* 홈 인디케이터 (탭해도 이미 홈이므로 아무 동작 없음) */}
+      <HomeIndicator onTap={undefined} />
+    </div>
+  );
+}
+```
+
+---
+
+### 5-4. `FolderIcon.tsx` 신규 생성
+
+iOS 앱 아이콘 스타일의 부서 폴더 아이콘입니다.
+
+```tsx
+// client/src/components/FolderIcon.tsx
+import type { Department } from "@/data/departments";
+
+interface Props {
+  dept: Department;
+  onClick: () => void;
+}
+
+export default function FolderIcon({ dept, onClick }: Props) {
+  return (
+    <button className="folder-icon" onClick={onClick}>
+      {/* 앱 아이콘 */}
+      <div
+        className="folder-icon-bg"
+        style={{ background: dept.iconBg }}
+      >
+        <span className="folder-icon-emoji">{dept.icon}</span>
+      </div>
+      {/* 아이콘 레이블 */}
+      <span className="folder-icon-label">{dept.name}</span>
+    </button>
+  );
+}
+```
+
+**iOS 앱 아이콘 애니메이션:**
+- 롱프레스: 흔들림 모드 (`wiggle` keyframe 애니메이션)
+- 탭: `scale(0.9)` → `scale(1)` 스프링 피드백
+- 탭 후 앱 실행: `scale(1.05)` → 전체화면으로 줌인 (`zoom-in` transition)
+
+---
+
+### 5-5. `DockBar.tsx` 신규 생성
+
+홈 화면 하단의 고정 Dock 영역입니다.
+
+```tsx
+// client/src/components/DockBar.tsx
+
+const DOCK_APPS = [
+  { id: "phone",    emoji: "📞", label: "전화",    color: "#34C759" },
+  { id: "messages", emoji: "💬", label: "메세지",  color: "#34C759" },
+  { id: "safari",   emoji: "🌐", label: "Safari",  color: "#007AFF" },
+];
+
+export default function DockBar() {
+  return (
+    <div className="dock-container">
+      <div className="dock-bar">
+        {DOCK_APPS.map((app) => (
+          <button key={app.id} className="dock-app">
+            <div
+              className="dock-app-icon"
+              style={{ background: app.color }}
+            >
+              <span>{app.emoji}</span>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+### 5-6. `HomeIndicator.tsx` 신규 생성
+
+아이폰 하단의 홈 인디케이터 바입니다.  
+**부서 앱 안에서 탭하면 홈 화면으로 복귀**하는 핵심 기능을 담당합니다.
+
+```tsx
+// client/src/components/HomeIndicator.tsx
+
+interface Props {
+  onTap?: () => void;  // 홈으로 돌아가는 콜백. undefined이면 비활성
+}
+
+export default function HomeIndicator({ onTap }: Props) {
+  return (
+    <div
+      className={`home-indicator${onTap ? " tappable" : ""}`}
+      onClick={onTap}
+    >
+      <div className="home-indicator-bar" />
+    </div>
+  );
+}
+```
+
+---
+
+### 5-7. `DepartmentApp.tsx` 신규 생성
+
+각 부서 앱을 동적으로 로딩하는 컨테이너 컴포넌트입니다.  
+기존 `home.tsx`의 콘텐츠를 부서별로 분기합니다.
+
+```tsx
+// client/src/pages/DepartmentApp.tsx
+import { lazy, Suspense } from "react";
+import HomeIndicator from "@/components/HomeIndicator";
+import WprApp from "./WprApp";    // 기존 home.tsx를 리네임한 파일
+import HrApp from "./HrApp";      // 신규 HR 앱
+
+interface Props {
+  deptId: string;
+  onGoHome: () => void;
+}
+
+export default function DepartmentApp({ deptId, onGoHome }: Props) {
+  return (
+    <div className="dept-app-container">
+
+      {/* 부서별 앱 콘텐츠 */}
+      <div className="dept-app-content">
+        {deptId === "wpr" && <WprApp />}
+        {deptId === "hr"  && <HrApp />}
+        {/* 향후 부서 추가: {deptId === "finance" && <FinanceApp />} */}
+      </div>
+
+      {/* 홈 인디케이터 — 탭하면 홈으로 */}
+      <HomeIndicator onTap={onGoHome} />
+
+    </div>
+  );
+}
+```
+
+---
+
+### 5-8. `WprApp.tsx` (기존 `home.tsx` 리네임 + 최소 수정)
+
+기존 `home.tsx`를 `WprApp.tsx`로 복사 후 다음만 제거합니다:
+
+```diff
+- // iphone-frame, iphone-notch, dynamic-island 관련 JSX 제거
+- // (IPhoneFrame 컴포넌트가 이미 감싸고 있으므로)
+
++ // HomeIndicator는 DepartmentApp이 렌더링하므로 내부에서 제거
++ // bottom-home-indicator 관련 JSX 제거
+```
+
+**유지되는 것:**
+- ✅ `activeTab` / `panelOpen` / `selectedPerson` 등 모든 상태
+- ✅ `MessengerList` 컴포넌트
+- ✅ `BentoGrid` 컴포넌트
+- ✅ `side-panel` 슬라이드 패널
+- ✅ `EmailBox` 이메일 템플릿
+- ✅ Siri 검색 기능
+- ✅ 하단 탭바 (💬 팀원 / 📋 업무목록 / ❓FAQ)
+
+---
+
+## 6. CSS 스타일 명세
+
+### 6-1. 홈 화면 스타일 (`index.css` 추가)
+
+```css
+/* ──── 홈 화면 전체 ──── */
+.home-screen {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 배경화면: 다크 그라디언트 */
+.home-wallpaper {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    145deg,
+    #0D1B2A 0%,
+    #1A1F35 40%,
+    #0A1628 70%,
+    #1C0A1A 100%
+  );
+  z-index: 0;
+}
+
+/* 시계 위젯 */
+.home-clock {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding-top: 60px;
+  color: #FFFFFF;
+}
+.clock-time {
+  font-size: 72px;
+  font-weight: 200;
+  letter-spacing: -2px;
+  line-height: 1;
+}
+.clock-date {
+  font-size: 17px;
+  opacity: 0.85;
+  margin-top: 6px;
+}
+
+/* 앱 그리드 */
+.home-app-grid {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);  /* 4열 (iOS 표준) */
+  gap: 24px 16px;
+  padding: 40px 20px 20px;
+  align-content: start;
+}
+
+/* ──── 폴더 아이콘 ──── */
+.folder-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.folder-icon-bg {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;  /* iOS 아이콘 radius */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  transition: transform 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.folder-icon:active .folder-icon-bg {
+  transform: scale(0.88);
+}
+.folder-icon-emoji {
+  font-size: 30px;
+}
+.folder-icon-label {
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 400;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  text-align: center;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ──── Dock ──── */
+.dock-container {
+  position: relative;
+  z-index: 1;
+  padding: 0 16px 8px;
+}
+.dock-bar {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 26px;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.dock-app {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.dock-app-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  transition: transform 150ms ease;
+}
+.dock-app:active .dock-app-icon {
+  transform: scale(0.88);
+}
+
+/* ──── 홈 인디케이터 ──── */
+.home-indicator {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+}
+.home-indicator.tappable {
+  cursor: pointer;
+}
+.home-indicator-bar {
+  width: 134px;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 3px;
+  transition: background 200ms;
+}
+/* 부서 앱 내부: 홈 인디케이터 흰색 */
+.dept-app-container .home-indicator-bar {
+  background: rgba(0, 0, 0, 0.2);
+}
+.home-indicator.tappable:active .home-indicator-bar {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* ──── 화면 전환 애니메이션 ──── */
+.dept-app-container {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #F2F2F7;
+  animation: appLaunch 350ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+@keyframes appLaunch {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 홈으로 복귀 시 */
+.home-screen {
+  animation: homeReturn 300ms ease-out forwards;
+}
+@keyframes homeReturn {
+  from { opacity: 0.7; transform: scale(1.03); }
+  to   { opacity: 1;   transform: scale(1); }
+}
+```
+
+---
+
+## 7. 화면 전환 플로우 및 애니메이션 명세
+
+### 7-1. 홈 → 부서 앱 실행
+
+```
+1. 폴더 아이콘 탭
+2. 아이콘: scale(0.88) 피드백 (150ms)
+3. DepartmentApp 마운트
+4. 화면: scale(0.92) + opacity(0) → scale(1) + opacity(1) (350ms ease-out)
+5. 부서 앱 콘텐츠 표시
+```
+
+### 7-2. 부서 앱 → 홈 복귀
+
+```
+1. 홈 인디케이터 바 탭
+2. 바: background 어두워짐 피드백 (200ms)
+3. App.tsx의 view 상태 → { type: "home" }
+4. HomeScreen 마운트
+5. 화면: opacity(0.7) + scale(1.03) → opacity(1) + scale(1) (300ms)
+```
+
+### 7-3. 앱 내부 슬라이드 패널 (기존 동일)
+
+```
+업무 카드 / 직원 카드 탭
+→ side-panel: translateX(100%) → translateX(0) (300ms ease-out)
+→ 뒤 콘텐츠: blur(4px) + opacity(0.5)
+
+뒤로 버튼 탭
+→ side-panel: translateX(0) → translateX(100%) (250ms ease-in)
+```
+
+---
+
+## 8. 부서 추가 방법 (확장 가이드)
+
+새로운 부서(예: Finance, Legal)를 추가할 때의 단계별 절차입니다.
+
+### Step 1. 부서 데이터 등록
+
+```typescript
+// client/src/data/departments.ts 에 추가
+{
+  id: "finance",
+  name: "Finance",
+  fullName: "Finance & Accounting",
+  nameKo: "재무팀",
+  icon: "💰",
+  iconBg: "#059669",
+  iconColor: "#FFFFFF",
+  color: "#059669",
+  description: "예산·정산·회계",
+},
+```
+
+### Step 2. 업무·직원 데이터 파일 생성
+
+```
+client/src/data/finance/
+  ├── financeTasks.ts    ← TaskData 인터페이스 재사용
+  └── financePersons.ts  ← Person 인터페이스 재사용
+```
+
+### Step 3. 앱 컴포넌트 생성
+
+```typescript
+// client/src/pages/FinanceApp.tsx
+// WprApp.tsx를 복사 후 import 경로만 변경
+import { FINANCE_DATA } from "@/data/finance/financeTasks";
+import { financePersons } from "@/data/finance/financePersons";
+```
+
+### Step 4. DepartmentApp.tsx에 분기 추가
+
+```tsx
+{deptId === "finance" && <FinanceApp />}
+```
+
+> **홈 화면 아이콘은 자동으로 추가됩니다.**  
+> `DEPARTMENTS` 배열에 등록하면 `HomeScreen`의 `home-app-grid`가 자동으로 아이콘을 렌더링합니다.
+
+---
+
+## 9. 수정이 필요한 기존 파일 요약
+
+| 파일 | 작업 | 상세 |
+|---|---|---|
+| `App.tsx` | **전면 수정** | 헤더/라우터 제거 → `IPhoneFrame` + `HomeScreen` + `DepartmentApp` |
+| `home.tsx` | **리네임 + 최소 수정** | `WprApp.tsx`로 복사 후 iphone-frame 관련 JSX 제거 |
+| `index.css` | **추가** | 홈 화면 스타일 블록 추가 (기존 스타일 유지) |
+
+---
+
+## 10. 최종 구현 체크리스트
+
+```
+[기반 작업]
+□ departments.ts 생성
+□ IPhoneFrame.tsx 생성
+□ HomeScreen.tsx 생성
+□ FolderIcon.tsx 생성
+□ DockBar.tsx 생성
+□ HomeIndicator.tsx 생성
+□ DepartmentApp.tsx 생성
+
+[기존 파일 수정]
+□ home.tsx → WprApp.tsx 복사 + iphone-frame JSX 제거
+□ App.tsx 전면 수정 (헤더 제거, HomeScreen/DepartmentApp 라우팅)
+□ index.css 홈 화면 스타일 추가
+
+[HR 부서 추가]
+□ hr/hrTasks.ts 생성 (TaskData 인터페이스 재사용)
+□ hr/hrPersons.ts 생성 (Person 인터페이스 재사용)
+□ HrApp.tsx 생성 (WprApp.tsx 복사 후 import 경로 변경)
+□ DepartmentApp.tsx에 HR 분기 추가
+
+[QA]
+□ 홈 화면 → WPR 앱 진입 → 홈 복귀 플로우 확인
+□ 홈 화면 → HR 앱 진입 → 홈 복귀 플로우 확인
+□ 각 앱 내부 슬라이드 패널 동작 확인
+□ 모바일 화면(390px) 레이아웃 확인
+□ 데스크톱 접속 시 아이폰 프레임 중앙 배치 확인
+```
+
+---
+
+*본 가이드는 `FullFarming/Code-Assistant` 레포지토리의 현재 코드 구조(2025년 3월 기준)를 기반으로 작성되었습니다.*  
+*기존 데이터 인터페이스(`TaskData`, `Person`)와 UI 컴포넌트(`MessengerList`, `BentoGrid`, `EmailBox`)는 변경 없이 재사용합니다.*
