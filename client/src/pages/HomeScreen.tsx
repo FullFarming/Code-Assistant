@@ -3,7 +3,6 @@ import { DEPARTMENTS } from "@/data/departments";
 import FolderIcon from "@/components/FolderIcon";
 import DockBar from "@/components/DockBar";
 import HomeIndicator from "@/components/HomeIndicator";
-import wallpaperImg from "@assets/image_1773215947432.png";
 
 interface Props {
   onOpenDepartment: (deptId: string) => void;
@@ -34,9 +33,14 @@ export default function HomeScreen({ onOpenDepartment, activeDeptId }: Props) {
 
   return (
     <div className="home-screen" data-testid="home-screen">
-      <div
-        className="home-wallpaper"
-        style={{ backgroundImage: `url(${wallpaperImg})` }}
+      <video
+        className="home-wallpaper-video"
+        src="/home-wallpaper.mp4"
+        autoPlay
+        loop
+        muted
+        playsInline
+        data-testid="home-wallpaper-video"
       />
 
       <div className="home-clock" data-testid="home-clock">
