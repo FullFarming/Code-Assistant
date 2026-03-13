@@ -1605,26 +1605,63 @@
   object-position: center;
   z-index: 0;
 }
-.home-clock {
+.hs-status-bar {
   position: relative;
   z-index: 1;
-  text-align: center;
-  padding-top: 52px;
-  color: #FFFFFF;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  flex-shrink: 0;
 }
-.clock-time {
-  font-size: 64px;
-  font-weight: 200;
-  letter-spacing: -2px;
-  line-height: 1;
-  font-family: var(--font-en);
-  text-shadow: 0 1px 8px rgba(0,0,0,0.3);
-}
-.clock-date {
+.hs-time {
   font-size: 15px;
-  opacity: 0.9;
-  margin-top: 4px;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  font-weight: 600;
+  color: #FFFFFF;
+  font-family: var(--font-en);
+  letter-spacing: -0.3px;
+}
+.hs-di-space {
+  flex: 1;
+}
+.hs-status-icons {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.hs-5g {
+  font-size: 12px;
+  font-weight: 600;
+  color: #FFFFFF;
+  font-family: var(--font-en);
+  letter-spacing: -0.2px;
+}
+.hs-battery {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+.hs-battery-body {
+  width: 22px;
+  height: 11px;
+  border: 1.5px solid rgba(255,255,255,0.9);
+  border-radius: 3px;
+  padding: 1.5px;
+  position: relative;
+  overflow: hidden;
+}
+.hs-battery-fill {
+  height: 100%;
+  background: #FFFFFF;
+  border-radius: 1px;
+}
+.hs-battery-tip {
+  width: 2px;
+  height: 5px;
+  background: rgba(255,255,255,0.7);
+  border-radius: 0 1px 1px 0;
+  margin-left: 1px;
 }
 .home-app-grid {
   position: relative;
@@ -1633,7 +1670,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 24px 16px;
-  padding: 36px 20px 20px;
+  padding: 20px 20px 20px;
   align-content: start;
 }
 
