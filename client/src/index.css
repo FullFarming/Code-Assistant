@@ -159,8 +159,8 @@
     background: linear-gradient(135deg, #E8E8ED 0%, #F0F0F5 50%, #E8E8ED 100%);
     color: var(--ios-label);
     font-family: var(--font-body);
-    min-height: 100vh;
-    overflow-x: hidden;
+    height: 100dvh;
+    overflow: hidden;
     -webkit-font-smoothing: antialiased;
   }
 }
@@ -168,7 +168,8 @@
 .layout {
   display: grid;
   grid-template-rows: auto 1fr;
-  min-height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .header {
@@ -227,7 +228,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 56px);
+  height: calc(100dvh - 56px);
+  overflow: hidden;
   padding: 20px;
   gap: 0;
   transition: gap 0.35s ease;
@@ -1881,7 +1883,7 @@
 @media (max-width: 430px) {
   .iphone-page {
     padding: 0;
-    min-height: calc(100dvh - 56px);
+    height: calc(100dvh - 56px);
     flex-direction: column;
     gap: 0 !important;
   }
