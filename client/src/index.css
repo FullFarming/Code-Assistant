@@ -478,24 +478,37 @@
 }
 
 .person-overlay {
-  position: fixed;
-  top: 56px;
-  right: 0;
-  bottom: 0;
-  width: 420px;
-  z-index: 200;
+  width: 0;
+  min-height: 0;
   background: var(--ios-surface);
-  transform: translateX(100%);
-  transition: transform 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border-radius: 20px;
   overflow: hidden;
+  transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              opacity 0.35s ease,
+              box-shadow 0.35s ease,
+              flex 0.4s ease;
+  opacity: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 1;
+  flex-grow: 0;
   pointer-events: none;
-  box-shadow: -8px 0 32px rgba(0,0,0,0.14);
 }
 .person-overlay.open {
-  transform: translateX(0);
+  width: auto;
+  flex: 1;
+  min-width: 420px;
+  max-width: 720px;
+  opacity: 1;
+  box-shadow:
+    0 10px 40px rgba(0,0,0,0.10),
+    0 2px 10px rgba(0,0,0,0.05),
+    0 0 0 1px rgba(0,0,0,0.04);
   pointer-events: all;
 }
 .person-overlay .pds-inner {
+  flex: 1;
   height: 100%;
 }
 .sp-task {
@@ -1597,7 +1610,8 @@
     width: 280px;
     height: 600px;
   }
-  .side-panel.task-open {
+  .side-panel.task-open,
+  .person-overlay.open {
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -1620,7 +1634,8 @@
     max-width: 393px;
     height: 700px;
   }
-  .side-panel.task-open {
+  .side-panel.task-open,
+  .person-overlay.open {
     max-height: 50vh;
   }
 }
@@ -1877,7 +1892,8 @@
     border: none;
     box-shadow: none;
   }
-  .side-panel.task-open {
+  .side-panel.task-open,
+  .person-overlay.open {
     width: 100%;
     height: 45dvh;
     border-radius: 16px 16px 0 0;

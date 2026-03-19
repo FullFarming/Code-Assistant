@@ -228,23 +228,10 @@ export default function Home() {
     setSelectedPerson(p);
   }, []);
 
-  const hasSlideOpen = !!panelOpen;
+  const hasSlideOpen = !!panelOpen || !!selectedPerson;
   const isAppMode = viewMode === "app";
 
   return (
-    <>
-    <div className={`person-overlay${selectedPerson ? " open" : ""}`} data-testid="person-overlay">
-      {selectedPerson && (
-        <PersonDetailSlide
-          person={selectedPerson}
-          onBack={closePersonDetail}
-          onSelectTask={(key) => {
-            setSelectedPerson(null);
-            openPanel(key);
-          }}
-        />
-      )}
-    </div>
     <div className={`iphone-page${hasSlideOpen ? " slide-active" : ""}`} data-testid="iphone-page">
       <div className={`iphone-frame${isSiriActive ? " siri-dimmed" : ""}`} data-testid="iphone-frame">
         <div className="iphone-notch" data-testid="dynamic-island">
@@ -486,8 +473,19 @@ export default function Home() {
           </div>
         )}
       </div>
+      <div className={`person-overlay${selectedPerson ? " open" : ""}`} data-testid="person-overlay">
+        {selectedPerson && (
+          <PersonDetailSlide
+            person={selectedPerson}
+            onBack={closePersonDetail}
+            onSelectTask={(key) => {
+              setSelectedPerson(null);
+              openPanel(key);
+            }}
+          />
+        )}
+      </div>
     </div>
-    </>
   );
 }
 
