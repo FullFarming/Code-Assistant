@@ -246,7 +246,7 @@ export default function Home() {
       )}
     </div>
     <div className={`iphone-page${hasSlideOpen ? " slide-active" : ""}`} data-testid="iphone-page">
-      <div className={`iphone-frame${isSiriActive ? " siri-dimmed" : ""}${selectedPerson ? " person-dim" : ""}`} data-testid="iphone-frame">
+      <div className={`iphone-frame${isSiriActive ? " siri-dimmed" : ""}`} data-testid="iphone-frame">
         <div className="iphone-notch" data-testid="dynamic-island">
           <div className="dynamic-island">
             <div className="di-video-circle">
