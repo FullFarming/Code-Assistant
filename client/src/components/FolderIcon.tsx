@@ -1,5 +1,10 @@
 import type { Department } from "@/data/departments";
 
+const ICON_GRADIENTS: Record<string, string> = {
+  wpr: "linear-gradient(145deg, #E8243C 0%, #C41230 45%, #8B0D22 100%)",
+  hr:  "linear-gradient(145deg, #4F8BF5 0%, #2563EB 45%, #1A47B0 100%)",
+};
+
 interface Props {
   dept: Department;
   onClick: () => void;
@@ -7,6 +12,8 @@ interface Props {
 }
 
 export default function FolderIcon({ dept, onClick, disabled }: Props) {
+  const gradient = ICON_GRADIENTS[dept.id] ?? dept.iconBg;
+
   return (
     <button
       className={`folder-icon${disabled ? " folder-disabled" : ""}`}
@@ -15,7 +22,7 @@ export default function FolderIcon({ dept, onClick, disabled }: Props) {
     >
       <div
         className="folder-icon-bg"
-        style={{ background: dept.iconBg, opacity: disabled ? 0.5 : 1 }}
+        style={{ background: gradient, opacity: disabled ? 0.5 : 1 }}
       >
         <span className="folder-icon-emoji">{dept.icon}</span>
       </div>
