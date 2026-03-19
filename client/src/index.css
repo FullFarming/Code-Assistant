@@ -235,6 +235,7 @@
 .iphone-page.slide-active {
   gap: 24px;
   align-items: stretch;
+  justify-content: flex-start;
 }
 
 .iphone-frame {
@@ -1871,7 +1872,7 @@
   }
   .iphone-frame {
     width: 100%;
-    height: calc(60dvh - 34px);
+    height: 55dvh;
     border-radius: 0;
     border: none;
     box-shadow: none;
