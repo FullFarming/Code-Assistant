@@ -228,12 +228,25 @@ export default function Home() {
     setSelectedPerson(p);
   }, []);
 
-  const hasSlideOpen = !!(selectedPerson || panelOpen);
+  const hasSlideOpen = !!panelOpen;
   const isAppMode = viewMode === "app";
 
   return (
+    <>
+    <div className={`person-overlay${selectedPerson ? " open" : ""}`} data-testid="person-overlay">
+      {selectedPerson && (
+        <PersonDetailSlide
+          person={selectedPerson}
+          onBack={closePersonDetail}
+          onSelectTask={(key) => {
+            setSelectedPerson(null);
+            openPanel(key);
+          }}
+        />
+      )}
+    </div>
     <div className={`iphone-page${hasSlideOpen ? " slide-active" : ""}`} data-testid="iphone-page">
-      <div className={`iphone-frame${isSiriActive ? " siri-dimmed" : ""}`} data-testid="iphone-frame">
+      <div className={`iphone-frame${isSiriActive ? " siri-dimmed" : ""}${selectedPerson ? " person-dim" : ""}`} data-testid="iphone-frame">
         <div className="iphone-notch" data-testid="dynamic-island">
           <div className="dynamic-island">
             <div className="di-video-circle">
@@ -392,16 +405,7 @@ export default function Home() {
         )}
       </div>
 
-      <div className={`side-panel${selectedPerson ? " open" : ""}${panelOpen ? " task-open" : ""}`} data-testid="side-panel">
-        {selectedPerson && !panelOpen && (
-          <PersonDetailSlide
-            person={selectedPerson}
-            onBack={closePersonDetail}
-            onSelectTask={(key) => {
-              openPanel(key);
-            }}
-          />
-        )}
+      <div className={`side-panel${panelOpen ? " task-open" : ""}`} data-testid="side-panel">
         {activeData && panelOpen && (
           <div className="sp-task" data-testid="task-slide">
             <div className="ts-header" data-testid="ts-header">
@@ -483,6 +487,7 @@ export default function Home() {
         )}
       </div>
     </div>
+    </>
   );
 }
 
