@@ -27,8 +27,29 @@ export const persons: Person[] = [
     emoji: "👔",
     color: "#8B5CF6",
     avatarInitial: "권",
-    description: "WPR팀 총괄",
-    responsibilities: [],
+    description: "WPR 총괄 · Legal & Compliance Coordination",
+    responsibilities: [
+      {
+        label: "WPR 총괄",
+        taskKey: "wpr_overview",
+        description: "WPR팀 전체 업무 총괄 관리"
+      },
+      {
+        label: "Contract Review Support & Legal Coordination",
+        taskKey: "contract_review",
+        description: "계약서 검토 지원 및 Legal 코디네이션 (표준계약서/고객사 양식)"
+      },
+      {
+        label: "NDA Review & Process",
+        taskKey: "nda_review",
+        description: "비밀유지약정서(NDA) 리뷰 절차 및 체크리스트 관리"
+      },
+      {
+        label: "Compliance Coordination",
+        taskKey: "compliance",
+        description: "윤리 및 규정 준수 조항 코디네이션"
+      },
+    ],
   },
   {
     id: "person_noel",

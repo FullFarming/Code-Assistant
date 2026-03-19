@@ -86,6 +86,9 @@ const BENTO_ITEMS: BentoItem[] = [
   { key: "solstice", icon: "🖥️", label: "Solstice", category: "IT", categoryColor: "#3B82F6", gradient: "linear-gradient(135deg, #E8EAF6, #C5CAE9)" },
   { key: "canteen", icon: "📹", label: "Canteen Room", category: "IT", categoryColor: "#3B82F6", gradient: "linear-gradient(135deg, #E8EAF6, #C5CAE9)" },
   { key: "printix", icon: "🖨️", label: "Printix", category: "IT", categoryColor: "#3B82F6", gradient: "linear-gradient(135deg, #E8EAF6, #C5CAE9)" },
+  { key: "nda_review", icon: "🔒", label: "NDA Review", category: "Legal", categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)" },
+  { key: "contract_review", icon: "📋", label: "Contract Review", category: "Legal", categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)", wide: true },
+  { key: "compliance", icon: "⚖️", label: "Compliance", category: "Compliance", categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)" },
 ];
 
 export default function Home() {
