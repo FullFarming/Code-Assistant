@@ -1,0 +1,693 @@
+# C&W Korea Code-Assistant 수정 기획서
+
+> **프로젝트**: FullFarming/Code-Assistant  
+> **대상**: Grace Kwon 이사 역할 확장 + 홈스크린 앱 아이콘 리디자인  
+> **작성일**: 2026-03-19  
+> **앱 스택**: React 18 + TypeScript + Vite / iOS 스타일 iPhone Mockup UI
+
+---
+
+## 목차
+
+1. [레포지토리 구조 분석](#1-레포지토리-구조-분석)
+2. [Grace Kwon 이사 역할 수정](#2-grace-kwon-이사-역할-수정)
+3. [NDA 리뷰 절차 플로우](#3-nda-리뷰-절차-플로우)
+4. [계약서 리뷰 절차 플로우](#4-계약서-리뷰-절차-플로우)
+5. [계약서 작성 및 리뷰 시 주의사항 체크리스트](#5-계약서-작성-및-리뷰-시-주의사항-체크리스트)
+6. [홈스크린 앱 아이콘 리디자인](#6-홈스크린-앱-아이콘-리디자인)
+7. [파일별 수정 명세](#7-파일별-수정-명세)
+8. [구현 코드 스니펫](#8-구현-코드-스니펫)
+
+---
+
+## 1. 레포지토리 구조 분석
+
+### 핵심 파일 맵
+
+```
+Code-Assistant/
+├── client/src/
+│   ├── data/
+│   │   ├── persons.ts          ← Grace Kwon 역할(responsibilities) 수정
+│   │   ├── tasks.ts            ← NDA·계약서리뷰·컴플라이언스 TaskData 추가
+│   │   ├── searchIndex.ts      ← 신규 task 검색 인덱스 추가
+│   │   └── departments.ts      ← (변경 없음)
+│   ├── pages/
+│   │   ├── home.tsx            ← BENTO_ITEMS에 신규 카드 추가
+│   │   └── HomeScreen.tsx      ← 아이콘 컴포넌트 교체
+│   ├── components/
+│   │   ├── FolderIcon.tsx      ← 글래시 벤토 아이콘으로 리디자인
+│   │   └── DockBar.tsx         ← 독바 아이콘 글래시 스타일 적용
+│   └── index.css               ← 아이콘 CSS 신규 추가
+└── client/public/              ← (필요시 아이콘 에셋 추가)
+```
+
+### 현재 Grace Kwon 데이터 상태
+
+**`persons.ts` (line 20-32)**
+```typescript
+{
+  id: "person_grace",
+  name: "권희원",
+  nameEn: "Grace Kwon",
+  title: "이사",
+  team: "WPR팀",
+  emoji: "👔",
+  color: "#8B5CF6",
+  avatarInitial: "권",
+  description: "WPR팀 총괄",
+  responsibilities: [],  // ← 현재 비어있음!
+}
+```
+
+**문제점**: `responsibilities`가 빈 배열이므로 PersonDetailSlide에서 "담당 업무가 없습니다 (총괄 관리)"로 표시됨.
+
+---
+
+## 2. Grace Kwon 이사 역할 수정
+
+### 2-1. 신규 역할 정의
+
+| # | 역할 라벨 | taskKey | 설명 | 언어 |
+|---|-----------|---------|------|------|
+| 1 | WPR 총괄 | `wpr_overview` | WPR팀 전체 업무 총괄 관리 | 한국어 |
+| 2 | Contract Review Support & Legal Coordination | `contract_review` | 표준계약서/고객사 양식 계약서 리뷰 절차 관리 | 영어 |
+| 3 | NDA Review & Process | `nda_review` | 비밀유지약정서(NDA) 리뷰 절차 및 체크리스트 관리 | 영어 |
+| 4 | Compliance Coordination | `compliance` | 윤리 및 규정 준수 조항 코디네이션 | 영어 |
+
+### 2-2. `persons.ts` 수정 내용
+
+```typescript
+{
+  id: "person_grace",
+  name: "권희원",
+  nameEn: "Grace Kwon",
+  title: "이사",
+  team: "WPR팀",
+  emoji: "👔",
+  color: "#8B5CF6",
+  avatarInitial: "권",
+  description: "WPR 총괄 · Legal & Compliance Coordination",
+  responsibilities: [
+    {
+      label: "WPR 총괄",
+      taskKey: "wpr_overview",
+      description: "WPR팀 전체 업무 총괄 관리"
+    },
+    {
+      label: "Contract Review Support & Legal Coordination",
+      taskKey: "contract_review",
+      description: "계약서 검토 지원 및 Legal 코디네이션 (표준계약서/고객사 양식)"
+    },
+    {
+      label: "NDA Review & Process",
+      taskKey: "nda_review",
+      description: "비밀유지약정서(NDA) 리뷰 절차 및 체크리스트 관리"
+    },
+    {
+      label: "Compliance Coordination",
+      taskKey: "compliance",
+      description: "윤리 및 규정 준수 조항 코디네이션"
+    },
+  ],
+}
+```
+
+---
+
+## 3. NDA 리뷰 절차 플로우
+
+### 3-1. 절차 다이어그램
+
+```
+┌─────────────┐     ┌──────────────────────────┐     ┌──────────────┐
+│   NDA 작성   │ ──▶ │  팀장 리뷰 (1차 검토)      │ ──▶ │ Division Head │
+│  (담당자)    │     │  + NDA Checklist 확인      │     │ or Grace Kwon│
+└─────────────┘     └──────────────────────────┘     │  (최종 승인)  │
+                                                      └──────────────┘
+```
+
+### 3-2. NDA Checklist 필수 확인 항목
+
+| # | 체크 항목 | 상세 내용 |
+|---|-----------|-----------|
+| ✅ | 준거법 (Governing Law) | 대한민국 법률 또는 합의된 관할법 명시 |
+| ✅ | 관할법원 (Jurisdiction) | 서울중앙지방법원 등 구체적 법원 명시 |
+| ✅ | 비밀정보 정의 (Definition of Confidential Information) | 범위가 명확하고 구체적인지 확인 |
+| ✅ | 유효기간 (Term & Survival) | NDA 유효기간 및 종료 후 의무 존속 기간 |
+| ✅ | 정보반환/파기 의무 | 계약 종료 시 비밀정보 처리 방법 명시 |
+
+### 3-3. NDA 포함 금지 사항
+
+| ❌ 포함 금지 항목 | 사유 |
+|-------------------|------|
+| **면책 조항 (Indemnification)** | NDA는 비밀유지 목적이므로 면책 조항은 부적절 |
+| **위약벌 (Penalty/Liquidated Damages)** | NDA 위반 시 손해배상은 별도 — 위약벌 사전 규정 불가 |
+
+### 3-4. 고객사 정보 공개 시 주의사항
+
+> 고객사의 정보를 제3자에게 공개해야 하는 경우:  
+> **고객사와의 NDA를 Back-to-Back으로 체결** 필수  
+> (= 고객사 NDA의 비밀유지 의무를 동일 수준으로 제3자에게도 적용)
+
+### 3-5. `tasks.ts`에 추가할 NDA TaskData
+
+```typescript
+nda_review: {
+  icon: "🔒", label: "NDA Review & Process", badge: "Legal",
+  owner: {
+    icon: "👔", name: "Grace Kwon",
+    nameKo: "권희원 이사", team: "WPR",
+    contact: "grace.kwon@ap.cushwake.com"
+  },
+  steps: [
+    {
+      n: 1, title: "NDA 초안 작성",
+      desc: "담당자가 NDA 초안을 작성합니다. 표준 NDA 양식 사용을 권장합니다.",
+      detail: null
+    },
+    {
+      n: 2, title: "팀장 리뷰 (1차)",
+      desc: "소속 팀장에게 1차 리뷰를 요청합니다. <strong>NDA Checklist 확인 필수</strong>.",
+      detail: "확인 항목: 준거법(Governing Law), 관할법원(Jurisdiction), 비밀정보 정의, 유효기간, 정보반환/파기 의무"
+    },
+    {
+      n: 3, title: "Division Head 또는 Grace Kwon 최종 승인",
+      desc: "팀장 리뷰 완료 후 <strong>Division Head</strong> 또는 <strong>Grace Kwon</strong>에게 최종 승인을 요청합니다.",
+      email: {
+        to: "Grace Kwon (grace.kwon@ap.cushwake.com)",
+        cc: "팀장, Division Head (YJ Choi)",
+        subject: "[NDA Review] [고객사명] / NDA 최종 승인 요청",
+        body: "Dear Grace,\n\nPlease find attached the NDA for your review and final approval.\n\n■ Client Name : [고객사명]\n■ Counterparty : [상대방]\n■ NDA Type : □ Mutual  □ One-way\n■ Team Lead Review : Completed\n■ NDA Checklist : Attached\n\nPlease advise if any amendments are required.\n\nBest regards,"
+      }
+    },
+  ],
+  infoGrid: [
+    {
+      title: "✅ NDA Checklist",
+      items: [
+        "준거법 (Governing Law) 확인",
+        "관할법원 (Jurisdiction) 확인",
+        "비밀정보 정의 범위 적정성",
+        "유효기간 및 존속조항 확인",
+        "정보반환/파기 의무 명시"
+      ]
+    },
+    {
+      title: "❌ 포함 금지 항목",
+      items: [
+        "면책 조항 (Indemnification)",
+        "위약벌 (Penalty/Liquidated Damages)"
+      ]
+    },
+    {
+      title: "⚠️ 고객사 정보 공개 시",
+      items: [
+        "고객사와의 NDA를 Back-to-Back으로 체결 필수",
+        "동일 수준 비밀유지 의무를 제3자에게 적용"
+      ]
+    }
+  ],
+  warn: "NDA에 면책(Indemnification) 또는 위약벌(Penalty) 조항이 포함되어서는 안 됩니다."
+},
+```
+
+---
+
+## 4. 계약서 리뷰 절차 플로우
+
+### 4-1. Case A: 표준계약서 사용 시
+
+```
+┌──────────────┐     ┌──────────────┐     ┌──────────────────────┐
+│  Grace Kwon  │ ──▶ │    팀장      │ ──▶ │  Division Head       │
+│  (1차 리뷰)   │     │  (2차 리뷰)   │     │  YJ Choi (최종 승인)  │
+└──────────────┘     └──────────────┘     └──────────────────────┘
+```
+
+### 4-2. Case B: 고객사 양식 사용 또는 표준계약서 내 수정
+
+```
+┌──────────────┐     ┌──────────────┐
+│  Grace Kwon  │ ──▶ │  APAC Legal  │
+│  (1차 리뷰)   │     │  (최종 승인)  │
+└──────────────┘     └──────────────┘
+```
+
+### 4-3. `tasks.ts`에 추가할 Contract Review TaskData
+
+```typescript
+contract_review: {
+  icon: "📋", label: "Contract Review Support & Legal Coordination", badge: "Legal",
+  owner: {
+    icon: "👔", name: "Grace Kwon",
+    nameKo: "권희원 이사", team: "WPR",
+    contact: "grace.kwon@ap.cushwake.com"
+  },
+  steps: [
+    {
+      n: 1, title: "계약서 양식 구분",
+      desc: "계약서가 <strong>표준계약서</strong>인지, <strong>고객사 양식</strong> 또는 <strong>표준계약서 내 수정</strong>인지 확인합니다.",
+      detail: "• 표준계약서 사용 → Case A 절차<br>• 고객사 양식 사용 또는 표준계약서 내용 수정 → Case B 절차"
+    },
+    {
+      n: 2, title: "[Case A] Grace Kwon → 팀장 → Division Head (YJ Choi)",
+      desc: "표준계약서를 그대로 사용하는 경우, Grace Kwon이 1차 리뷰 후 팀장 → Division Head 순서로 승인합니다.",
+      email: {
+        to: "Grace Kwon (grace.kwon@ap.cushwake.com)",
+        cc: "팀장",
+        subject: "[Contract Review – Standard] [프로젝트명] / [고객사명]",
+        body: "Dear Grace,\n\nPlease review the attached standard contract for the following project.\n\n■ Project Name  : [프로젝트명]\n■ Client Name   : [고객사명]\n■ Contract Type : Standard Template\n■ Fee Structure : [용역 수수료 구조]\n■ Key Terms     : [주요 조건 요약]\n\nPlease advise if the contract is ready for Team Lead review.\n\nBest regards,"
+      }
+    },
+    {
+      n: 3, title: "[Case B] Grace Kwon → APAC Legal",
+      desc: "고객사 양식 사용 또는 표준계약서 내 수정이 있는 경우, Grace Kwon 1차 리뷰 후 <strong>APAC Legal</strong>로 에스컬레이션합니다.",
+      email: {
+        to: "Grace Kwon (grace.kwon@ap.cushwake.com)",
+        cc: "팀장, APAC Legal",
+        subject: "[Contract Review – Client Form / Amendment] [프로젝트명] / [고객사명]",
+        body: "Dear Grace,\n\nPlease review the attached contract which uses the client's template / contains amendments to our standard form.\n\n■ Project Name     : [프로젝트명]\n■ Client Name      : [고객사명]\n■ Contract Type    : □ Client Template  □ Standard with Amendments\n■ Key Amendments   : [수정사항 요약]\n■ Fee Structure    : [용역 수수료 구조]\n\nAPAC Legal escalation may be required per policy.\n\nBest regards,"
+      }
+    },
+    {
+      n: 4, title: "최종 승인 및 체결",
+      desc: "모든 리뷰 완료 후 계약서 최종본을 확정하고 <strong>Glosign</strong>을 통해 날인 절차를 진행합니다.",
+      detail: "→ 비대면 인감날인 절차는 🖊️ 인감 날인 항목을 참고하세요."
+    }
+  ],
+  infoGrid: [
+    {
+      title: "📝 Case A — 표준계약서",
+      items: [
+        "Grace Kwon (1차 리뷰)",
+        "팀장 (2차 리뷰)",
+        "Division Head / YJ Choi (최종 승인)"
+      ]
+    },
+    {
+      title: "📝 Case B — 고객사 양식/수정",
+      items: [
+        "Grace Kwon (1차 리뷰)",
+        "APAC Legal (최종 승인)"
+      ]
+    }
+  ],
+},
+```
+
+---
+
+## 5. 계약서 작성 및 리뷰 시 주의사항 체크리스트
+
+### 5-1. 중개와 구별 주의 — 한눈에 보는 Do / Don't
+
+| 구분 | ✅ DO (허용) | ❌ DON'T (금지) |
+|------|-------------|-----------------|
+| **업무 범위 용어** | 자문 (Advisory), 컨설팅 (Consulting) | 중개 (Brokerage), 부동산 중개 |
+| **수수료 용어** | **용역 수수료** (Service Fee) | ~~커미션 (Commission)~~ |
+| **영문 계약서** | Advisory / Consulting Service | ~~Brokerage~~ 포함 절대 금지 |
+| **업무 정의** | 구체적·실제적 업무 명시 (예: "입주 시까지 임차인 관리") | 추상적·포괄적 업무 범위 |
+| **전문자격 업무** | "전문자격을 요하는 업무는 본 계약에 포함되지 않는다" 명시 | 계약서 검토, 재무 자문, 물리적 실사 등 포함 |
+| **향후 업무 추가** | — | ~~"추후 협의에 따라 전문자격 필요 업무 논의 가능"~~ 문구 자제 |
+
+### 5-2. 부동산 중개 오인 소지 업무 — 주의 목록
+
+다음 업무가 계약서에 포함되면 부동산 중개로 오인될 수 있으므로 **반드시 제외하거나 별도 전문가 위임을 명시**해야 합니다:
+
+| ⚠️ 주의 업무 | 오인 소지 사유 |
+|-------------|---------------|
+| 임대차 계약서 작성 | 중개업 무인가 행위 해당 가능 |
+| 임대차 계약서 리뷰 | 법률 자문으로 분류될 수 있음 |
+| 임차인과 계약 조건 협의 | 중개 행위에 해당할 수 있음 |
+| 재무 자문 (Financial Advisory) | 전문자격(CPA/CFA) 필요 |
+| 물리적 실사 (Physical Due Diligence) | 전문 엔지니어링 자격 필요 |
+| 계약서 법률 검토 (Legal Review) | 변호사 자격 필요 |
+
+### 5-3. 계약서 필수 구조 — 6대 섹션
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    계약서 구조 (필수)                      │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ① 업무 영역 (Scope of Services)                         │
+│     → 구체적·실제적 업무 범위 명시                          │
+│     → 추상적 표현 지양                                    │
+│     → 예: "입주시까지 임차인 관리"                          │
+│                                                         │
+│  ② Disclaimer (면책 선언)                                │
+│     → "전문자격을 요하는 업무는 본 계약에 포함되지           │
+│        않으며, 쿠시먼앤드웨이크필드는 해당 업무를            │
+│        제공할 책임을 지지 않는다"                           │
+│                                                         │
+│  ③ 용역 수수료 (Service Fee)                             │
+│     → "커미션(Commission)" 용어 사용 금지                  │
+│     → "용역 수수료(Service Fee)" 용어 사용                 │
+│                                                         │
+│  ④ 손해배상 (Liability)                                  │
+│     → 책임 한도(Liability Cap) 반드시 설정                 │
+│     → 수수료 총액 또는 합의 금액 기준                       │
+│                                                         │
+│  ⑤ 준거법 및 관할법원                                     │
+│     → Governing Law: 대한민국 법률                        │
+│     → Jurisdiction: 서울중앙지방법원 등                    │
+│                                                         │
+│  ⑥ 컴플라이언스 조항 (Ethics & Compliance)                │
+│     → 윤리 및 규정 준수 조항 필수 포함                      │
+│     → FCPA, UK Bribery Act 등 Anti-Corruption 준수       │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 5-4. `tasks.ts`에 추가할 Compliance TaskData
+
+```typescript
+compliance: {
+  icon: "⚖️", label: "Compliance Coordination", badge: "Compliance",
+  owner: {
+    icon: "👔", name: "Grace Kwon",
+    nameKo: "권희원 이사", team: "WPR",
+    contact: "grace.kwon@ap.cushwake.com"
+  },
+  steps: [
+    {
+      n: 1, title: "계약서 내 컴플라이언스 조항 확인",
+      desc: "계약서에 윤리 및 규정 준수 조항(Ethics & Compliance Clause)이 포함되어 있는지 확인합니다.",
+      detail: "Anti-Corruption (FCPA, UK Bribery Act), Data Protection, Conflict of Interest 조항 포함 여부 확인"
+    },
+    {
+      n: 2, title: "Supplier Due Diligence (3rd Party Risk)",
+      desc: "신규 거래처 등록 시 <strong>3rd Party Risk Assessment DD Form</strong> 작성 및 실사설문지 확인",
+      detail: "→ Workday Supplier 등록 절차 내 DD Form 첨부 필수"
+    },
+    {
+      n: 3, title: "Compliance 이슈 발생 시 에스컬레이션",
+      desc: "윤리 위반 또는 컴플라이언스 이슈 발견 시 <strong>Grace Kwon</strong>을 통해 APAC Compliance팀에 보고합니다.",
+      email: {
+        to: "Grace Kwon (grace.kwon@ap.cushwake.com)",
+        subject: "[Compliance Issue] [프로젝트명/건명] / Escalation Request",
+        body: "Dear Grace,\n\nI would like to escalate the following compliance concern for your review.\n\n■ Project / Matter : [프로젝트명 / 건명]\n■ Issue Type       : □ Anti-Corruption  □ Conflict of Interest  □ Data Protection  □ Other\n■ Description      : [이슈 상세 내용]\n■ Urgency          : □ Immediate  □ Within 1 week  □ Non-urgent\n\nPlease advise on next steps.\n\nBest regards,"
+      }
+    }
+  ],
+  infoGrid: [
+    {
+      title: "⚖️ 필수 컴플라이언스 영역",
+      items: [
+        "Anti-Corruption (FCPA / UK Bribery Act)",
+        "Data Protection & Privacy",
+        "Conflict of Interest",
+        "Sanctions & Export Controls",
+        "Anti-Money Laundering"
+      ]
+    }
+  ],
+},
+```
+
+### 5-5. `tasks.ts`에 추가할 WPR Overview TaskData
+
+```typescript
+wpr_overview: {
+  icon: "🏢", label: "WPR 총괄", badge: "총괄",
+  owner: {
+    icon: "👔", name: "Grace Kwon",
+    nameKo: "권희원 이사", team: "WPR",
+    contact: "grace.kwon@ap.cushwake.com"
+  },
+  steps: [
+    {
+      n: 1, title: "WPR팀 전체 업무 총괄",
+      desc: "시설·행정·IT 지원 업무 전반의 총괄 관리 및 의사결정",
+      detail: null
+    },
+    {
+      n: 2, title: "팀원 업무 배분 및 관리",
+      desc: "WPR팀 소속 직원의 업무 배분, 성과 관리, 교육 지원",
+      detail: null
+    },
+    {
+      n: 3, title: "APAC 리포팅",
+      desc: "APAC 본사에 대한 정기 보고 및 지역 정책 이행 관리",
+      detail: null
+    }
+  ],
+},
+```
+
+---
+
+## 6. 홈스크린 앱 아이콘 리디자인
+
+### 6-1. 현재 문제점
+
+현재 `FolderIcon.tsx`의 아이콘은 단순 이모지(`🏢`, `👥`)를 단색 사각형 배경(`#C41230`, `#2563EB`)에 넣은 형태로, 실제 iOS 앱 아이콘과 비교했을 때 **플랫하고 미완성된 느낌**입니다.
+
+```
+현재 스타일:
+┌──────────┐
+│  단색 배경  │  ← 단순 border-radius: 14px, 단색 background
+│    🏢     │  ← 이모지만 중앙 배치
+└──────────┘
+  WPR
+```
+
+### 6-2. 목표 디자인: 글래시(Glassy) 벤토 스타일 앱 아이콘
+
+iOS 실제 앱 아이콘처럼 **그래디언트 + 글래스모피즘 + 미세한 inner shadow + 아이콘 심볼**을 적용합니다.
+
+```
+목표 스타일:
+┌────────────────┐
+│ ░░░ 글래스 레이어 │  ← backdrop-filter: blur
+│  ╔═══════╗     │  ← 그래디언트 배경
+│  ║  심볼  ║     │  ← SVG 또는 고해상도 이모지
+│  ╚═══════╝     │  ← inner shadow + 광택 오버레이
+└────────────────┘
+    WPR
+```
+
+### 6-3. 디자인 스펙
+
+| 속성 | 현재 값 | 변경 값 |
+|------|---------|---------|
+| 아이콘 크기 | 56×56px | 60×60px |
+| Border radius | 14px | 15px (iOS 표준 비율) |
+| 배경 | 단색 (`#C41230`) | 다층 그래디언트 |
+| 이모지 크기 | 26px | 28px |
+| 그림자 | `box-shadow: 0 4px 16px rgba(0,0,0,0.35)` | 다중 레이어 그림자 |
+| 글래스 효과 | 없음 | `::after` pseudo-element로 글래스 오버레이 |
+| 내부 광택 | 없음 | `inset` box-shadow로 상단 하이라이트 |
+
+### 6-4. 부서별 아이콘 디자인
+
+#### WPR (Workplace Resources)
+```css
+background: linear-gradient(145deg, #E8243C 0%, #C41230 45%, #8B0D22 100%);
+/* 상단 밝은 레드 → 코퍼레이트 레드 → 진한 레드 */
+```
+- 심볼: 빌딩 이모지 `🏢` 유지 (또는 SVG로 교체 가능)
+- 글래스 오버레이: 상단 30% 영역에 `rgba(255,255,255,0.25)` → `transparent` 그래디언트
+
+#### HR (Human Resources)
+```css
+background: linear-gradient(145deg, #4F8BF5 0%, #2563EB 45%, #1A47B0 100%);
+/* 상단 밝은 블루 → 코퍼레이트 블루 → 진한 블루 */
+```
+- 심볼: 사람 이모지 `👥` 유지
+- 글래스 오버레이: 동일 패턴
+
+### 6-5. CSS 수정 — `index.css`에 추가
+
+```css
+/* ──── Glassy Bento App Icons ──── */
+.folder-icon-bg {
+  width: 60px;
+  height: 60px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* 다층 그림자: 외부 그림자 + 내부 광택 */
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    0 1px 3px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* 글래스 하이라이트 오버레이 */
+.folder-icon-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    175deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 0.12) 30%,
+    transparent 50%
+  );
+  pointer-events: none;
+}
+
+.folder-icon-emoji {
+  font-size: 28px;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+```
+
+### 6-6. `departments.ts` 배경 그래디언트 적용
+
+현재 `iconBg`가 단색 HEX이므로, **FolderIcon.tsx에서 gradient 맵을 별도 관리**하는 방식을 권장합니다:
+
+```typescript
+// FolderIcon.tsx에 추가할 그래디언트 맵
+const ICON_GRADIENTS: Record<string, string> = {
+  wpr: "linear-gradient(145deg, #E8243C 0%, #C41230 45%, #8B0D22 100%)",
+  hr:  "linear-gradient(145deg, #4F8BF5 0%, #2563EB 45%, #1A47B0 100%)",
+};
+```
+
+그리고 `FolderIcon` 컴포넌트를 수정합니다:
+
+```tsx
+export default function FolderIcon({ dept, onClick, disabled }: Props) {
+  const gradient = ICON_GRADIENTS[dept.id] || dept.iconBg;
+
+  return (
+    <button
+      className={`folder-icon${disabled ? " folder-disabled" : ""}`}
+      onClick={disabled ? undefined : onClick}
+    >
+      <div
+        className="folder-icon-bg"
+        style={{ background: gradient, opacity: disabled ? 0.5 : 1 }}
+      >
+        <span className="folder-icon-emoji">{dept.icon}</span>
+      </div>
+      <span className="folder-icon-label">
+        {dept.name}
+        {disabled && <span className="folder-soon"> (준비 중)</span>}
+      </span>
+    </button>
+  );
+}
+```
+
+### 6-7. DockBar 아이콘도 글래시 스타일 보강
+
+현재 DockBar의 FaceTime, 메세지, Safari 아이콘은 PNG 이미지(`48×48`)인데, 글래시 오버레이만 추가하면 통일감이 높아집니다:
+
+```css
+.dock-app-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: block;
+  position: relative;
+
+  /* 글래시 그림자 */
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+```
+
+---
+
+## 7. 파일별 수정 명세
+
+| 파일 경로 | 수정 유형 | 수정 내용 요약 |
+|-----------|-----------|---------------|
+| `client/src/data/persons.ts` | **수정** | Grace Kwon의 `description`, `responsibilities` 배열 채우기 |
+| `client/src/data/tasks.ts` | **추가** | `wpr_overview`, `nda_review`, `contract_review`, `compliance` 4개 TaskData 추가 |
+| `client/src/data/searchIndex.ts` | **추가** | 4개 신규 task에 대한 SearchableTask 항목 추가 |
+| `client/src/pages/home.tsx` | **수정** | `BENTO_ITEMS`에 신규 4개 벤토 카드 추가 |
+| `client/src/components/FolderIcon.tsx` | **수정** | 그래디언트 맵 추가, 글래시 배경 적용 |
+| `client/src/index.css` | **수정** | `.folder-icon-bg` 글래시 스타일, `::after` 오버레이, `.dock-app-img` 글래시 그림자 |
+
+### searchIndex.ts 추가 항목
+
+```typescript
+// searchIndex.ts에 추가
+{
+  key: 'wpr_overview', label: 'WPR 총괄', badge: '총괄', icon: '🏢',
+  keywords: ['총괄', 'wpr', '관리', '권희원', 'grace'],
+  ownerName: '권희원 이사', ownerEn: 'grace kwon',
+},
+{
+  key: 'nda_review', label: 'NDA Review', badge: 'Legal', icon: '🔒',
+  keywords: ['nda', '비밀유지', '약정서', '비밀', 'non-disclosure', 'confidential', '체크리스트'],
+  ownerName: '권희원 이사', ownerEn: 'grace kwon',
+},
+{
+  key: 'contract_review', label: 'Contract Review', badge: 'Legal', icon: '📋',
+  keywords: ['계약', 'contract', '리뷰', '검토', '표준계약', '고객사양식', 'legal', '법률'],
+  ownerName: '권희원 이사', ownerEn: 'grace kwon',
+},
+{
+  key: 'compliance', label: 'Compliance', badge: 'Compliance', icon: '⚖️',
+  keywords: ['compliance', '컴플라이언스', '윤리', '규정', '준수', 'ethics', 'fcpa', 'anti-corruption'],
+  ownerName: '권희원 이사', ownerEn: 'grace kwon',
+},
+```
+
+### BENTO_ITEMS 추가 (home.tsx)
+
+```typescript
+// BENTO_ITEMS 배열에 추가
+{ key: "nda_review", icon: "🔒", label: "NDA Review", category: "Legal",
+  categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)" },
+{ key: "contract_review", icon: "📋", label: "Contract Review", category: "Legal",
+  categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)", wide: true },
+{ key: "compliance", icon: "⚖️", label: "Compliance", category: "Compliance",
+  categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)" },
+```
+
+---
+
+## 8. 구현 코드 스니펫
+
+### 8-1. Replit / Cursor 에이전트 지시 요약
+
+Replit이나 Cursor에 직접 전달할 수 있는 요약 지시서:
+
+```
+[수정 1] persons.ts — Grace Kwon responsibilities 추가
+- 4개 항목: wpr_overview, contract_review, nda_review, compliance
+- description을 "WPR 총괄 · Legal & Compliance Coordination"으로 변경
+
+[수정 2] tasks.ts — 4개 TaskData 추가
+- wpr_overview: WPR 총괄 업무 3스텝
+- nda_review: NDA 리뷰 절차 3스텝 + infoGrid(체크리스트/금지항목/주의사항) + warn
+- contract_review: 계약서 리뷰 4스텝(Case A/B 분기) + infoGrid
+- compliance: 컴플라이언스 코디네이션 3스텝 + infoGrid
+
+[수정 3] searchIndex.ts — 4개 SearchableTask 추가
+- 각 task에 맞는 한/영 키워드 세트
+
+[수정 4] home.tsx — BENTO_ITEMS에 3개 카드 추가
+- nda_review, contract_review(wide), compliance
+- 카테고리 색상: #8B5CF6 (Grace Kwon 퍼스널 컬러)
+
+[수정 5] FolderIcon.tsx — 글래시 벤토 아이콘
+- ICON_GRADIENTS 맵 추가 (wpr: red gradient, hr: blue gradient)
+- background에 gradient 적용
+
+[수정 6] index.css — 글래시 스타일 CSS
+- .folder-icon-bg: 60×60, border-radius 15px, 다층 그림자, inset 하이라이트
+- .folder-icon-bg::after: 글래스 오버레이 (상단 35% 밝은 그래디언트)
+- .folder-icon-emoji: 28px, drop-shadow
+- .dock-app-img: inset shadow 추가
+```
+
+---
+
+> **다음 단계**: 이 기획서를 Replit Agent에 전달하거나, 각 파일별 코드 스니펫을 순서대로 적용하세요. NDA/계약서 절차 및 주의사항 데이터가 tasks.ts에 반영되면 Grace Kwon의 PersonDetailSlide에서 4개 역할 카드가 표시되고, 각 카드를 탭하면 상세 절차 패널이 열립니다.
