@@ -1,0 +1,1160 @@
+# C&W Korea Code-Assistant v2 — 확장형 패널 UI + Grace Kwon 역할 수정 기획서
+
+> **레포지토리**: `github.com/FullFarming/Code-Assistant`  
+> **작성일**: 2026-03-19  
+> **스택**: React 18 + TypeScript + Vite / iOS Design Language  
+> **핵심 변경**: 사이드 패널을 **전체 화면 확장 뷰**로 리디자인 + Grace Kwon 이사 역할 확장
+
+---
+
+## 목차
+
+1. [현재 아키텍처 분석](#1-현재-아키텍처-분석)
+2. [문제 진단 — 이미지 기반 분석](#2-문제-진단--이미지-기반-분석)
+3. [확장형 패널 UI 리디자인 상세 가이드](#3-확장형-패널-ui-리디자인-상세-가이드)
+4. [Grace Kwon 이사 역할 수정](#4-grace-kwon-이사-역할-수정)
+5. [NDA 리뷰 절차](#5-nda-리뷰-절차)
+6. [계약서 리뷰 절차](#6-계약서-리뷰-절차)
+7. [계약서 작성·리뷰 시 주의사항 체크리스트](#7-계약서-작성리뷰-시-주의사항-체크리스트)
+8. [홈스크린 글래시 벤토 아이콘](#8-홈스크린-글래시-벤토-아이콘)
+9. [파일별 수정 명세 (전체)](#9-파일별-수정-명세-전체)
+
+---
+
+## 1. 현재 아키텍처 분석
+
+### 1-1. 프로젝트 파일 구조
+
+```
+Code-Assistant/
+├── client/src/
+│   ├── App.tsx                    ← 앱 셸 (Header + Router)
+│   ├── main.tsx                   ← 엔트리
+│   ├── index.css                  ← 전체 스타일 (1,889줄)
+│   ├── pages/
+│   │   ├── home.tsx               ← 메인 페이지 (742줄) — iPhone + Side Panel
+│   │   ├── HomeScreen.tsx         ← 홈 스크린 (폴더 아이콘 + 독바)
+│   │   ├── faq.tsx                ← FAQ 아코디언
+│   │   └── not-found.tsx
+│   ├── components/
+│   │   ├── FolderIcon.tsx         ← 홈 아이콘 컴포넌트
+│   │   ├── DockBar.tsx            ← 하단 독바 (FaceTime, 메세지, Safari)
+│   │   └── HomeIndicator.tsx      ← 하단 인디케이터 바
+│   ├── data/
+│   │   ├── persons.ts             ← 4명 직원 데이터
+│   │   ├── tasks.ts               ← 13개 업무 TaskData
+│   │   ├── searchIndex.ts         ← Siri 검색 인덱스
+│   │   └── departments.ts         ← 부서 레지스트리 (WPR, HR)
+│   └── lib/ hooks/ components/ui/ ← 유틸리티
+├── server/                        ← Express 서버 (정적 파일 서빙)
+└── client/public/                 ← 벽지, 아이콘 에셋
+```
+
+### 1-2. 현재 레이아웃 구조
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Header: [C&W 로고]                             [WPR] [FAQ]      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│         ┌──────────────┐    ┌──────────────┐                    │
+│         │ iPhone Frame │    │  Side Panel  │                    │
+│         │  314 × 682   │    │  380 × 682   │                    │
+│         │              │    │              │                    │
+│         │  ┌────────┐  │    │  업무 상세    │                    │
+│         │  │팀원 목록│  │    │  절차 표시    │                    │
+│         │  └────────┘  │    │              │                    │
+│         │              │    │              │                    │
+│         │ [팀원][Siri] │    │              │                    │
+│         │   [업무목록] │    │              │                    │
+│         └──────────────┘    └──────────────┘                    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 1-3. 핵심 CSS 수치 (현재)
+
+| 요소 | 클래스 | 현재 수치 | 위치 (index.css) |
+|------|--------|----------|-----------------|
+| 전체 레이아웃 | `.layout` | `grid-template-rows: auto 1fr` | Line 168 |
+| 헤더 | `.header` | `height: 56px` | Line 174 |
+| 아이폰 페이지 | `.iphone-page` | `display: flex; justify-content: center` | Line 226 |
+| 아이폰 프레임 | `.iphone-frame` | `width: 314px; height: 682px` | Line 239 |
+| 사이드 패널 (닫힘) | `.side-panel` | `width: 0; height: 682px` | Line 448 |
+| 사이드 패널 (열림) | `.side-panel.open` | `width: 380px` | Line 464 |
+| 패널 헤더 | `.ts-header` | `padding: 12px 16px` | Line 657 |
+| 패널 본문 | `.ts-body` | `padding: 16px` | Line 693 |
+| 스텝 번호 | `.step-num` | `28×28px, font: 13px` | Line 761 |
+| 스텝 제목 | `.step-title` | `font-size: 15px` | Line 779 |
+| 스텝 설명 | `.step-desc` | `font-size: 13px` | Line 785 |
+| 이메일 박스 | `.email-box` | `border-radius: 12px` | Line 832 |
+| 정보 그리드 | `.info-grid` | `grid-template-columns: 1fr 1fr` | Line 959 |
+| 900px 이하 | `@media` | 패널 `width: 100%; max-width: 393px` | Line 1556 |
+| 430px 이하 | `@media` | 프레임 full-width, 패널 `40dvh` | Line 1805 |
+
+---
+
+## 2. 문제 진단 — 이미지 기반 분석
+
+### 2-1. 스크린샷에서 발견된 문제
+
+이미지에서 노란 하이라이트로 표시된 영역은 현재 `side-panel` (380px 고정폭) 입니다.
+
+```
+문제점:
+┌──────────────┐    ┌──────────────┐
+│ iPhone 314px │    │ Panel 380px  │ ← 노란 하이라이트 영역
+│              │    │              │
+│              │    │  글자가 작고   │ ← 13px 기본 폰트
+│              │    │  공간이 좁음   │ ← 16px 패딩
+│              │    │              │ ← 이메일 박스 답답
+│              │    │  스크롤 많음   │ ← 682px 고정 높이
+│              │    │              │
+└──────────────┘    └──────────────┘
+                    ↑
+                    사용자 요청: 이 공간을 전체 화면처럼
+                    크게 확장해서 업무 상세 내용을
+                    편하게 볼 수 있게 해달라
+```
+
+### 2-2. 핵심 요구사항 정리
+
+| # | 요구사항 | 상세 |
+|---|---------|------|
+| 1 | **패널 확장** | 380px 고정폭 → 남은 공간 전체를 사용하도록 확장 |
+| 2 | **높이 확장** | 682px 고정 → 뷰포트 높이 전체 활용 |
+| 3 | **가독성 향상** | 글자 크기, 패딩, 간격을 넉넉하게 확대 |
+| 4 | **업무 상세 전체 보기** | 스텝, 이메일 템플릿, 정보 그리드를 한 화면에 더 많이 표시 |
+| 5 | **확대된 느낌** | 마치 "확대(zoom-in)"한 것처럼 크고 선명하게 |
+
+---
+
+## 3. 확장형 패널 UI 리디자인 상세 가이드
+
+### 3-1. 새로운 레이아웃 구조
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ Header: [C&W 로고]                                  [WPR] [FAQ]    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌──────────┐  ┌──────────────────────────────────────────────────┐ │
+│  │ iPhone   │  │           확장된 Side Panel                      │ │
+│  │  Frame   │  │     (flex: 1 — 남은 공간 전체 사용)               │ │
+│  │ 314×682  │  │                                                  │ │
+│  │          │  │  ← 뒤로                                         │ │
+│  │          │  │  📋 Contract Review Support & Legal Coordination │ │
+│  │          │  │                                                  │ │
+│  │          │  │  ┌─────────────────────────────────────────────┐ │ │
+│  │          │  │  │ 👔 권희원 이사  Grace Kwon                   │ │ │
+│  │          │  │  │ WPR  grace.kwon@ap.cushwake.com             │ │ │
+│  │          │  │  └─────────────────────────────────────────────┘ │ │
+│  │          │  │                                                  │ │
+│  │          │  │  1  계약서 양식 구분                               │ │
+│  │          │  │     표준계약서 vs 고객사 양식 확인                  │ │
+│  │          │  │                                                  │ │
+│  │          │  │  2  [Case A] Grace Kwon → 팀장 → Division Head  │ │
+│  │          │  │     ┌───────────────────────────────────────┐   │ │
+│  │          │  │     │ ✉️ Outlook 메일 작성 예시              │   │ │
+│  │          │  │     │ To: Grace Kwon                        │   │ │
+│  │          │  │     │ Subject: [Contract Review]...         │   │ │
+│  │          │  │     │ ...                                   │   │ │
+│  │          │  │     └───────────────────────────────────────┘   │ │
+│  │          │  │                                                  │ │
+│  │          │  │  ┌────────────────┐ ┌────────────────┐          │ │
+│  │          │  │  │ Case A 표준     │ │ Case B 고객사   │          │ │
+│  │          │  │  │ Grace → 팀장   │ │ Grace → APAC   │          │ │
+│  │          │  │  │ → Div. Head    │ │ Legal          │          │ │
+│  │          │  │  └────────────────┘ └────────────────┘          │ │
+│  │          │  │                                                  │ │
+│  └──────────┘  └──────────────────────────────────────────────────┘ │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 3-2. CSS 변경 — `.iphone-page` 레이아웃
+
+**파일**: `client/src/index.css`  
+**위치**: Line 226-237
+
+```css
+/* ===== 변경 전 ===== */
+.iphone-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 56px);
+  padding: 20px;
+  gap: 0;
+  transition: gap 0.35s ease;
+}
+.iphone-page.slide-active {
+  gap: 20px;
+}
+
+/* ===== 변경 후 ===== */
+.iphone-page {
+  display: flex;
+  align-items: stretch;           /* ← center → stretch: 패널이 세로 전체를 채움 */
+  justify-content: center;
+  min-height: calc(100vh - 56px);
+  padding: 20px;
+  gap: 0;
+  transition: gap 0.35s ease;
+}
+.iphone-page.slide-active {
+  gap: 24px;                      /* ← 20px → 24px: 간격 약간 넓힘 */
+  justify-content: flex-start;    /* ← 추가: 좌측 정렬로 전환 */
+  padding: 20px 24px;             /* ← 추가: 좌우 패딩 조정 */
+}
+```
+
+**핵심 변경**: `align-items: center` → `align-items: stretch`로 바꾸면 사이드 패널이 부모 높이 전체를 채우게 됩니다.
+
+### 3-3. CSS 변경 — `.iphone-frame` (패널 열렸을 때 아이폰 축소)
+
+**위치**: Line 239-255
+
+```css
+/* ===== 추가 ===== */
+.iphone-page.slide-active .iphone-frame {
+  /* 패널이 열리면 iPhone은 고정 크기 유지, 좌측에 붙음 */
+  flex-shrink: 0;
+}
+```
+
+### 3-4. CSS 변경 — `.side-panel` 확장
+
+**위치**: Line 448-468
+
+```css
+/* ===== 변경 전 ===== */
+.side-panel {
+  width: 0;
+  height: 682px;
+  background: var(--ios-surface);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: width 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              opacity 0.35s ease,
+              box-shadow 0.35s ease;
+  opacity: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.side-panel.open,
+.side-panel.task-open {
+  width: 380px;
+  opacity: 1;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.12), 0 2px 10px rgba(0,0,0,0.06);
+}
+
+/* ===== 변경 후 ===== */
+.side-panel {
+  width: 0;
+  min-height: 0;                  /* ← height: 682px 제거 */
+  background: var(--ios-surface);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              opacity 0.35s ease,
+              box-shadow 0.35s ease,
+              flex 0.4s ease;     /* ← flex 트랜지션 추가 */
+  opacity: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 1;                 /* ← 0 → 1: 축소 허용 */
+  flex-grow: 0;
+}
+.side-panel.open,
+.side-panel.task-open {
+  width: auto;                    /* ← 380px 고정 → auto */
+  flex: 1;                        /* ← 추가: 남은 공간 전체 차지 */
+  min-width: 420px;               /* ← 최소 너비 보장 */
+  max-width: 720px;               /* ← 최대 너비 제한 (너무 넓으면 가독성 저하) */
+  opacity: 1;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.10),
+    0 2px 10px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.04); /* ← 얇은 보더 추가 */
+}
+```
+
+### 3-5. CSS 변경 — 패널 내부 콘텐츠 확대
+
+패널이 넓어졌으므로 **내부 콘텐츠의 폰트, 패딩, 간격도 비례 확대**합니다.
+
+```css
+/* ──── 패널 헤더 확대 ──── */
+/* 변경 전: Line 657 */
+.ts-header {
+  padding: 12px 16px;            /* → */ padding: 16px 24px;
+}
+.ts-back {
+  font-size: 15px;               /* → */ font-size: 16px;
+  margin-bottom: 8px;            /* → */ margin-bottom: 10px;
+}
+.ts-icon {
+  font-size: 24px;               /* → */ font-size: 28px;
+}
+.ts-title {
+  font-size: 20px;               /* → */ font-size: 24px;
+}
+
+/* ──── 패널 본문 확대 ──── */
+/* 변경 전: Line 693 */
+.ts-body {
+  padding: 16px;                 /* → */ padding: 20px 28px;
+}
+
+/* ──── 담당자 카드 확대 ──── */
+/* 변경 전: Line 700 */
+.owner-card {
+  padding: 14px 16px;            /* → */ padding: 16px 20px;
+  gap: 12px;                     /* → */ gap: 16px;
+  border-radius: 14px;           /* → */ border-radius: 16px;
+  margin-bottom: 16px;           /* → */ margin-bottom: 20px;
+}
+.owner-icon {
+  font-size: 28px;               /* → */ font-size: 32px;
+  width: 44px;                   /* → */ width: 52px;
+  height: 44px;                  /* → */ height: 52px;
+}
+.owner-name {
+  font-size: 15px;               /* → */ font-size: 17px;
+}
+.owner-name span {
+  font-size: 13px;               /* → */ font-size: 14px;
+}
+.owner-team {
+  font-size: 12px;               /* → */ font-size: 13px;
+}
+.owner-contact {
+  font-size: 12px;               /* → */ font-size: 13px;
+}
+
+/* ──── 스텝 확대 ──── */
+/* 변경 전: Line 755 */
+.step {
+  gap: 12px;                     /* → */ gap: 16px;
+  margin-bottom: 16px;           /* → */ margin-bottom: 22px;
+}
+.step-num {
+  width: 28px;                   /* → */ width: 34px;
+  height: 28px;                  /* → */ height: 34px;
+  font-size: 13px;               /* → */ font-size: 15px;
+}
+.step-title {
+  font-size: 15px;               /* → */ font-size: 17px;
+  margin-bottom: 4px;            /* → */ margin-bottom: 6px;
+}
+.step-desc {
+  font-size: 13px;               /* → */ font-size: 15px;
+  line-height: 1.7;              /* → */ line-height: 1.75;
+}
+
+/* ──── 상세 보기 버튼 확대 ──── */
+.expand-btn {
+  padding: 6px 14px;             /* → */ padding: 8px 18px;
+  font-size: 12px;               /* → */ font-size: 13px;
+}
+.expand-detail {
+  padding: 12px 14px;            /* → */ padding: 14px 18px;
+  font-size: 13px;               /* → */ font-size: 14px;
+}
+
+/* ──── 이메일 박스 확대 ──── */
+.email-header {
+  padding: 8px 14px;             /* → */ padding: 10px 18px;
+  font-size: 12px;               /* → */ font-size: 13px;
+}
+.email-meta {
+  padding: 10px 14px;            /* → */ padding: 12px 18px;
+}
+.email-row {
+  font-size: 12px;               /* → */ font-size: 13px;
+  margin-bottom: 4px;            /* → */ margin-bottom: 6px;
+}
+.email-label {
+  font-size: 12px;               /* → */ font-size: 13px;
+  width: 55px;                   /* → */ width: 65px;
+}
+.email-value {
+  font-size: 12px;               /* → */ font-size: 13px;
+}
+.email-body-content {
+  padding: 10px 14px;            /* → */ padding: 14px 18px;
+  font-size: 13px;               /* → */ font-size: 14px;
+}
+.email-body-copy-btn {
+  padding: 6px 14px;             /* → */ padding: 8px 18px;
+  font-size: 12px;               /* → */ font-size: 13px;
+}
+
+/* ──── 정보 그리드 확대 ──── */
+.info-grid {
+  gap: 8px;                      /* → */ gap: 12px;
+  margin-top: 12px;              /* → */ margin-top: 16px;
+}
+.info-card {
+  padding: 12px 14px;            /* → */ padding: 16px 18px;
+  border-radius: 12px;           /* → */ border-radius: 14px;
+}
+.info-card-title {
+  font-size: 12px;               /* → */ font-size: 14px;
+  margin-bottom: 6px;            /* → */ margin-bottom: 8px;
+}
+.info-card li {
+  font-size: 12px;               /* → */ font-size: 13px;
+}
+
+/* ──── 테이블 확대 ──── */
+.ptable {
+  font-size: 12px;               /* → */ font-size: 14px;
+}
+.ptable th {
+  padding: 8px 12px;             /* → */ padding: 10px 16px;
+}
+.ptable td {
+  padding: 8px 12px;             /* → */ padding: 10px 16px;
+}
+
+/* ──── 경고/노트 확대 ──── */
+.warn {
+  padding: 10px 14px;            /* → */ padding: 14px 18px;
+  font-size: 13px;               /* → */ font-size: 14px;
+}
+.note {
+  padding: 10px 14px;            /* → */ padding: 14px 18px;
+  font-size: 13px;               /* → */ font-size: 14px;
+}
+```
+
+### 3-6. CSS 변경 — PersonDetailSlide 확대
+
+```css
+/* ──── 인물 상세 패널 확대 ──── */
+.pds-header {
+  padding: 12px 16px;            /* → */ padding: 16px 24px;
+}
+.pds-back {
+  font-size: 15px;               /* → */ font-size: 16px;
+}
+.pds-avatar {
+  width: 56px;                   /* → */ width: 64px;
+  height: 56px;                  /* → */ height: 64px;
+  font-size: 22px;               /* → */ font-size: 26px;
+}
+.pds-name {
+  font-size: 17px;               /* → */ font-size: 20px;
+}
+.pds-name-en {
+  font-size: 13px;               /* → */ font-size: 14px;
+}
+.pds-desc {
+  font-size: 13px;               /* → */ font-size: 14px;
+}
+
+/* 담당 업무 리스트 항목 */
+.pds-task-item {
+  /* 기존 스타일에 추가 */
+  padding: 14px 16px;            /* → */ padding: 16px 20px;
+}
+.pds-task-label {
+  font-size: 14px;               /* → */ font-size: 16px;
+}
+.pds-task-desc {
+  font-size: 12px;               /* → */ font-size: 13px;
+}
+.pds-task-num {
+  width: 28px;                   /* → */ width: 32px;
+  height: 28px;                  /* → */ height: 32px;
+  font-size: 13px;               /* → */ font-size: 14px;
+}
+```
+
+### 3-7. 반응형 브레이크포인트 수정
+
+```css
+/* ===== 900px 이하 — 변경 ===== */
+@media (max-width: 900px) {
+  .iphone-page {
+    flex-direction: column;        /* ← row → column: 세로 스택 */
+    align-items: center;
+    padding: 10px;
+    gap: 12px !important;
+  }
+  .iphone-frame {
+    width: 280px;
+    height: 600px;
+  }
+  .side-panel.open,
+  .side-panel.task-open {
+    width: 100%;
+    max-width: 100%;               /* ← 393px → 100% */
+    min-width: 0;                  /* ← min-width 리셋 */
+    flex: none;                    /* ← flex: 1 해제 */
+    height: auto;                  /* ← 500px 고정 → auto */
+    min-height: 400px;
+    max-height: 60vh;
+    border-radius: 20px;
+  }
+
+  /* 패널 내부도 축소 복원 */
+  .ts-body { padding: 16px; }
+  .ts-title { font-size: 20px; }
+  .step-title { font-size: 15px; }
+  .step-desc { font-size: 13px; }
+  .owner-icon { width: 44px; height: 44px; font-size: 28px; }
+}
+
+/* ===== 700px 이하 ===== */
+@media (max-width: 700px) {
+  .iphone-page {
+    flex-direction: column;
+    padding: 10px;
+    gap: 12px !important;
+  }
+  .iphone-frame {
+    width: 100%;
+    max-width: 393px;
+    height: 700px;
+  }
+  .side-panel.open,
+  .side-panel.task-open {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex: none;
+    max-height: 50vh;
+  }
+}
+
+/* ===== 430px 이하 (모바일 풀스크린) ===== */
+@media (max-width: 430px) {
+  .iphone-page {
+    padding: 0;
+    min-height: calc(100dvh - 56px);
+    flex-direction: column;
+    gap: 0 !important;
+  }
+  .iphone-frame {
+    width: 100%;
+    height: calc(55dvh - 34px);  /* ← 60dvh → 55dvh: 패널에 더 공간 할당 */
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  }
+  .side-panel.open,
+  .side-panel.task-open {
+    width: 100%;
+    height: 45dvh;               /* ← 40dvh → 45dvh */
+    border-radius: 16px 16px 0 0;
+    max-width: 100%;
+    min-width: 0;
+    flex: none;
+  }
+}
+```
+
+### 3-8. 변경 전/후 시각 비교
+
+```
+=== 변경 전 (현재) ===
+
+  ┌────────┐ ┌──────────┐
+  │iPhone  │ │Panel     │
+  │314×682 │ │380×682   │   ← 고정 크기, 작은 글자
+  │        │ │ 13px 기본 │
+  │        │ │          │
+  └────────┘ └──────────┘
+       694px 사용 / 나머지 공간 낭비
+
+
+=== 변경 후 ===
+
+  ┌────────┐ ┌──────────────────────────────────────┐
+  │iPhone  │ │         확장된 Panel                   │
+  │314×682 │ │     flex:1 (남은 공간 전체)              │
+  │        │ │     min: 420px / max: 720px            │
+  │        │ │     15~17px 본문 / 24px 제목            │
+  │        │ │     넓은 패딩 (28px 본문)               │
+  │        │ │     큰 스텝 번호 (34px)                 │
+  │        │ │     쾌적한 이메일 박스                    │
+  └────────┘ └──────────────────────────────────────┘
+       전체 뷰포트 활용 — 확대된 느낌
+```
+
+---
+
+## 4. Grace Kwon 이사 역할 수정
+
+### 4-1. 현재 상태
+
+```typescript
+// persons.ts — Line 20-32 (현재)
+{
+  id: "person_grace",
+  name: "권희원",
+  nameEn: "Grace Kwon",
+  title: "이사",
+  team: "WPR팀",
+  emoji: "👔",
+  color: "#8B5CF6",
+  avatarInitial: "권",
+  description: "WPR팀 총괄",
+  responsibilities: [],  // ← 비어있음! "담당 업무가 없습니다" 표시됨
+}
+```
+
+### 4-2. 수정 코드
+
+```typescript
+// persons.ts — 수정 후
+{
+  id: "person_grace",
+  name: "권희원",
+  nameEn: "Grace Kwon",
+  title: "이사",
+  team: "WPR팀",
+  emoji: "👔",
+  color: "#8B5CF6",
+  avatarInitial: "권",
+  description: "WPR 총괄 · Legal & Compliance Coordination",
+  responsibilities: [
+    {
+      label: "WPR 총괄",
+      taskKey: "wpr_overview",
+      description: "WPR팀 전체 업무 총괄 관리"
+    },
+    {
+      label: "Contract Review Support & Legal Coordination",
+      taskKey: "contract_review",
+      description: "계약서 검토 지원 및 Legal 코디네이션"
+    },
+    {
+      label: "NDA Review & Process",
+      taskKey: "nda_review",
+      description: "비밀유지약정서(NDA) 리뷰 절차 및 체크리스트 관리"
+    },
+    {
+      label: "Compliance Coordination",
+      taskKey: "compliance",
+      description: "윤리 및 규정 준수 조항 코디네이션"
+    },
+  ],
+}
+```
+
+---
+
+## 5. NDA 리뷰 절차
+
+### 5-1. 절차 다이어그램
+
+```
+┌─────────────┐     ┌──────────────────────────┐     ┌──────────────────────┐
+│  NDA 초안    │ ──▶ │   팀장 리뷰 (1차 검토)     │ ──▶ │  Division Head       │
+│  작성 (담당자)│     │   NDA Checklist 확인 필수  │     │  또는 Grace Kwon     │
+└─────────────┘     └──────────────────────────┘     │  (최종 승인)          │
+                                                      └──────────────────────┘
+```
+
+### 5-2. NDA Checklist
+
+| # | 체크 항목 | 상세 |
+|---|----------|------|
+| ✅ | 준거법 (Governing Law) | 대한민국 법률 또는 합의된 관할법 명시 |
+| ✅ | 관할법원 (Jurisdiction) | 서울중앙지방법원 등 구체적 명시 |
+| ✅ | 비밀정보 정의 | 범위가 명확·구체적인지 확인 |
+| ✅ | 유효기간 (Term & Survival) | NDA 유효기간 + 종료 후 존속 기간 |
+| ✅ | 정보반환/파기 의무 | 계약 종료 시 비밀정보 처리 방법 명시 |
+
+### 5-3. NDA 포함 금지 사항
+
+| ❌ 금지 항목 | 사유 |
+|-------------|------|
+| **면책 (Indemnification)** | NDA는 비밀유지 목적 — 면책 조항 부적절 |
+| **위약벌 (Penalty / Liquidated Damages)** | 위약벌 사전 규정 불가 |
+
+### 5-4. 고객사 정보 공개 시
+
+> 고객사의 정보를 제3자에게 공개해야 하는 경우  
+> → **고객사와의 NDA를 Back-to-Back으로 체결** 필수  
+> (동일 수준 비밀유지 의무를 제3자에게 적용)
+
+### 5-5. tasks.ts 추가 코드 — `nda_review`
+
+```typescript
+nda_review: {
+  icon: "🔒", label: "NDA Review & Process", badge: "Legal",
+  owner: {
+    icon: "👔", name: "Grace Kwon",
+    nameKo: "권희원 이사", team: "WPR",
+    contact: "grace.kwon@ap.cushwake.com"
+  },
+  steps: [
+    {
+      n: 1, title: "NDA 초안 작성",
+      desc: "담당자가 NDA 초안을 작성합니다. 표준 NDA 양식 사용을 권장합니다.",
+      detail: null
+    },
+    {
+      n: 2, title: "팀장 리뷰 (1차)",
+      desc: "소속 팀장에게 1차 리뷰를 요청합니다. <strong>NDA Checklist 확인 필수</strong>.",
+      detail: "확인 항목: 준거법(Governing Law), 관할법원(Jurisdiction), 비밀정보 정의, 유효기간, 정보반환/파기 의무"
+    },
+    {
+      n: 3, title: "Division Head 또는 Grace Kwon 최종 승인",
+      desc: "팀장 리뷰 완료 후 <strong>Division Head</strong> 또는 <strong>Grace Kwon</strong>에게 최종 승인을 요청합니다.",
+      email: {
+        to: "Grace Kwon (grace.kwon@ap.cushwake.com)",
+        cc: "팀장, Division Head (YJ Choi)",
+        subject: "[NDA Review] [고객사명] / NDA 최종 승인 요청",
+        body: "Dear Grace,\n\nPlease find attached the NDA for your review and final approval.\n\n■ Client Name   : [고객사명]\n■ Counterparty  : [상대방]\n■ NDA Type      : □ Mutual  □ One-way\n■ Team Lead Review : Completed\n■ NDA Checklist : Attached\n\nPlease advise if any amendments are required.\n\nBest regards,"
+      }
+    },
+  ],
+  infoGrid: [
+    {
+      title: "✅ NDA Checklist",
+      items: [
+        "준거법 (Governing Law) 확인",
+        "관할법원 (Jurisdiction) 확인",
+        "비밀정보 정의 범위 적정성",
+        "유효기간 및 존속조항 확인",
+        "정보반환/파기 의무 명시"
+      ]
+    },
+    {
+      title: "❌ 포함 금지 항목",
+      items: [
+        "면책 조항 (Indemnification)",
+        "위약벌 (Penalty/Liquidated Damages)"
+      ]
+    },
+    {
+      title: "⚠️ 고객사 정보 공개 시",
+      items: [
+        "고객사와의 NDA를 Back-to-Back으로 체결 필수",
+        "동일 수준 비밀유지 의무를 제3자에게 적용"
+      ]
+    }
+  ],
+  warn: "NDA에 면책(Indemnification) 또는 위약벌(Penalty) 조항이 포함되어서는 안 됩니다."
+},
+```
+
+---
+
+## 6. 계약서 리뷰 절차
+
+### 6-1. Case A — 표준계약서 사용 시
+
+```
+Grace Kwon (1차 리뷰) ──▶ 팀장 (2차 리뷰) ──▶ Division Head / YJ Choi (최종 승인)
+```
+
+### 6-2. Case B — 고객사 양식 사용 또는 표준계약서 내 수정
+
+```
+Grace Kwon (1차 리뷰) ──▶ APAC Legal (최종 승인)
+```
+
+### 6-3. tasks.ts 추가 코드 — `contract_review`
+
+```typescript
+contract_review: {
+  icon: "📋", label: "Contract Review Support & Legal Coordination", badge: "Legal",
+  owner: {
+    icon: "👔", name: "Grace Kwon",
+    nameKo: "권희원 이사", team: "WPR",
+    contact: "grace.kwon@ap.cushwake.com"
+  },
+  steps: [
+    {
+      n: 1, title: "계약서 양식 구분",
+      desc: "계약서가 <strong>표준계약서</strong>인지, <strong>고객사 양식</strong> 또는 <strong>표준계약서 내 수정</strong>인지 확인합니다.",
+      detail: "• 표준계약서 사용 → Case A 절차<br>• 고객사 양식 사용 또는 표준계약서 내용 수정 → Case B 절차"
+    },
+    {
+      n: 2, title: "[Case A] Grace Kwon → 팀장 → Division Head (YJ Choi)",
+      desc: "표준계약서를 그대로 사용하는 경우, Grace Kwon이 1차 리뷰 후 팀장 → Division Head 순서로 승인합니다.",
+      email: {
+        to: "Grace Kwon (grace.kwon@ap.cushwake.com)",
+        cc: "팀장",
+        subject: "[Contract Review – Standard] [프로젝트명] / [고객사명]",
+        body: "Dear Grace,\n\nPlease review the attached standard contract for the following project.\n\n■ Project Name  : [프로젝트명]\n■ Client Name   : [고객사명]\n■ Contract Type : Standard Template\n■ Fee Structure : [용역 수수료 구조]\n■ Key Terms     : [주요 조건 요약]\n\nPlease advise if the contract is ready for Team Lead review.\n\nBest regards,"
+      }
+    },
+    {
+      n: 3, title: "[Case B] Grace Kwon → APAC Legal",
+      desc: "고객사 양식 사용 또는 표준계약서 내 수정이 있는 경우, Grace Kwon 1차 리뷰 후 <strong>APAC Legal</strong>로 에스컬레이션합니다.",
+      email: {
+        to: "Grace Kwon (grace.kwon@ap.cushwake.com)",
+        cc: "팀장, APAC Legal",
+        subject: "[Contract Review – Client Form / Amendment] [프로젝트명] / [고객사명]",
+        body: "Dear Grace,\n\nPlease review the attached contract which uses the client's template / contains amendments to our standard form.\n\n■ Project Name     : [프로젝트명]\n■ Client Name      : [고객사명]\n■ Contract Type    : □ Client Template  □ Standard with Amendments\n■ Key Amendments   : [수정사항 요약]\n■ Fee Structure    : [용역 수수료 구조]\n\nAPAC Legal escalation may be required per policy.\n\nBest regards,"
+      }
+    },
+    {
+      n: 4, title: "최종 승인 및 체결",
+      desc: "모든 리뷰 완료 후 계약서 최종본을 확정하고 <strong>Glosign</strong>을 통해 날인 절차를 진행합니다.",
+      detail: "→ 비대면 인감날인 절차는 🖊️ 인감 날인 항목을 참고하세요."
+    }
+  ],
+  infoGrid: [
+    {
+      title: "📝 Case A — 표준계약서",
+      items: [
+        "Grace Kwon (1차 리뷰)",
+        "팀장 (2차 리뷰)",
+        "Division Head / YJ Choi (최종 승인)"
+      ]
+    },
+    {
+      title: "📝 Case B — 고객사 양식/수정",
+      items: [
+        "Grace Kwon (1차 리뷰)",
+        "APAC Legal (최종 승인)"
+      ]
+    }
+  ],
+},
+```
+
+---
+
+## 7. 계약서 작성·리뷰 시 주의사항 체크리스트
+
+### 7-1. 중개와 구별 — Do / Don't 매트릭스
+
+| 구분 | ✅ DO (허용) | ❌ DON'T (금지) |
+|------|-------------|-----------------|
+| **업무 범위 용어** | 자문 (Advisory), 컨설팅 (Consulting) | 중개 (Brokerage) |
+| **수수료 용어** | **용역 수수료** (Service Fee) | ~~커미션 (Commission)~~ |
+| **영문 계약서** | Advisory / Consulting Service | ~~Brokerage~~ 포함 절대 금지 |
+| **업무 정의** | 구체적·실제적 명시 (예: "입주 시까지 임차인 관리") | 추상적·포괄적 업무 범위 |
+| **전문자격 업무** | Disclaimer에 제외 명시 | 계약서 검토, 재무 자문, 물리적 실사 포함 |
+| **향후 업무 추가** | — | ~~"추후 협의에 따라 전문자격 업무 논의 가능"~~ |
+
+### 7-2. 부동산 중개 오인 소지 업무
+
+| ⚠️ 주의 업무 | 오인 소지 사유 |
+|-------------|---------------|
+| 임대차 계약서 작성 | 중개업 무인가 행위 해당 가능 |
+| 임대차 계약서 리뷰 | 법률 자문으로 분류 가능 |
+| 임차인과 계약 조건 협의 | 중개 행위 해당 가능 |
+| 재무 자문 (Financial Advisory) | CPA/CFA 전문자격 필요 |
+| 물리적 실사 (Physical DD) | 전문 엔지니어링 자격 필요 |
+| 계약서 법률 검토 | 변호사 자격 필요 |
+
+### 7-3. 계약서 필수 구조 — 6대 섹션
+
+```
+ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+ ┃                 계약서 필수 구조                       ┃
+ ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+ ┃                                                      ┃
+ ┃  ① 업무 영역 (Scope of Services)                      ┃
+ ┃     → 구체적·실제적 업무만 명시                          ┃
+ ┃     → 예: "입주시까지 임차인 관리"                       ┃
+ ┃                                                      ┃
+ ┃  ② Disclaimer (면책 선언)                              ┃
+ ┃     → "전문자격을 요하는 업무는 본 계약에 포함되지         ┃
+ ┃        않으며, C&W는 해당 업무 제공 책임을 지지 않는다"    ┃
+ ┃                                                      ┃
+ ┃  ③ 용역 수수료 (Service Fee)                           ┃
+ ┃     → "커미션" 대신 "용역 수수료" 용어 사용               ┃
+ ┃                                                      ┃
+ ┃  ④ 손해배상 (Liability)                                ┃
+ ┃     → 책임 한도(Liability Cap) 반드시 설정               ┃
+ ┃     → 수수료 총액 또는 합의 금액 기준                     ┃
+ ┃                                                      ┃
+ ┃  ⑤ 준거법 및 관할법원                                   ┃
+ ┃     → Governing Law: 대한민국 법률                      ┃
+ ┃     → Jurisdiction: 서울중앙지방법원 등                  ┃
+ ┃                                                      ┃
+ ┃  ⑥ 컴플라이언스 조항 (Ethics & Compliance)              ┃
+ ┃     → FCPA, UK Bribery Act 등 Anti-Corruption          ┃
+ ┃     → 윤리 및 규정 준수 조항 필수                        ┃
+ ┃                                                      ┃
+ ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+```
+
+### 7-4. tasks.ts 추가 코드 — `compliance` & `wpr_overview`
+
+```typescript
+compliance: {
+  icon: "⚖️", label: "Compliance Coordination", badge: "Compliance",
+  owner: {
+    icon: "👔", name: "Grace Kwon",
+    nameKo: "권희원 이사", team: "WPR",
+    contact: "grace.kwon@ap.cushwake.com"
+  },
+  steps: [
+    {
+      n: 1, title: "계약서 내 컴플라이언스 조항 확인",
+      desc: "계약서에 윤리 및 규정 준수 조항(Ethics & Compliance Clause)이 포함되어 있는지 확인합니다.",
+      detail: "Anti-Corruption (FCPA, UK Bribery Act), Data Protection, Conflict of Interest 조항 포함 여부 확인"
+    },
+    {
+      n: 2, title: "Supplier Due Diligence (3rd Party Risk)",
+      desc: "신규 거래처 등록 시 <strong>3rd Party Risk Assessment DD Form</strong> 작성 및 실사설문지 확인",
+      detail: "→ Workday Supplier 등록 절차 내 DD Form 첨부 필수"
+    },
+    {
+      n: 3, title: "Compliance 이슈 에스컬레이션",
+      desc: "윤리 위반 또는 컴플라이언스 이슈 발견 시 <strong>Grace Kwon</strong>을 통해 APAC Compliance팀에 보고합니다.",
+      email: {
+        to: "Grace Kwon (grace.kwon@ap.cushwake.com)",
+        subject: "[Compliance Issue] [건명] / Escalation Request",
+        body: "Dear Grace,\n\nI would like to escalate the following compliance concern for your review.\n\n■ Project / Matter : [건명]\n■ Issue Type       : □ Anti-Corruption  □ Conflict of Interest  □ Data Protection  □ Other\n■ Description      : [이슈 상세]\n■ Urgency          : □ Immediate  □ Within 1 week  □ Non-urgent\n\nPlease advise on next steps.\n\nBest regards,"
+      }
+    }
+  ],
+  infoGrid: [
+    {
+      title: "⚖️ 필수 컴플라이언스 영역",
+      items: [
+        "Anti-Corruption (FCPA / UK Bribery Act)",
+        "Data Protection & Privacy",
+        "Conflict of Interest",
+        "Sanctions & Export Controls",
+        "Anti-Money Laundering"
+      ]
+    }
+  ],
+},
+
+wpr_overview: {
+  icon: "🏢", label: "WPR 총괄", badge: "총괄",
+  owner: {
+    icon: "👔", name: "Grace Kwon",
+    nameKo: "권희원 이사", team: "WPR",
+    contact: "grace.kwon@ap.cushwake.com"
+  },
+  steps: [
+    {
+      n: 1, title: "WPR팀 전체 업무 총괄",
+      desc: "시설·행정·IT 지원 업무 전반의 총괄 관리 및 의사결정",
+      detail: null
+    },
+    {
+      n: 2, title: "팀원 업무 배분 및 관리",
+      desc: "WPR팀 소속 직원의 업무 배분, 성과 관리, 교육 지원",
+      detail: null
+    },
+    {
+      n: 3, title: "APAC 리포팅",
+      desc: "APAC 본사에 대한 정기 보고 및 지역 정책 이행 관리",
+      detail: null
+    }
+  ],
+},
+```
+
+---
+
+## 8. 홈스크린 글래시 벤토 아이콘
+
+### 8-1. FolderIcon.tsx 수정
+
+```tsx
+import type { Department } from "@/data/departments";
+
+const ICON_GRADIENTS: Record<string, string> = {
+  wpr: "linear-gradient(145deg, #E8243C 0%, #C41230 45%, #8B0D22 100%)",
+  hr:  "linear-gradient(145deg, #4F8BF5 0%, #2563EB 45%, #1A47B0 100%)",
+};
+
+interface Props {
+  dept: Department;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+export default function FolderIcon({ dept, onClick, disabled }: Props) {
+  const gradient = ICON_GRADIENTS[dept.id] || dept.iconBg;
+
+  return (
+    <button
+      className={`folder-icon${disabled ? " folder-disabled" : ""}`}
+      onClick={disabled ? undefined : onClick}
+      data-testid={`folder-${dept.id}`}
+    >
+      <div
+        className="folder-icon-bg"
+        style={{ background: gradient, opacity: disabled ? 0.5 : 1 }}
+      >
+        <span className="folder-icon-emoji">{dept.icon}</span>
+      </div>
+      <span className="folder-icon-label">
+        {dept.name}
+        {disabled && <span className="folder-soon"> (준비 중)</span>}
+      </span>
+    </button>
+  );
+}
+```
+
+### 8-2. CSS 글래시 스타일
+
+```css
+/* ──── Glassy Bento App Icons ──── */
+.folder-icon-bg {
+  width: 60px;
+  height: 60px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    0 1px 3px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.folder-icon-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    175deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 0.12) 30%,
+    transparent 50%
+  );
+  pointer-events: none;
+}
+
+.folder-icon-emoji {
+  font-size: 28px;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+```
+
+---
+
+## 9. 파일별 수정 명세 (전체)
+
+### 9-1. 수정 파일 목록
+
+| # | 파일 | 수정 유형 | 변경 내용 |
+|---|------|----------|----------|
+| 1 | `client/src/index.css` | **수정** | `.iphone-page` stretch 레이아웃, `.side-panel` flex:1 확장, 내부 폰트/패딩 전체 확대, 반응형 브레이크포인트 조정, 글래시 아이콘 CSS |
+| 2 | `client/src/data/persons.ts` | **수정** | Grace Kwon `description` 변경, `responsibilities` 4개 항목 추가 |
+| 3 | `client/src/data/tasks.ts` | **추가** | `wpr_overview`, `nda_review`, `contract_review`, `compliance` 4개 TaskData |
+| 4 | `client/src/data/searchIndex.ts` | **추가** | 4개 신규 task SearchableTask 항목 |
+| 5 | `client/src/pages/home.tsx` | **수정** | `BENTO_ITEMS`에 신규 카드 3개 추가 |
+| 6 | `client/src/components/FolderIcon.tsx` | **수정** | `ICON_GRADIENTS` 맵 추가, gradient 배경 적용 |
+
+### 9-2. searchIndex.ts 추가 항목
+
+```typescript
+{
+  key: 'wpr_overview', label: 'WPR 총괄', badge: '총괄', icon: '🏢',
+  keywords: ['총괄', 'wpr', '관리', '권희원', 'grace'],
+  ownerName: '권희원 이사', ownerEn: 'grace kwon',
+},
+{
+  key: 'nda_review', label: 'NDA Review', badge: 'Legal', icon: '🔒',
+  keywords: ['nda', '비밀유지', '약정서', 'non-disclosure', 'confidential', '체크리스트'],
+  ownerName: '권희원 이사', ownerEn: 'grace kwon',
+},
+{
+  key: 'contract_review', label: 'Contract Review', badge: 'Legal', icon: '📋',
+  keywords: ['계약', 'contract', '리뷰', '검토', '표준계약', '고객사양식', 'legal'],
+  ownerName: '권희원 이사', ownerEn: 'grace kwon',
+},
+{
+  key: 'compliance', label: 'Compliance', badge: 'Compliance', icon: '⚖️',
+  keywords: ['compliance', '컴플라이언스', '윤리', '규정', 'ethics', 'fcpa'],
+  ownerName: '권희원 이사', ownerEn: 'grace kwon',
+},
+```
+
+### 9-3. BENTO_ITEMS 추가 (home.tsx)
+
+```typescript
+{ key: "nda_review", icon: "🔒", label: "NDA Review", category: "Legal",
+  categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)" },
+{ key: "contract_review", icon: "📋", label: "Contract Review", category: "Legal",
+  categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)", wide: true },
+{ key: "compliance", icon: "⚖️", label: "Compliance", category: "Compliance",
+  categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)" },
+```
+
+### 9-4. CSS 변경 요약 (index.css 라인별)
+
+| 라인 | 클래스 | 핵심 변경 |
+|------|--------|----------|
+| 226 | `.iphone-page` | `align-items: stretch` |
+| 235 | `.iphone-page.slide-active` | `justify-content: flex-start; gap: 24px` |
+| 448 | `.side-panel` | `height` 제거 → `min-height: 0`, `flex-shrink: 1` |
+| 463 | `.side-panel.open` | `width: auto; flex: 1; min-width: 420px; max-width: 720px` |
+| 657 | `.ts-header` | `padding: 16px 24px` |
+| 684 | `.ts-icon` | `font-size: 28px` |
+| 687 | `.ts-title` | `font-size: 24px` |
+| 693 | `.ts-body` | `padding: 20px 28px` |
+| 700 | `.owner-card` | `padding: 16px 20px; gap: 16px` |
+| 709 | `.owner-icon` | `52×52px, font: 32px` |
+| 755 | `.step` | `gap: 16px; margin-bottom: 22px` |
+| 761 | `.step-num` | `34×34px, font: 15px` |
+| 779 | `.step-title` | `font-size: 17px` |
+| 785 | `.step-desc` | `font-size: 15px` |
+| 832 | `.email-*` | 전체 패딩·폰트 1-2px 확대 |
+| 959 | `.info-grid` | `gap: 12px` |
+| 1556 | `@media 900px` | 패널 `width: 100%; max-width: 100%` |
+| 1577 | `@media 700px` | 패널 `max-height: 50vh` |
+| 1805 | `@media 430px` | 프레임 `55dvh`, 패널 `45dvh` |
+| 1688 | `.folder-icon-bg` | `60×60, radius: 15px, 글래시 shadow, ::after 오버레이` |
+
+### 9-5. Replit / Cursor 에이전트 지시 요약
+
+```
+[수정 1] index.css — 레이아웃 확장
+- .iphone-page: align-items를 center → stretch로 변경
+- .iphone-page.slide-active: justify-content: flex-start, gap: 24px
+- .side-panel: height: 682px 제거, flex-shrink: 1
+- .side-panel.open: width: auto, flex: 1, min-width: 420px, max-width: 720px
+- 반응형 @media 900px/700px/430px 브레이크포인트 수정
+
+[수정 2] index.css — 패널 내부 콘텐츠 확대
+- .ts-header: padding 16px 24px
+- .ts-title: font-size 24px
+- .ts-body: padding 20px 28px
+- .step-num: 34×34px
+- .step-title: 17px, .step-desc: 15px
+- .email-*: 전체 1-2px 확대
+- .info-grid: gap 12px
+- .owner-icon: 52×52px
+- .pds-avatar: 64×64px, .pds-name: 20px
+
+[수정 3] index.css — 글래시 벤토 아이콘
+- .folder-icon-bg: 60×60, 글래디언트 + 글래스 오버레이(::after) + inset shadow
+
+[수정 4] FolderIcon.tsx — ICON_GRADIENTS 맵 추가
+
+[수정 5] persons.ts — Grace Kwon responsibilities 4개 추가
+
+[수정 6] tasks.ts — wpr_overview, nda_review, contract_review, compliance 4개 TaskData 추가
+
+[수정 7] searchIndex.ts — 4개 SearchableTask 추가
+
+[수정 8] home.tsx — BENTO_ITEMS에 nda_review, contract_review(wide), compliance 추가
+```
+
+---
+
+> **작업 순서 권장**: CSS 레이아웃 (수정 1~3) → 컴포넌트 (수정 4) → 데이터 (수정 5~8)  
+> 레이아웃을 먼저 확장한 후 데이터를 추가해야 확대된 패널에서 바로 결과를 확인할 수 있습니다.
