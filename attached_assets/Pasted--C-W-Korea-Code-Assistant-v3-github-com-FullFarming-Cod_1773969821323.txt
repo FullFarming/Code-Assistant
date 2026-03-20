@@ -1,0 +1,823 @@
+# C&W Korea Code-Assistant v3 — 종합 제작 가이드
+
+> **레포지토리**: `github.com/FullFarming/Code-Assistant`  
+> **작성일**: 2026-03-20  
+> **핵심 변경**: Grace Kwon 역할 재정의 + NDA/계약서 멀티 Task 분리 + Teams 아이콘 홈스크린 + 채널 기반 부서 구분
+
+---
+
+## 목차
+
+1. [홈스크린 구조 변경 — Teams 앱 아이콘 + Channel 방식](#1-홈스크린-구조-변경)
+2. [Grace Kwon 이사 역할 재정의](#2-grace-kwon-이사-역할-재정의)
+3. [NDA 리뷰 — 멀티 Task 설계](#3-nda-리뷰--멀티-task-설계)
+4. [계약서 리뷰 — 멀티 Task 설계](#4-계약서-리뷰--멀티-task-설계)
+5. [계약서 날인 및 보관 절차](#5-계약서-날인-및-보관-절차)
+6. [계약서 작성·리뷰 시 주의사항 (원문 그대로)](#6-계약서-작성리뷰-시-주의사항)
+7. [Compliance Coordination Task](#7-compliance-coordination-task)
+8. [데이터 구조 설계 (persons.ts / tasks.ts)](#8-데이터-구조-설계)
+9. [파일별 수정 명세](#9-파일별-수정-명세)
+
+---
+
+## 1. 홈스크린 구조 변경
+
+### 1-1. 현재 → 변경
+
+```
+현재:
+┌──────────────────┐
+│   홈 화면 배경     │
+│                  │
+│  [WPR]  [HR]     │  ← 부서별 폴더 아이콘 (직접 배치)
+│                  │
+│  [FaceTime] ...  │  ← Dock
+└──────────────────┘
+
+변경 후:
+┌──────────────────┐
+│   홈 화면 배경     │
+│                  │
+│  [Teams]         │  ← MS Teams 앱 아이콘 1개만 배치
+│                  │
+│  [FaceTime] ...  │  ← Dock
+└──────────────────┘
+```
+
+### 1-2. Teams 앱 아이콘
+
+- 기존 WPR, HR 폴더 아이콘을 **모두 제거**
+- **MS Teams 아이콘 1개**만 홈 화면에 배치
+- 아이콘 디자인: Teams 공식 보라색 그래디언트 (`#6264A7` → `#7B83EB`), 글래시 스타일
+- 아이콘 라벨: `"Teams"`
+
+### 1-3. Teams 아이콘 탭 → Channel 선택 화면
+
+Teams 아이콘을 탭하면 **부서 Channel 선택 화면**이 나타납니다.
+
+```
+┌──────────────────────┐
+│  ← 뒤로    Teams     │  ← 앱 내비게이션 바
+├──────────────────────┤
+│                      │
+│  Channels            │  ← 섹션 타이틀
+│                      │
+│  ┌──────────────────┐│
+│  │ 🏢 WPR           ││  ← Channel 카드 (활성)
+│  │ Workplace Resources│
+│  │ 시설·행정·IT·Legal ││
+│  └──────────────────┘│
+│                      │
+│  ┌──────────────────┐│
+│  │ 👥 HR            ││  ← Channel 카드 (준비 중)
+│  │ Human Resources   ││
+│  │ 인사·채용·복지     ││
+│  │        (준비 중)   ││
+│  └──────────────────┘│
+│                      │
+└──────────────────────┘
+```
+
+### 1-4. 구현 방식
+
+**`departments.ts` 변경 불필요** — 기존 데이터 구조 유지
+
+**`HomeScreen.tsx` 변경**:
+- `DEPARTMENTS` 배열로 폴더 아이콘 여러 개 → **Teams 아이콘 1개**로 교체
+- Teams 아이콘 탭 시 **Channel 선택 뷰** (중간 단계) 표시
+- Channel 선택 시 기존 앱 모드로 진입
+
+**`home.tsx` 변경**:
+- `viewMode` 상태에 `"channels"` 추가: `"home" | "channels" | "app"`
+- `"home"` → Teams 아이콘 탭 → `"channels"` → WPR 탭 → `"app"`
+
+**`FolderIcon.tsx` 변경**:
+- 기존 부서별 아이콘 → Teams 단일 아이콘 컴포넌트로 교체
+
+---
+
+## 2. Grace Kwon 이사 역할 재정의
+
+### 2-1. 역할 구조
+
+Grace Kwon 이사의 팀원 카드에는 **이름과 직책만** 표시합니다. "WPR 총괄" 같은 기능 설명은 제거합니다.
+
+```typescript
+// persons.ts
+{
+  id: "person_grace",
+  name: "권희원",
+  nameEn: "Grace Kwon",
+  title: "이사",
+  team: "WPR팀",
+  emoji: "👔",
+  color: "#8B5CF6",
+  avatarInitial: "권",
+  description: "Legal & Compliance Coordination",  // 총괄 제거, 역할만
+  responsibilities: [
+    {
+      label: "NDA Review Process",
+      taskKey: "nda_review",
+      description: "비밀유지약정서(NDA) 리뷰 절차 안내"
+    },
+    {
+      label: "Contract Review & Legal Coordination",
+      taskKey: "contract_review",
+      description: "계약서 검토 지원 및 Legal 코디네이션"
+    },
+    {
+      label: "계약서 날인 및 보관",
+      taskKey: "contract_seal",
+      description: "Glosign 전자 날인 / 실물 날인 / 보관 절차"
+    },
+    {
+      label: "Compliance Coordination",
+      taskKey: "compliance",
+      description: "윤리 및 규정 준수 조항 코디네이션"
+    },
+  ],
+}
+```
+
+---
+
+## 3. NDA 리뷰 — 멀티 Task 설계
+
+### 3-1. 전체 플로우
+
+```
+[담당자] NDA 초안 작성 + NDA Checklist 확인
+    │
+    ▼
+[Task 1] 팀장에게 검토 및 승인 요청 메일 ──── ✉️ 메일 #1
+    │
+    ▼ (팀장 승인 완료)
+    │
+[Task 2] Division Head 또는 Grace Kwon에게
+         검토 및 진행 승인 요청 메일 ──── ✉️ 메일 #2
+    │
+    ▼ (최종 승인 완료)
+    │
+[완료] NDA 체결 진행
+```
+
+### 3-2. NDA Checklist (리뷰 시 필수 확인)
+
+- 준거법 및 관할법원
+- 비밀정보 정의 범위
+- 유효기간 및 존속조항
+- 정보반환/파기 의무
+
+### 3-3. NDA에 포함되면 안 되는 내용
+
+- **면책**에 대한 내용
+- **위약벌**에 대한 내용
+
+### 3-4. 고객사 정보 공개 시
+
+- 고객사의 정보를 공개하는 경우: **고객사와의 NDA를 back to back으로** 체결
+
+### 3-5. Task 1 — 팀장 검토·승인 요청 메일
+
+```
+To: [소속 팀장]
+Cc: [관련자]
+Subject: [NDA 검토·승인 요청] [고객사명] / NDA 리뷰
+
+안녕하세요 [팀장님 성함],
+
+아래 NDA에 대한 검토 및 승인을 요청드립니다.
+
+■ 고객사명    : [고객사명]
+■ 상대방      : [상대방 회사명]
+■ NDA 유형    : □ Mutual (상호)  □ One-way (단방향)
+■ NDA Checklist : 확인 완료
+
+첨부: NDA 초안, NDA Checklist
+
+검토 후 승인 부탁드립니다.
+
+감사합니다.
+```
+
+### 3-6. Task 2 — Division Head / Grace Kwon 검토·진행 승인 요청 메일
+
+```
+To: [Division Head 또는 Grace Kwon (grace.kwon@ap.cushwake.com)]
+Cc: [팀장]
+Subject: [NDA 진행 승인 요청] [고객사명] / 팀장 승인 완료
+
+안녕하세요,
+
+아래 NDA에 대해 팀장 검토·승인이 완료되어 진행 승인을 요청드립니다.
+
+■ 고객사명    : [고객사명]
+■ 상대방      : [상대방 회사명]
+■ NDA 유형    : □ Mutual  □ One-way
+■ 팀장 승인   : 완료 (승인 메일 첨부)
+
+첨부: NDA, 팀장 승인 메일
+
+검토 및 진행 승인 부탁드립니다.
+
+감사합니다.
+```
+
+---
+
+## 4. 계약서 리뷰 — 멀티 Task 설계
+
+### 4-1. Case A — 표준계약서 사용 시
+
+```
+[Task A-1] Grace Kwon에게 검토 요청 ──── ✉️ 메일 #1
+    │
+    ▼ (Grace 검토 완료)
+    │
+[Task A-2] 팀장에게 승인 요청 ──── ✉️ 메일 #2
+    │       (첨부: Grace 검토 완료 메일)
+    ▼ (팀장 승인 완료)
+    │
+[Task A-3] Division Head (YJ Choi)에게 승인 요청 ──── ✉️ 메일 #3
+    │
+    ▼ (최종 승인 완료)
+    │
+[날인 절차로 이동]
+```
+
+### 4-2. Case B — 고객사 양식 사용 또는 표준계약서 내 수정
+
+```
+[Task B-1] Grace Kwon에게 검토 요청 ──── ✉️ 메일 #1
+    │
+    ▼ (Grace가 APAC Legal에 검토 요청)
+    │
+    │ [Grace ↔ APAC Legal 사이 진행]
+    │
+    ▼ (APAC Legal 승인 → Grace가 요청자에게 승인 회신)
+    │
+[Task B-2] 팀장에게 승인 요청 ──── ✉️ 메일 #2
+    │       (첨부: Grace 검토 완료/승인 메일)
+    ▼ (팀장 승인 완료)
+    │
+[Task B-3] Division Head (YJ Choi)에게 승인 요청 ──── ✉️ 메일 #3
+    │
+    ▼ (최종 승인 완료)
+    │
+[날인 절차로 이동]
+```
+
+### 4-3. Task A-1 / B-1 — Grace Kwon 검토 요청 메일
+
+```
+To: Grace Kwon (grace.kwon@ap.cushwake.com)
+Cc: [팀장]
+Subject: [계약서 검토 요청] [프로젝트명] / [고객사명]
+
+Dear Grace,
+
+아래 계약서에 대한 검토를 요청드립니다.
+
+■ 프로젝트명    : [프로젝트명]
+■ 고객사명      : [고객사명]
+■ 계약서 유형   : □ 표준계약서  □ 고객사 양식  □ 표준계약서 (수정 있음)
+■ 용역 수수료   : [수수료 구조]
+■ 주요 조건     : [주요 조건 요약]
+
+첨부: 계약서 초안
+
+검토 부탁드립니다.
+
+감사합니다.
+```
+
+### 4-4. Task A-2 / B-2 — 팀장 승인 요청 메일
+
+```
+To: [소속 팀장]
+Cc: Grace Kwon, [관련자]
+Subject: [계약서 승인 요청] [프로젝트명] / [고객사명] — Grace Kwon 검토 완료
+
+안녕하세요 [팀장님 성함],
+
+아래 계약서에 대해 Grace Kwon 이사의 검토가 완료되어 승인을 요청드립니다.
+
+■ 프로젝트명    : [프로젝트명]
+■ 고객사명      : [고객사명]
+■ 계약서 유형   : [유형]
+■ Grace 검토    : 완료 (검토 완료 메일 첨부)
+
+첨부: 계약서, Grace Kwon 검토 완료 메일
+
+승인 부탁드립니다.
+
+감사합니다.
+```
+
+### 4-5. Task A-3 / B-3 — Division Head 승인 요청 메일
+
+```
+To: YJ Choi (Division Head)
+Cc: [팀장], Grace Kwon
+Subject: [계약서 최종 승인 요청] [프로젝트명] / [고객사명]
+
+안녕하세요,
+
+아래 계약서에 대해 Grace Kwon 검토 및 팀장 승인이 완료되어
+최종 승인을 요청드립니다.
+
+■ 프로젝트명    : [프로젝트명]
+■ 고객사명      : [고객사명]
+■ Grace 검토    : 완료
+■ 팀장 승인     : 완료
+
+첨부: 계약서 최종본, 승인 이력 메일
+
+최종 승인 부탁드립니다.
+
+감사합니다.
+```
+
+---
+
+## 5. 계약서 날인 및 보관 절차
+
+모든 승인 절차가 완료된 후 날인은 **두 가지 방법** 중 선택합니다.
+
+### 5-1. 방법 1 — Glosign 비대면 전자 계약
+
+기존 `인감` Task(Glosign 절차)와 동일합니다.
+- Glosign 접속 → 계약서 업로드 → 결재자 설정 → 날인 위치 지정 → 완료
+- 서명참여자: **권희원 이사** (grace.kwon@ap.cushwake.com)
+
+### 5-2. 방법 2 — 실물 날인
+
+- WPR팀에 실물 날인을 요청합니다.
+- 대부분 **사용인감**으로 날인되므로, **사용인감계를 작성하여 함께 전달**해야 합니다.
+- 사용인감계 양식은 WPR팀에 문의하세요.
+
+### 5-3. 날인 완료 후 — 계약서 보관 요청
+
+- 날인이 전부 완료된 계약서는 **WPR팀으로 보관 요청**
+- Gina Kim (gina.kim@cushwake.com)에게 메일로 보관 요청
+
+```
+To: Gina Kim (gina.kim@cushwake.com)
+Subject: [계약서 보관 요청] [고객사명] / [프로젝트명]
+
+안녕하세요 Gina님,
+
+아래 계약서의 날인이 완료되어 보관을 요청드립니다.
+
+■ 고객사명    : [고객사명]
+■ 프로젝트명  : [프로젝트명]
+■ 계약 유형   : [유형]
+■ 날인 방법   : □ Glosign 전자 날인  □ 실물 날인
+■ 계약 기간   : [시작일 ~ 종료일]
+
+첨부: 날인 완료 계약서 (스캔본 또는 원본)
+
+감사합니다.
+```
+
+### 5-4. Task 데이터 (`contract_seal`)
+
+```typescript
+contract_seal: {
+  icon: "🖊️", label: "계약서 날인 및 보관", badge: "날인",
+  owner: {
+    icon: "👔", name: "Grace Kwon",
+    nameKo: "권희원 이사", team: "WPR",
+    contact: "grace.kwon@ap.cushwake.com"
+  },
+  steps: [
+    {
+      n: 1, title: "날인 방법 선택",
+      desc: "모든 승인 절차 완료 후 아래 두 가지 방법 중 선택합니다.",
+      detail: "• <strong>방법 1:</strong> Glosign 비대면 전자 계약<br>• <strong>방법 2:</strong> 실물 날인 (WPR팀 요청)"
+    },
+    {
+      n: 2, title: "[방법 1] Glosign 전자 날인",
+      desc: "Glosign 접속 → 계약서 업로드 → 결재자 설정 → 날인 위치 지정 → 완료",
+      detail: "서명참여자(법인인감 날인 권한자): <strong>권희원 이사</strong> grace.kwon@ap.cushwake.com"
+    },
+    {
+      n: 3, title: "[방법 2] 실물 날인",
+      desc: "WPR팀에 실물 날인을 요청합니다. 대부분 <strong>사용인감</strong>으로 날인되므로 <strong>사용인감계를 작성하여 함께 전달</strong>해야 합니다.",
+      detail: null
+    },
+    {
+      n: 4, title: "보관 요청",
+      desc: "날인이 전부 완료된 계약서는 <strong>WPR팀(Gina Kim)</strong>에 보관을 요청합니다.",
+      email: {
+        to: "Gina Kim (gina.kim@cushwake.com)",
+        subject: "[계약서 보관 요청] [고객사명] / [프로젝트명]",
+        body: "안녕하세요 Gina님,\n\n아래 계약서의 날인이 완료되어 보관을 요청드립니다.\n\n■ 고객사명   : [고객사명]\n■ 프로젝트명 : [프로젝트명]\n■ 날인 방법  : □ Glosign 전자  □ 실물 날인\n■ 계약 기간  : [시작일 ~ 종료일]\n\n첨부: 날인 완료 계약서\n\n감사합니다."
+      }
+    }
+  ],
+  warn: "실물 날인 시 사용인감계 미첨부 시 날인이 진행되지 않습니다."
+},
+```
+
+---
+
+## 6. 계약서 작성·리뷰 시 주의사항
+
+> 아래 내용은 원문 그대로 표기합니다.
+
+### 6-1. 중개와 구별 주의
+
+- **계약서 내 중개 (영문 계약서 작성시 brokerage 포함) 및 부동산 중개로 오인할 소지가 있는 업무의 영역 주의. (임대차 계약서 작성, 리뷰, 임차인과 계약 조건 협의 등)**
+
+- **전문자격이 필요한 업무 사항이 포함되지 않도록 유의. (계약서 검토, 재무 자문, 물리적 실사등) 혹은 추후 협의에 따라 전문자격이 필요한 업무 논의 가능 이란 문구 자제.**
+
+- **커미션이라는 용어 대신 용역 수수료 용어 사용.**
+
+- **업무 영역 및 범위는 가능하면 추상적이지 않고 구체적이고 실제적으로 제공하는 업무로 명시. (ex 입주시까지 임차인 관리)**
+
+### 6-2. 계약서의 구조
+
+- **업무 영역**
+- **Disclaimer (전문자격을 요하는 업무는 포함되지 않으며 쿠시먼은 해당 업무를 제공할 책임을 지지 않는다)**
+- **용역 수수료**
+- **손해배상 (책임 한도 설정)**
+- **준거법 및 관할 법원**
+- **컴플라이언스 조항 (윤리 및 규정 준수 조항)**
+
+### 6-3. 앱 내 표현 방식
+
+위 주의사항은 Task 패널이나 채팅 메시지에서 **원문 그대로** 나열하여 직관적으로 볼 수 있어야 합니다. 요약이나 축약 없이 원문 텍스트를 그대로 렌더링합니다.
+
+`tasks.ts`의 `infoGrid` 또는 별도 `cautionList` 필드로 구현:
+
+```typescript
+// contract_review Task 내부
+cautionList: [
+  {
+    title: "중개와 구별 주의",
+    items: [
+      "계약서 내 중개 (영문 계약서 작성시 brokerage 포함) 및 부동산 중개로 오인할 소지가 있는 업무의 영역 주의. (임대차 계약서 작성, 리뷰, 임차인과 계약 조건 협의 등)",
+      "전문자격이 필요한 업무 사항이 포함되지 않도록 유의. (계약서 검토, 재무 자문, 물리적 실사등) 혹은 추후 협의에 따라 전문자격이 필요한 업무 논의 가능 이란 문구 자제.",
+      "커미션이라는 용어 대신 용역 수수료 용어 사용.",
+      "업무 영역 및 범위는 가능하면 추상적이지 않고 구체적이고 실제적으로 제공하는 업무로 명시. (ex 입주시까지 임차인 관리)"
+    ]
+  },
+  {
+    title: "계약서의 구조",
+    items: [
+      "업무 영역",
+      "Disclaimer (전문자격을 요하는 업무는 포함되지 않으며 쿠시먼은 해당 업무를 제공할 책임을 지지 않는다)",
+      "용역 수수료",
+      "손해배상 (책임 한도 설정)",
+      "준거법 및 관할 법원",
+      "컴플라이언스 조항 (윤리 및 규정 준수 조항)"
+    ]
+  }
+]
+```
+
+---
+
+## 7. Compliance Coordination Task
+
+```typescript
+compliance: {
+  icon: "⚖️", label: "Compliance Coordination", badge: "Compliance",
+  owner: {
+    icon: "👔", name: "Grace Kwon",
+    nameKo: "권희원 이사", team: "WPR",
+    contact: "grace.kwon@ap.cushwake.com"
+  },
+  steps: [
+    {
+      n: 1, title: "계약서 내 컴플라이언스 조항 확인",
+      desc: "계약서에 윤리 및 규정 준수 조항(Ethics & Compliance Clause)이 포함되어 있는지 확인합니다.",
+      detail: "Anti-Corruption (FCPA, UK Bribery Act), Data Protection, Conflict of Interest 조항 포함 여부 확인"
+    },
+    {
+      n: 2, title: "Supplier Due Diligence",
+      desc: "신규 거래처 등록 시 <strong>3rd Party Risk Assessment DD Form</strong> 작성 필수",
+      detail: null
+    },
+    {
+      n: 3, title: "이슈 에스컬레이션",
+      desc: "윤리 위반 또는 컴플라이언스 이슈 발견 시 <strong>Grace Kwon</strong>을 통해 APAC Compliance팀에 보고합니다.",
+      email: {
+        to: "Grace Kwon (grace.kwon@ap.cushwake.com)",
+        subject: "[Compliance Issue] [건명] / Escalation Request",
+        body: "Dear Grace,\n\nI would like to escalate the following compliance concern.\n\n■ Issue Type  : □ Anti-Corruption  □ COI  □ Data Protection  □ Other\n■ Description : [상세]\n■ Urgency     : □ Immediate  □ Within 1 week  □ Non-urgent\n\nBest regards,"
+      }
+    }
+  ],
+},
+```
+
+---
+
+## 8. 데이터 구조 설계
+
+### 8-1. NDA Review Task — tasks.ts
+
+각 Step이 **독립된 이메일 템플릿**을 가집니다.
+
+```typescript
+nda_review: {
+  icon: "🔒", label: "NDA Review Process", badge: "Legal",
+  owner: {
+    icon: "👔", name: "Grace Kwon",
+    nameKo: "권희원 이사", team: "WPR",
+    contact: "grace.kwon@ap.cushwake.com"
+  },
+  steps: [
+    {
+      n: 1, title: "NDA 초안 작성 + Checklist 확인",
+      desc: "NDA 초안을 작성하고 NDA Checklist를 확인합니다.",
+      detail: "확인 항목: 준거법 및 관할법원, 비밀정보 정의 범위, 유효기간 및 존속조항, 정보반환/파기 의무"
+    },
+    {
+      n: 2, title: "[Task 1] 팀장에게 검토·승인 요청",
+      desc: "소속 팀장에게 NDA 검토 및 승인을 요청합니다.",
+      email: {
+        to: "[소속 팀장]",
+        cc: "[관련자]",
+        subject: "[NDA 검토·승인 요청] [고객사명] / NDA 리뷰",
+        body: "안녕하세요 [팀장님 성함],\n\n아래 NDA에 대한 검토 및 승인을 요청드립니다.\n\n■ 고객사명   : [고객사명]\n■ 상대방     : [상대방 회사명]\n■ NDA 유형   : □ Mutual  □ One-way\n■ NDA Checklist : 확인 완료\n\n첨부: NDA 초안, NDA Checklist\n\n감사합니다."
+      }
+    },
+    {
+      n: 3, title: "[Task 2] Division Head / Grace Kwon에게 진행 승인 요청",
+      desc: "팀장 승인 완료 후 <strong>Division Head</strong> 또는 <strong>Grace Kwon</strong>에게 검토 및 진행 승인을 요청합니다.",
+      email: {
+        to: "Division Head 또는 Grace Kwon (grace.kwon@ap.cushwake.com)",
+        cc: "[팀장]",
+        subject: "[NDA 진행 승인 요청] [고객사명] / 팀장 승인 완료",
+        body: "안녕하세요,\n\n아래 NDA에 대해 팀장 검토·승인이 완료되어 진행 승인을 요청드립니다.\n\n■ 고객사명   : [고객사명]\n■ 상대방     : [상대방 회사명]\n■ NDA 유형   : □ Mutual  □ One-way\n■ 팀장 승인  : 완료 (승인 메일 첨부)\n\n첨부: NDA, 팀장 승인 메일\n\n감사합니다."
+      }
+    },
+  ],
+  infoGrid: [
+    {
+      title: "✅ NDA Checklist",
+      items: [
+        "준거법 및 관할법원",
+        "비밀정보 정의 범위",
+        "유효기간 및 존속조항",
+        "정보반환/파기 의무"
+      ]
+    },
+    {
+      title: "❌ NDA에 포함되면 안 되는 내용",
+      items: [
+        "면책에 대한 내용",
+        "위약벌에 대한 내용"
+      ]
+    },
+    {
+      title: "⚠️ 고객사 정보 공개 시",
+      items: [
+        "고객사와의 NDA를 back to back으로 체결"
+      ]
+    }
+  ],
+  warn: "NDA에 면책 또는 위약벌에 대한 내용이 포함되어서는 안 됩니다."
+},
+```
+
+### 8-2. Contract Review Task — tasks.ts
+
+```typescript
+contract_review: {
+  icon: "📋", label: "Contract Review & Legal Coordination", badge: "Legal",
+  owner: {
+    icon: "👔", name: "Grace Kwon",
+    nameKo: "권희원 이사", team: "WPR",
+    contact: "grace.kwon@ap.cushwake.com"
+  },
+  steps: [
+    {
+      n: 1, title: "계약서 유형 확인",
+      desc: "표준계약서인지, 고객사 양식 또는 표준계약서 내 수정인지 확인합니다.",
+      detail: "• <strong>Case A:</strong> 표준계약서 그대로 사용<br>• <strong>Case B:</strong> 고객사 양식 사용 또는 표준계약서 내 수정"
+    },
+    {
+      n: 2, title: "[Step 1] Grace Kwon에게 검토 요청",
+      desc: "Case A, Case B 모두 동일하게 Grace Kwon에게 먼저 검토를 요청합니다.",
+      email: {
+        to: "Grace Kwon (grace.kwon@ap.cushwake.com)",
+        cc: "[팀장]",
+        subject: "[계약서 검토 요청] [프로젝트명] / [고객사명]",
+        body: "Dear Grace,\n\n아래 계약서에 대한 검토를 요청드립니다.\n\n■ 프로젝트명  : [프로젝트명]\n■ 고객사명    : [고객사명]\n■ 계약서 유형 : □ 표준계약서  □ 고객사 양식  □ 표준(수정)\n■ 용역 수수료 : [수수료 구조]\n■ 주요 조건   : [주요 조건 요약]\n\n첨부: 계약서 초안\n\n감사합니다."
+      }
+    },
+    {
+      n: 3, title: "[Case B 한정] Grace → APAC Legal 검토",
+      desc: "고객사 양식 또는 표준계약서 수정 시, Grace Kwon이 APAC Legal팀에 검토를 요청합니다. APAC Legal 승인 후 Grace가 요청자에게 승인 회신을 합니다.",
+      detail: "이 단계는 Grace Kwon이 직접 진행합니다. 요청자는 Grace의 승인 회신을 대기합니다."
+    },
+    {
+      n: 4, title: "[Step 2] 팀장에게 승인 요청",
+      desc: "Grace 검토 완료 후, 팀장에게 승인을 요청합니다. <strong>Grace 검토 완료 메일을 반드시 첨부</strong>합니다.",
+      email: {
+        to: "[소속 팀장]",
+        cc: "Grace Kwon, [관련자]",
+        subject: "[계약서 승인 요청] [프로젝트명] / [고객사명] — Grace Kwon 검토 완료",
+        body: "안녕하세요 [팀장님 성함],\n\n아래 계약서에 대해 Grace Kwon 이사의 검토가 완료되어 승인을 요청드립니다.\n\n■ 프로젝트명  : [프로젝트명]\n■ 고객사명    : [고객사명]\n■ 계약서 유형 : [유형]\n■ Grace 검토  : 완료 (검토 완료 메일 첨부)\n\n첨부: 계약서, Grace Kwon 검토 완료 메일\n\n승인 부탁드립니다.\n\n감사합니다."
+      }
+    },
+    {
+      n: 5, title: "[Step 3] Division Head에게 최종 승인 요청",
+      desc: "팀장 승인 완료 후, <strong>Division Head (YJ Choi)</strong>에게 최종 승인을 요청합니다.",
+      email: {
+        to: "YJ Choi (Division Head)",
+        cc: "[팀장], Grace Kwon",
+        subject: "[계약서 최종 승인] [프로젝트명] / [고객사명]",
+        body: "안녕하세요,\n\n아래 계약서에 대해 Grace Kwon 검토 및 팀장 승인이 완료되어 최종 승인을 요청드립니다.\n\n■ 프로젝트명  : [프로젝트명]\n■ 고객사명    : [고객사명]\n■ Grace 검토  : 완료\n■ 팀장 승인   : 완료\n\n첨부: 계약서 최종본, 승인 이력 메일\n\n최종 승인 부탁드립니다.\n\n감사합니다."
+      }
+    },
+    {
+      n: 6, title: "날인 절차로 이동",
+      desc: "모든 승인 완료 후 <strong>계약서 날인 및 보관</strong> 절차를 진행합니다.",
+      detail: "→ 🖊️ 계약서 날인 및 보관 항목을 참고하세요."
+    }
+  ],
+  infoGrid: [
+    {
+      title: "📝 Case A — 표준계약서",
+      items: [
+        "Grace Kwon 검토 요청",
+        "팀장 승인 요청 (Grace 검토 메일 첨부)",
+        "Division Head 최종 승인"
+      ]
+    },
+    {
+      title: "📝 Case B — 고객사 양식/수정",
+      items: [
+        "Grace Kwon 검토 요청",
+        "Grace → APAC Legal 검토 (Grace가 진행)",
+        "Grace 승인 회신 수령",
+        "팀장 승인 요청 (Grace 검토 메일 첨부)",
+        "Division Head 최종 승인"
+      ]
+    }
+  ],
+  // 주의사항 원문 그대로
+  cautionList: [
+    {
+      title: "⚠️ 중개와 구별 주의",
+      items: [
+        "계약서 내 중개 (영문 계약서 작성시 brokerage 포함) 및 부동산 중개로 오인할 소지가 있는 업무의 영역 주의. (임대차 계약서 작성, 리뷰, 임차인과 계약 조건 협의 등)",
+        "전문자격이 필요한 업무 사항이 포함되지 않도록 유의. (계약서 검토, 재무 자문, 물리적 실사등) 혹은 추후 협의에 따라 전문자격이 필요한 업무 논의 가능 이란 문구 자제.",
+        "커미션이라는 용어 대신 용역 수수료 용어 사용.",
+        "업무 영역 및 범위는 가능하면 추상적이지 않고 구체적이고 실제적으로 제공하는 업무로 명시. (ex 입주시까지 임차인 관리)"
+      ]
+    },
+    {
+      title: "📌 계약서의 구조",
+      items: [
+        "업무 영역",
+        "Disclaimer (전문자격을 요하는 업무는 포함되지 않으며 쿠시먼은 해당 업무를 제공할 책임을 지지 않는다)",
+        "용역 수수료",
+        "손해배상 (책임 한도 설정)",
+        "준거법 및 관할 법원",
+        "컴플라이언스 조항 (윤리 및 규정 준수 조항)"
+      ]
+    }
+  ]
+},
+```
+
+### 8-3. searchIndex.ts 추가
+
+```typescript
+{
+  key: 'nda_review', label: 'NDA Review', badge: 'Legal', icon: '🔒',
+  keywords: ['nda','비밀유지','약정서','non-disclosure','confidential','체크리스트'],
+  ownerName: '권희원 이사', ownerEn: 'grace kwon',
+},
+{
+  key: 'contract_review', label: 'Contract Review', badge: 'Legal', icon: '📋',
+  keywords: ['계약','contract','리뷰','검토','표준계약','고객사양식','legal'],
+  ownerName: '권희원 이사', ownerEn: 'grace kwon',
+},
+{
+  key: 'contract_seal', label: '계약서 날인 및 보관', badge: '날인', icon: '🖊️',
+  keywords: ['날인','인감','glosign','사용인감','실물','보관','전자서명'],
+  ownerName: '권희원 이사', ownerEn: 'grace kwon',
+},
+{
+  key: 'compliance', label: 'Compliance', badge: 'Compliance', icon: '⚖️',
+  keywords: ['compliance','컴플라이언스','윤리','규정','ethics','fcpa'],
+  ownerName: '권희원 이사', ownerEn: 'grace kwon',
+},
+```
+
+### 8-4. BENTO_ITEMS 추가 (home.tsx)
+
+```typescript
+{ key: "nda_review", icon: "🔒", label: "NDA Review", category: "Legal",
+  categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)" },
+{ key: "contract_review", icon: "📋", label: "Contract Review", category: "Legal",
+  categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)", wide: true },
+{ key: "contract_seal", icon: "🖊️", label: "날인 및 보관", category: "날인",
+  categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)" },
+{ key: "compliance", icon: "⚖️", label: "Compliance", category: "Compliance",
+  categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)" },
+```
+
+---
+
+## 9. 파일별 수정 명세
+
+### 9-1. 수정 파일 목록
+
+| # | 파일 | 수정 | 내용 |
+|---|------|------|------|
+| 1 | `data/persons.ts` | **수정** | Grace Kwon description 변경, responsibilities 4개 (nda_review, contract_review, contract_seal, compliance) |
+| 2 | `data/tasks.ts` | **추가** | `nda_review`, `contract_review`, `contract_seal`, `compliance` 4개 TaskData — 각 Step별 독립 이메일 템플릿 포함 |
+| 3 | `data/tasks.ts` | **타입 확장** | `TaskData`에 `cautionList` 필드 추가 |
+| 4 | `data/searchIndex.ts` | **추가** | 4개 SearchableTask |
+| 5 | `pages/home.tsx` | **수정** | BENTO_ITEMS 4개 추가, viewMode에 "channels" 단계 추가, `cautionList` 렌더링 컴포넌트 추가 |
+| 6 | `pages/HomeScreen.tsx` | **수정** | 부서 폴더 아이콘 → Teams 단일 아이콘으로 교체 |
+| 7 | `data/departments.ts` | **유지** | 변경 없음 (Channel 선택 화면에서 활용) |
+| 8 | `components/FolderIcon.tsx` | **수정** | Teams 아이콘 전용 컴포넌트로 변경 |
+
+### 9-2. TaskData 타입 확장
+
+```typescript
+// tasks.ts — 타입에 cautionList 추가
+export interface CautionItem {
+  title: string;
+  items: string[];
+}
+
+export interface TaskData {
+  icon: string;
+  label: string;
+  badge: string;
+  owner: Owner;
+  steps: Step[];
+  infoGrid?: InfoCard[];
+  table?: TableData;
+  warn?: string;
+  note?: string;
+  cautionList?: CautionItem[];  // ← 신규 추가
+}
+```
+
+### 9-3. CautionList 렌더링 컴포넌트 (home.tsx에 추가)
+
+```tsx
+function CautionList({ items }: { items: CautionItem[] }) {
+  return (
+    <div className="caution-list">
+      {items.map((section, i) => (
+        <div className="caution-section" key={i}>
+          <div className="caution-title">{section.title}</div>
+          <ul className="caution-items">
+            {section.items.map((item, j) => (
+              <li key={j} className="caution-item">{item}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### 9-4. Replit / Cursor 에이전트 지시 요약
+
+```
+[수정 1] HomeScreen.tsx — 홈 화면 아이콘 변경
+- 기존 DEPARTMENTS.map → Teams 아이콘 1개만 배치
+- Teams 아이콘 탭 → Channel 선택 화면 (WPR/HR) 표시
+- viewMode에 "channels" 단계 추가: home → channels → app
+
+[수정 2] persons.ts — Grace Kwon 수정
+- description: "Legal & Compliance Coordination" (WPR 총괄 제거)
+- responsibilities: nda_review, contract_review, contract_seal, compliance
+
+[수정 3] tasks.ts — 4개 Task 추가
+- nda_review: 3 Steps — 초안작성, 팀장검토메일, DivHead/Grace승인메일
+- contract_review: 6 Steps — 유형확인, Grace검토메일, CaseB APAC, 팀장승인메일, DivHead최종메일, 날인이동
+- contract_seal: 4 Steps — 방법선택, Glosign, 실물날인+사용인감계, 보관요청메일
+- compliance: 3 Steps — 조항확인, Supplier DD, 에스컬레이션메일
+- contract_review에 cautionList 필드 추가 (원문 그대로)
+
+[수정 4] tasks.ts — TaskData 타입에 cautionList?: CautionItem[] 추가
+
+[수정 5] searchIndex.ts — 4개 항목 추가
+
+[수정 6] home.tsx — BENTO_ITEMS 4개 추가, CautionList 컴포넌트 추가
+
+[수정 7] home.tsx — Task 패널에서 cautionList 렌더링 로직 추가
+- activeData.cautionList가 있으면 CautionList 컴포넌트 표시
+
+[중요] 각 Step의 이메일은 독립된 EmailBox로 표시되어
+      사용자가 각각의 메일을 따로 따로 복사·작성할 수 있어야 함
+```
+
+---
+
+> **작업 순서**: HomeScreen 변경 (수정 1) → 데이터 추가 (수정 2~5) → UI 렌더링 (수정 6~7)

@@ -75,23 +75,23 @@ export const searchIndex: SearchableTask[] = [
     ownerName: '김경만 과장', ownerEn: 'noel kim',
   },
   {
-    key: 'wpr_overview', label: 'WPR 총괄', badge: '총괄', icon: '🏢',
-    keywords: ['총괄', 'wpr', '관리', '권희원', 'grace', '이사', '팀장'],
-    ownerName: '권희원 이사', ownerEn: 'grace kwon',
-  },
-  {
     key: 'nda_review', label: 'NDA Review', badge: 'Legal', icon: '🔒',
-    keywords: ['nda', '비밀유지', '약정서', '비밀', 'non-disclosure', 'confidential', '체크리스트', '기밀'],
+    keywords: ['nda', '비밀유지', '약정서', 'non-disclosure', 'confidential', '체크리스트'],
     ownerName: '권희원 이사', ownerEn: 'grace kwon',
   },
   {
     key: 'contract_review', label: 'Contract Review', badge: 'Legal', icon: '📋',
-    keywords: ['계약', 'contract', '리뷰', '검토', '표준계약', '고객사양식', 'legal', '법률', '계약서검토'],
+    keywords: ['계약', 'contract', '리뷰', '검토', '표준계약', '고객사양식', 'legal'],
+    ownerName: '권희원 이사', ownerEn: 'grace kwon',
+  },
+  {
+    key: 'contract_seal', label: '계약서 날인 및 보관', badge: '날인', icon: '🖊️',
+    keywords: ['날인', '인감', 'glosign', '사용인감', '실물', '보관', '전자서명'],
     ownerName: '권희원 이사', ownerEn: 'grace kwon',
   },
   {
     key: 'compliance', label: 'Compliance', badge: 'Compliance', icon: '⚖️',
-    keywords: ['compliance', '컴플라이언스', '윤리', '규정', '준수', 'ethics', 'fcpa', 'anti-corruption', '부패방지'],
+    keywords: ['compliance', '컴플라이언스', '윤리', '규정', 'ethics', 'fcpa'],
     ownerName: '권희원 이사', ownerEn: 'grace kwon',
   },
 ];

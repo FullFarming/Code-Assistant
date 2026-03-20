@@ -1,15 +1,11 @@
 import { useState, useEffect } from "react";
-import { DEPARTMENTS } from "@/data/departments";
-import FolderIcon from "@/components/FolderIcon";
+import TeamsIcon from "@/components/FolderIcon";
 import DockBar from "@/components/DockBar";
 import HomeIndicator from "@/components/HomeIndicator";
 
 interface Props {
-  onOpenDepartment: (deptId: string) => void;
-  activeDeptId?: string;
+  onOpenTeams: () => void;
 }
-
-const AVAILABLE_DEPTS = new Set(["wpr"]);
 
 function SignalBars() {
   return (
@@ -33,7 +29,7 @@ function BatteryIcon({ level = 55 }: { level?: number }) {
   );
 }
 
-export default function HomeScreen({ onOpenDepartment }: Props) {
+export default function HomeScreen({ onOpenTeams }: Props) {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -70,14 +66,7 @@ export default function HomeScreen({ onOpenDepartment }: Props) {
       </div>
 
       <div className="home-app-grid" data-testid="home-app-grid">
-        {DEPARTMENTS.map((dept) => (
-          <FolderIcon
-            key={dept.id}
-            dept={dept}
-            onClick={() => onOpenDepartment(dept.id)}
-            disabled={!AVAILABLE_DEPTS.has(dept.id)}
-          />
-        ))}
+        <TeamsIcon onClick={onOpenTeams} />
       </div>
 
       <DockBar />

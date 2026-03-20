@@ -8,6 +8,7 @@ export interface Person {
   id: string;
   name: string;
   nameEn: string;
+  region: string;
   title: string;
   team: string;
   emoji: string;
@@ -22,27 +23,28 @@ export const persons: Person[] = [
     id: "person_grace",
     name: "권희원",
     nameEn: "Grace Kwon",
+    region: "KOR",
     title: "이사",
     team: "WPR팀",
     emoji: "👔",
     color: "#8B5CF6",
     avatarInitial: "권",
-    description: "WPR 총괄 · Legal & Compliance Coordination",
+    description: "Legal & Compliance Coordination",
     responsibilities: [
       {
-        label: "WPR 총괄",
-        taskKey: "wpr_overview",
-        description: "WPR팀 전체 업무 총괄 관리"
-      },
-      {
-        label: "Contract Review Support & Legal Coordination",
-        taskKey: "contract_review",
-        description: "계약서 검토 지원 및 Legal 코디네이션 (표준계약서/고객사 양식)"
-      },
-      {
-        label: "NDA Review & Process",
+        label: "NDA Review Process",
         taskKey: "nda_review",
-        description: "비밀유지약정서(NDA) 리뷰 절차 및 체크리스트 관리"
+        description: "비밀유지약정서(NDA) 리뷰 절차 안내"
+      },
+      {
+        label: "Contract Review & Legal Coordination",
+        taskKey: "contract_review",
+        description: "계약서 검토 지원 및 Legal 코디네이션"
+      },
+      {
+        label: "계약서 날인 및 보관",
+        taskKey: "contract_seal",
+        description: "Glosign 전자 날인 / 실물 날인 / 보관 절차"
       },
       {
         label: "Compliance Coordination",
@@ -55,6 +57,7 @@ export const persons: Person[] = [
     id: "person_noel",
     name: "김경만",
     nameEn: "Noel Kim",
+    region: "KOR",
     title: "과장",
     team: "WPR팀",
     emoji: "💻",
@@ -72,6 +75,7 @@ export const persons: Person[] = [
     id: "person_gina",
     name: "김지성",
     nameEn: "Gina Kim",
+    region: "KOR",
     title: "대리",
     team: "WPR팀",
     emoji: "✈️",
@@ -91,6 +95,7 @@ export const persons: Person[] = [
     id: "person_emma",
     name: "송진영",
     nameEn: "Emma Song",
+    region: "KOR",
     title: "사원",
     team: "WPR팀",
     emoji: "🌸",

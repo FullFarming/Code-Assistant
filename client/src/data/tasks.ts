@@ -32,6 +32,11 @@ export interface Owner {
   contact?: string;
 }
 
+export interface CautionItem {
+  title: string;
+  items: string[];
+}
+
 export interface TaskData {
   icon: string;
   label: string;
@@ -42,6 +47,7 @@ export interface TaskData {
   table?: TableData;
   warn?: string;
   note?: string;
+  cautionList?: CautionItem[];
 }
 
 export interface BubbleConfig {
@@ -325,50 +331,33 @@ export const DATA: Record<string, TaskData> = {
     ],
   },
 
-  wpr_overview: {
-    icon: "🏢", label: "WPR 총괄", badge: "총괄",
-    owner: { icon: "👔", name: "Grace Kwon", nameKo: "권희원 이사", team: "WPR", contact: "grace.kwon@ap.cushwake.com" },
-    steps: [
-      {
-        n: 1, title: "WPR팀 전체 업무 총괄",
-        desc: "시설·행정·IT 지원 업무 전반의 총괄 관리 및 의사결정",
-        detail: null
-      },
-      {
-        n: 2, title: "팀원 업무 배분 및 관리",
-        desc: "WPR팀 소속 직원의 업무 배분, 성과 관리, 교육 지원",
-        detail: null
-      },
-      {
-        n: 3, title: "APAC 리포팅",
-        desc: "APAC 본사에 대한 정기 보고 및 지역 정책 이행 관리",
-        detail: null
-      }
-    ],
-  },
-
   nda_review: {
-    icon: "🔒", label: "NDA Review & Process", badge: "Legal",
+    icon: "🔒", label: "NDA Review Process", badge: "Legal",
     owner: { icon: "👔", name: "Grace Kwon", nameKo: "권희원 이사", team: "WPR", contact: "grace.kwon@ap.cushwake.com" },
     steps: [
       {
-        n: 1, title: "NDA 초안 작성",
-        desc: "담당자가 NDA 초안을 작성합니다. 표준 NDA 양식 사용을 권장합니다.",
-        detail: null
+        n: 1, title: "NDA 초안 작성 + Checklist 확인",
+        desc: "NDA 초안을 작성하고 NDA Checklist를 확인합니다.",
+        detail: "확인 항목: 준거법 및 관할법원, 비밀정보 정의 범위, 유효기간 및 존속조항, 정보반환/파기 의무"
       },
       {
-        n: 2, title: "팀장 리뷰 (1차)",
-        desc: "소속 팀장에게 1차 리뷰를 요청합니다. <strong>NDA Checklist 확인 필수</strong>.",
-        detail: "확인 항목: 준거법(Governing Law), 관할법원(Jurisdiction), 비밀정보 정의, 유효기간, 정보반환/파기 의무"
-      },
-      {
-        n: 3, title: "Division Head 또는 Grace Kwon 최종 승인",
-        desc: "팀장 리뷰 완료 후 <strong>Division Head</strong> 또는 <strong>Grace Kwon</strong>에게 최종 승인을 요청합니다.",
+        n: 2, title: "[Task 1] 팀장에게 검토·승인 요청",
+        desc: "소속 팀장에게 NDA 검토 및 승인을 요청합니다.",
         email: {
-          to: "Grace Kwon (grace.kwon@ap.cushwake.com)",
-          cc: "팀장, Division Head (YJ Choi)",
-          subject: "[NDA Review] [고객사명] / NDA 최종 승인 요청",
-          body: "Dear Grace,\n\nPlease find attached the NDA for your review and final approval.\n\n■ Client Name : [고객사명]\n■ Counterparty : [상대방]\n■ NDA Type : □ Mutual  □ One-way\n■ Team Lead Review : Completed\n■ NDA Checklist : Attached\n\nPlease advise if any amendments are required.\n\nBest regards,"
+          to: "[소속 팀장]",
+          cc: "[관련자]",
+          subject: "[NDA 검토·승인 요청] [고객사명] / NDA 리뷰",
+          body: "안녕하세요 [팀장님 성함],\n\n아래 NDA에 대한 검토 및 승인을 요청드립니다.\n\n■ 고객사명   : [고객사명]\n■ 상대방     : [상대방 회사명]\n■ NDA 유형   : □ Mutual  □ One-way\n■ NDA Checklist : 확인 완료\n\n첨부: NDA 초안, NDA Checklist\n\n감사합니다."
+        }
+      },
+      {
+        n: 3, title: "[Task 2] Division Head / Grace Kwon에게 진행 승인 요청",
+        desc: "팀장 승인 완료 후 <strong>Division Head</strong> 또는 <strong>Grace Kwon</strong>에게 검토 및 진행 승인을 요청합니다.",
+        email: {
+          to: "Division Head 또는 Grace Kwon (grace.kwon@ap.cushwake.com)",
+          cc: "[팀장]",
+          subject: "[NDA 진행 승인 요청] [고객사명] / 팀장 승인 완료",
+          body: "안녕하세요,\n\n아래 NDA에 대해 팀장 검토·승인이 완료되어 진행 승인을 요청드립니다.\n\n■ 고객사명   : [고객사명]\n■ 상대방     : [상대방 회사명]\n■ NDA 유형   : □ Mutual  □ One-way\n■ 팀장 승인  : 완료 (승인 메일 첨부)\n\n첨부: NDA, 팀장 승인 메일\n\n감사합니다."
         }
       },
     ],
@@ -376,83 +365,157 @@ export const DATA: Record<string, TaskData> = {
       {
         title: "✅ NDA Checklist",
         items: [
-          "준거법 (Governing Law) 확인",
-          "관할법원 (Jurisdiction) 확인",
-          "비밀정보 정의 범위 적정성",
-          "유효기간 및 존속조항 확인",
-          "정보반환/파기 의무 명시"
+          "준거법 및 관할법원",
+          "비밀정보 정의 범위",
+          "유효기간 및 존속조항",
+          "정보반환/파기 의무"
         ]
       },
       {
-        title: "❌ 포함 금지 항목",
+        title: "❌ NDA에 포함되면 안 되는 내용",
         items: [
-          "면책 조항 (Indemnification)",
-          "위약벌 (Penalty/Liquidated Damages)"
+          "면책에 대한 내용",
+          "위약벌에 대한 내용"
         ]
       },
       {
         title: "⚠️ 고객사 정보 공개 시",
         items: [
-          "고객사와의 NDA를 Back-to-Back으로 체결 필수",
-          "동일 수준 비밀유지 의무를 제3자에게 적용"
+          "고객사와의 NDA를 back to back으로 체결"
         ]
       }
     ],
-    warn: "NDA에 면책(Indemnification) 또는 위약벌(Penalty) 조항이 포함되어서는 안 됩니다.",
+    warn: "NDA에 면책 또는 위약벌에 대한 내용이 포함되어서는 안 됩니다."
   },
 
   contract_review: {
-    icon: "📋", label: "Contract Review Support & Legal Coordination", badge: "Legal",
+    icon: "📋", label: "Contract Review & Legal Coordination", badge: "Legal",
     owner: { icon: "👔", name: "Grace Kwon", nameKo: "권희원 이사", team: "WPR", contact: "grace.kwon@ap.cushwake.com" },
     steps: [
       {
-        n: 1, title: "계약서 양식 구분",
-        desc: "계약서가 <strong>표준계약서</strong>인지, <strong>고객사 양식</strong> 또는 <strong>표준계약서 내 수정</strong>인지 확인합니다.",
-        detail: "• 표준계약서 사용 → Case A 절차<br>• 고객사 양식 사용 또는 표준계약서 내용 수정 → Case B 절차"
+        n: 1, title: "계약서 유형 확인",
+        desc: "표준계약서인지, 고객사 양식 또는 표준계약서 내 수정인지 확인합니다.",
+        detail: "• <strong>Case A:</strong> 표준계약서 그대로 사용<br>• <strong>Case B:</strong> 고객사 양식 사용 또는 표준계약서 내 수정"
       },
       {
-        n: 2, title: "[Case A] Grace Kwon → 팀장 → Division Head (YJ Choi)",
-        desc: "표준계약서를 그대로 사용하는 경우, Grace Kwon이 1차 리뷰 후 팀장 → Division Head 순서로 승인합니다.",
+        n: 2, title: "[Step 1] Grace Kwon에게 검토 요청",
+        desc: "Case A, Case B 모두 동일하게 Grace Kwon에게 먼저 검토를 요청합니다.",
         email: {
           to: "Grace Kwon (grace.kwon@ap.cushwake.com)",
-          cc: "팀장",
-          subject: "[Contract Review – Standard] [프로젝트명] / [고객사명]",
-          body: "Dear Grace,\n\nPlease review the attached standard contract for the following project.\n\n■ Project Name  : [프로젝트명]\n■ Client Name   : [고객사명]\n■ Contract Type : Standard Template\n■ Fee Structure : [용역 수수료 구조]\n■ Key Terms     : [주요 조건 요약]\n\nPlease advise if the contract is ready for Team Lead review.\n\nBest regards,"
+          cc: "[팀장]",
+          subject: "[계약서 검토 요청] [프로젝트명] / [고객사명]",
+          body: "Dear Grace,\n\n아래 계약서에 대한 검토를 요청드립니다.\n\n■ 프로젝트명  : [프로젝트명]\n■ 고객사명    : [고객사명]\n■ 계약서 유형 : □ 표준계약서  □ 고객사 양식  □ 표준(수정)\n■ 용역 수수료 : [수수료 구조]\n■ 주요 조건   : [주요 조건 요약]\n\n첨부: 계약서 초안\n\n감사합니다."
         }
       },
       {
-        n: 3, title: "[Case B] Grace Kwon → APAC Legal",
-        desc: "고객사 양식 사용 또는 표준계약서 내 수정이 있는 경우, Grace Kwon 1차 리뷰 후 <strong>APAC Legal</strong>로 에스컬레이션합니다.",
+        n: 3, title: "[Case B 한정] Grace → APAC Legal 검토",
+        desc: "고객사 양식 또는 표준계약서 수정 시, Grace Kwon이 APAC Legal팀에 검토를 요청합니다. APAC Legal 승인 후 Grace가 요청자에게 승인 회신을 합니다.",
+        detail: "이 단계는 Grace Kwon이 직접 진행합니다. 요청자는 Grace의 승인 회신을 대기합니다."
+      },
+      {
+        n: 4, title: "[Step 2] 팀장에게 승인 요청",
+        desc: "Grace 검토 완료 후, 팀장에게 승인을 요청합니다. <strong>Grace 검토 완료 메일을 반드시 첨부</strong>합니다.",
         email: {
-          to: "Grace Kwon (grace.kwon@ap.cushwake.com)",
-          cc: "팀장, APAC Legal",
-          subject: "[Contract Review – Client Form / Amendment] [프로젝트명] / [고객사명]",
-          body: "Dear Grace,\n\nPlease review the attached contract which uses the client's template / contains amendments to our standard form.\n\n■ Project Name     : [프로젝트명]\n■ Client Name      : [고객사명]\n■ Contract Type    : □ Client Template  □ Standard with Amendments\n■ Key Amendments   : [수정사항 요약]\n■ Fee Structure    : [용역 수수료 구조]\n\nAPAC Legal escalation may be required per policy.\n\nBest regards,"
+          to: "[소속 팀장]",
+          cc: "Grace Kwon, [관련자]",
+          subject: "[계약서 승인 요청] [프로젝트명] / [고객사명] — Grace Kwon 검토 완료",
+          body: "안녕하세요 [팀장님 성함],\n\n아래 계약서에 대해 Grace Kwon 이사의 검토가 완료되어 승인을 요청드립니다.\n\n■ 프로젝트명  : [프로젝트명]\n■ 고객사명    : [고객사명]\n■ 계약서 유형 : [유형]\n■ Grace 검토  : 완료 (검토 완료 메일 첨부)\n\n첨부: 계약서, Grace Kwon 검토 완료 메일\n\n승인 부탁드립니다.\n\n감사합니다."
         }
       },
       {
-        n: 4, title: "최종 승인 및 체결",
-        desc: "모든 리뷰 완료 후 계약서 최종본을 확정하고 <strong>Glosign</strong>을 통해 날인 절차를 진행합니다.",
-        detail: "→ 비대면 인감날인 절차는 🖊️ 인감 날인 항목을 참고하세요."
+        n: 5, title: "[Step 3] Division Head에게 최종 승인 요청",
+        desc: "팀장 승인 완료 후, <strong>Division Head (YJ Choi)</strong>에게 최종 승인을 요청합니다.",
+        email: {
+          to: "YJ Choi (Division Head)",
+          cc: "[팀장], Grace Kwon",
+          subject: "[계약서 최종 승인] [프로젝트명] / [고객사명]",
+          body: "안녕하세요,\n\n아래 계약서에 대해 Grace Kwon 검토 및 팀장 승인이 완료되어 최종 승인을 요청드립니다.\n\n■ 프로젝트명  : [프로젝트명]\n■ 고객사명    : [고객사명]\n■ Grace 검토  : 완료\n■ 팀장 승인   : 완료\n\n첨부: 계약서 최종본, 승인 이력 메일\n\n최종 승인 부탁드립니다.\n\n감사합니다."
+        }
+      },
+      {
+        n: 6, title: "날인 절차로 이동",
+        desc: "모든 승인 완료 후 <strong>계약서 날인 및 보관</strong> 절차를 진행합니다.",
+        detail: "→ 🖊️ 계약서 날인 및 보관 항목을 참고하세요."
       }
     ],
     infoGrid: [
       {
         title: "📝 Case A — 표준계약서",
         items: [
-          "Grace Kwon (1차 리뷰)",
-          "팀장 (2차 리뷰)",
-          "Division Head / YJ Choi (최종 승인)"
+          "Grace Kwon 검토 요청",
+          "팀장 승인 요청 (Grace 검토 메일 첨부)",
+          "Division Head 최종 승인"
         ]
       },
       {
         title: "📝 Case B — 고객사 양식/수정",
         items: [
-          "Grace Kwon (1차 리뷰)",
-          "APAC Legal (최종 승인)"
+          "Grace Kwon 검토 요청",
+          "Grace → APAC Legal 검토 (Grace가 진행)",
+          "Grace 승인 회신 수령",
+          "팀장 승인 요청 (Grace 검토 메일 첨부)",
+          "Division Head 최종 승인"
         ]
       }
     ],
+    cautionList: [
+      {
+        title: "⚠️ 중개와 구별 주의",
+        items: [
+          "계약서 내 중개 (영문 계약서 작성시 brokerage 포함) 및 부동산 중개로 오인할 소지가 있는 업무의 영역 주의. (임대차 계약서 작성, 리뷰, 임차인과 계약 조건 협의 등)",
+          "전문자격이 필요한 업무 사항이 포함되지 않도록 유의. (계약서 검토, 재무 자문, 물리적 실사등) 혹은 추후 협의에 따라 전문자격이 필요한 업무 논의 가능 이란 문구 자제.",
+          "커미션이라는 용어 대신 용역 수수료 용어 사용.",
+          "업무 영역 및 범위는 가능하면 추상적이지 않고 구체적이고 실제적으로 제공하는 업무로 명시. (ex 입주시까지 임차인 관리)"
+        ]
+      },
+      {
+        title: "📌 계약서의 구조",
+        items: [
+          "업무 영역",
+          "Disclaimer (전문자격을 요하는 업무는 포함되지 않으며 쿠시먼은 해당 업무를 제공할 책임을 지지 않는다)",
+          "용역 수수료",
+          "손해배상 (책임 한도 설정)",
+          "준거법 및 관할 법원",
+          "컴플라이언스 조항 (윤리 및 규정 준수 조항)"
+        ]
+      }
+    ]
+  },
+
+  contract_seal: {
+    icon: "🖊️", label: "계약서 날인 및 보관", badge: "날인",
+    owner: {
+      icon: "👔", name: "Grace Kwon",
+      nameKo: "권희원 이사", team: "WPR",
+      contact: "grace.kwon@ap.cushwake.com"
+    },
+    steps: [
+      {
+        n: 1, title: "날인 방법 선택",
+        desc: "모든 승인 절차 완료 후 아래 두 가지 방법 중 선택합니다.",
+        detail: "• <strong>방법 1:</strong> Glosign 비대면 전자 계약<br>• <strong>방법 2:</strong> 실물 날인 (WPR팀 요청)"
+      },
+      {
+        n: 2, title: "[방법 1] Glosign 전자 날인",
+        desc: "Glosign 접속 → 계약서 업로드 → 결재자 설정 → 날인 위치 지정 → 완료",
+        detail: "서명참여자(법인인감 날인 권한자): <strong>권희원 이사</strong> grace.kwon@ap.cushwake.com"
+      },
+      {
+        n: 3, title: "[방법 2] 실물 날인",
+        desc: "WPR팀에 실물 날인을 요청합니다. 대부분 <strong>사용인감</strong>으로 날인되므로 <strong>사용인감계를 작성하여 함께 전달</strong>해야 합니다.",
+        detail: null
+      },
+      {
+        n: 4, title: "보관 요청",
+        desc: "날인이 전부 완료된 계약서는 <strong>WPR팀(Gina Kim)</strong>에 보관을 요청합니다.",
+        email: {
+          to: "Gina Kim (gina.kim@cushwake.com)",
+          subject: "[계약서 보관 요청] [고객사명] / [프로젝트명]",
+          body: "안녕하세요 Gina님,\n\n아래 계약서의 날인이 완료되어 보관을 요청드립니다.\n\n■ 고객사명   : [고객사명]\n■ 프로젝트명 : [프로젝트명]\n■ 날인 방법  : □ Glosign 전자  □ 실물 날인\n■ 계약 기간  : [시작일 ~ 종료일]\n\n첨부: 날인 완료 계약서\n\n감사합니다."
+        }
+      }
+    ],
+    warn: "실물 날인 시 사용인감계 미첨부 시 날인이 진행되지 않습니다."
   },
 
   compliance: {
@@ -465,30 +528,18 @@ export const DATA: Record<string, TaskData> = {
         detail: "Anti-Corruption (FCPA, UK Bribery Act), Data Protection, Conflict of Interest 조항 포함 여부 확인"
       },
       {
-        n: 2, title: "Supplier Due Diligence (3rd Party Risk)",
-        desc: "신규 거래처 등록 시 <strong>3rd Party Risk Assessment DD Form</strong> 작성 및 실사설문지 확인",
-        detail: "→ Workday Supplier 등록 절차 내 DD Form 첨부 필수"
+        n: 2, title: "Supplier Due Diligence",
+        desc: "신규 거래처 등록 시 <strong>3rd Party Risk Assessment DD Form</strong> 작성 필수",
+        detail: null
       },
       {
-        n: 3, title: "Compliance 이슈 발생 시 에스컬레이션",
+        n: 3, title: "이슈 에스컬레이션",
         desc: "윤리 위반 또는 컴플라이언스 이슈 발견 시 <strong>Grace Kwon</strong>을 통해 APAC Compliance팀에 보고합니다.",
         email: {
           to: "Grace Kwon (grace.kwon@ap.cushwake.com)",
-          subject: "[Compliance Issue] [프로젝트명/건명] / Escalation Request",
-          body: "Dear Grace,\n\nI would like to escalate the following compliance concern for your review.\n\n■ Project / Matter : [프로젝트명 / 건명]\n■ Issue Type       : □ Anti-Corruption  □ Conflict of Interest  □ Data Protection  □ Other\n■ Description      : [이슈 상세 내용]\n■ Urgency          : □ Immediate  □ Within 1 week  □ Non-urgent\n\nPlease advise on next steps.\n\nBest regards,"
+          subject: "[Compliance Issue] [건명] / Escalation Request",
+          body: "Dear Grace,\n\nI would like to escalate the following compliance concern.\n\n■ Issue Type  : □ Anti-Corruption  □ COI  □ Data Protection  □ Other\n■ Description : [상세]\n■ Urgency     : □ Immediate  □ Within 1 week  □ Non-urgent\n\nBest regards,"
         }
-      }
-    ],
-    infoGrid: [
-      {
-        title: "⚖️ 필수 컴플라이언스 영역",
-        items: [
-          "Anti-Corruption (FCPA / UK Bribery Act)",
-          "Data Protection & Privacy",
-          "Conflict of Interest",
-          "Sanctions & Export Controls",
-          "Anti-Money Laundering"
-        ]
       }
     ],
   },

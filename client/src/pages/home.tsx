@@ -1,7 +1,8 @@
 import { useState, useCallback, useRef, useEffect, useReducer } from "react";
-import { DATA, type TaskData } from "@/data/tasks";
+import { DATA, type TaskData, type CautionItem } from "@/data/tasks";
 import { persons, type Person } from "@/data/persons";
 import { searchIndex, searchTasks, type SearchableTask } from "@/data/searchIndex";
+import { DEPARTMENTS } from "@/data/departments";
 import HomeScreen from "@/pages/HomeScreen";
 import HomeIndicator from "@/components/HomeIndicator";
 const siriImg = "/siri-icon.png";
@@ -88,6 +89,7 @@ const BENTO_ITEMS: BentoItem[] = [
   { key: "printix", icon: "🖨️", label: "Printix", category: "IT", categoryColor: "#3B82F6", gradient: "linear-gradient(135deg, #E8EAF6, #C5CAE9)" },
   { key: "nda_review", icon: "🔒", label: "NDA Review", category: "Legal", categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)" },
   { key: "contract_review", icon: "📋", label: "Contract Review", category: "Legal", categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)", wide: true },
+  { key: "contract_seal", icon: "🖊️", label: "날인 및 보관", category: "날인", categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)" },
   { key: "compliance", icon: "⚖️", label: "Compliance", category: "Compliance", categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)" },
 ];
 
@@ -242,12 +244,8 @@ export default function Home() {
           </div>
         </div>
 
-        {!isAppMode && (
-          <HomeScreen onOpenDepartment={(deptId) => {
-            if (deptId === "wpr") {
-              setViewMode("app");
-            }
-          }} activeDeptId="wpr" />
+        {viewMode === "home" && (
+          <HomeScreen onOpenTeams={() => setViewMode("app")} />
         )}
 
         {isAppMode && (
@@ -258,7 +256,7 @@ export default function Home() {
 
         <div className={`iphone-content${isNavigating ? " navigating" : ""}${isSiriActive ? " siri-blurred" : ""}`} data-testid="iphone-content">
           <div className={`tab-view${activeTab === "messenger" ? " active" : ""}`}>
-            <MessengerList onSelectPerson={handleSelectPerson} />
+            <MessengerList onSelectPerson={handleSelectPerson} selectedPersonId={selectedPerson?.id ?? null} />
           </div>
           <div className={`tab-view${activeTab === "tasks" ? " active" : ""}`}>
             <BentoGrid onSelectTask={openPanel} />
@@ -365,7 +363,9 @@ export default function Home() {
             onClick={() => { if (isSiriActive) handleSiriToggle(); handleTabChange("messenger"); }}
             data-testid="tab-messenger"
           >
-            <span className="tab-icon">💬</span>
+            <svg className="tab-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M2 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6.5L3 18.5V15H4a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h2v2.086L8.914 14H16a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4z"/>
+            </svg>
             <span className="tab-label">팀원</span>
           </button>
           <button
@@ -382,7 +382,9 @@ export default function Home() {
             onClick={() => { if (isSiriActive) handleSiriToggle(); handleTabChange("tasks"); }}
             data-testid="tab-tasks"
           >
-            <span className="tab-icon">📋</span>
+            <svg className="tab-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M6 2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7.414L11.586 2H6zm0 1h5v4a1 1 0 0 0 1 1h4v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm6 .707L14.293 7H12V3.707zM7 9h6v1H7V9zm0 2.5h6v1H7v-1zm0 2.5h4v1H7v-1z"/>
+            </svg>
             <span className="tab-label">업무목록</span>
           </button>
         </div>
@@ -405,6 +407,13 @@ export default function Home() {
               </div>
             </div>
             <div className="ts-body" ref={panelBodyRef} data-testid="panel-body">
+              <div className="chat-timestamp" data-testid="chat-timestamp">Today</div>
+              <div className="msg-bubble msg-bubble--other" data-testid="msg-bubble-bot">
+                {activeData.label} 업무 가이드를 안내해 드릴게요 😊
+              </div>
+              <div className="msg-bubble msg-bubble--self" data-testid="msg-bubble-user">
+                네, 알려주세요!
+              </div>
               <OwnerCard owner={activeData.owner} />
               {activeData.steps.length > 0 && (
                 <div className="steps-container">
@@ -460,6 +469,12 @@ export default function Home() {
                   <PolicyTable table={activeData.table} />
                 </>
               )}
+              {activeData.cautionList && activeData.cautionList.length > 0 && (
+                <>
+                  <hr className="sec-div" />
+                  <CautionList items={activeData.cautionList} />
+                </>
+              )}
               {activeData.warn && (
                 <div className="warn">
                   <span>⚠️</span>
@@ -469,6 +484,22 @@ export default function Home() {
               {activeData.note && (
                 <div className="note" data-testid="note">{activeData.note}</div>
               )}
+            </div>
+            <div className="compose-bar" data-testid="compose-bar">
+              <div className="compose-input-wrap">
+                <div
+                  className="compose-input"
+                  contentEditable
+                  data-placeholder="Type a message"
+                  suppressContentEditableWarning
+                  data-testid="compose-input"
+                  role="textbox"
+                  aria-label="메시지 입력"
+                />
+              </div>
+              <button className="compose-send" data-testid="compose-send" aria-label="전송">
+                ▶
+              </button>
             </div>
           </div>
         )}
@@ -489,27 +520,126 @@ export default function Home() {
   );
 }
 
-function MessengerList({ onSelectPerson }: { onSelectPerson: (p: Person) => void }) {
+
+const TEAMS_AVATAR_COLORS = [
+  "#6264A7", "#7B7B3F", "#C4314B", "#7B83EB", "#8B6F4E", "#4F6B52",
+  "#B24B6F", "#0078D4", "#69797E",
+];
+
+function getAvatarColor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  return TEAMS_AVATAR_COLORS[Math.abs(hash) % TEAMS_AVATAR_COLORS.length];
+}
+
+const AVAILABLE_CHANNELS = new Set(["wpr"]);
+
+function MessengerList({ onSelectPerson, selectedPersonId }: {
+  onSelectPerson: (p: Person) => void;
+  selectedPersonId: string | null;
+}) {
+  const [activeFilter, setActiveFilter] = useState<string>("Chats");
+
   return (
     <div className="messenger-list" data-testid="messenger-list">
-      {persons.map((person) => (
-        <button
-          key={person.id}
-          className="messenger-card"
-          onClick={() => onSelectPerson(person)}
-          data-testid={`person-card-${person.id}`}
-        >
-          <div className="mc-avatar" style={{ background: `${person.color}20`, color: person.color }}>
-            {person.avatarInitial}
-          </div>
-          <div className="mc-info">
-            <div className="mc-name">{person.name} {person.title}</div>
-            <div className="mc-name-en">{person.nameEn}</div>
-            <div className="mc-desc">{person.description}</div>
-          </div>
-          <span className="mc-chevron">›</span>
-        </button>
-      ))}
+      <div className="messenger-filter-pills">
+        {["Unread", "Channels", "Chats"].map((f) => (
+          <button
+            key={f}
+            className={`pill-btn${activeFilter === f ? " pill-active" : ""}`}
+            onClick={() => setActiveFilter(f)}
+            data-testid={`filter-pill-${f}`}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+
+      {activeFilter === "Channels" ? (
+        <div className="channels-inline" data-testid="channels-list">
+          <div className="messenger-section-label" data-testid="section-label-channels">▾ Departments</div>
+          {DEPARTMENTS.map((dept) => {
+            const isAvailable = AVAILABLE_CHANNELS.has(dept.id);
+            return (
+              <button
+                key={dept.id}
+                className={`channel-item${!isAvailable ? " channel-disabled" : ""}`}
+                onClick={isAvailable ? () => setActiveFilter("Chats") : undefined}
+                disabled={!isAvailable}
+                data-testid={`channel-${dept.id}`}
+              >
+                <div className="channel-icon" style={{ background: dept.iconBg }}>
+                  <span>{dept.icon}</span>
+                </div>
+                <div className="channel-info">
+                  <div className="channel-name">{dept.name}</div>
+                  <div className="channel-desc">{dept.description}</div>
+                </div>
+                {isAvailable ? (
+                  <span className="channel-chevron">›</span>
+                ) : (
+                  <span className="channel-soon">준비 중</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <>
+          <div className="messenger-section-label" data-testid="section-label-favorites">▾ Favorites</div>
+          {persons.slice(0, 2).map((person) => {
+            const avatarColor = getAvatarColor(person.id);
+            const displayName = `${person.nameEn}/${person.region}`;
+            const isActive = selectedPersonId === person.id;
+            return (
+              <button
+                key={`fav-${person.id}`}
+                className={`messenger-card${isActive ? " active" : ""}`}
+                onClick={() => onSelectPerson(person)}
+                data-testid={`person-card-fav-${person.id}`}
+              >
+                <div className="mc-avatar-wrap">
+                  <div className="mc-avatar" style={{ background: avatarColor }}>
+                    {person.nameEn.charAt(0)}{person.nameEn.split(" ")[1]?.charAt(0) ?? ""}
+                  </div>
+                  <span className="mc-status-badge" />
+                </div>
+                <div className="mc-info">
+                  <div className="mc-name">{displayName}</div>
+                  <div className="mc-desc">{person.description}</div>
+                </div>
+                <span className="mc-chevron">›</span>
+              </button>
+            );
+          })}
+          <div className="messenger-section-label" data-testid="section-label-chats">▾ Chats</div>
+          {persons.slice(2).map((person) => {
+            const avatarColor = getAvatarColor(person.id);
+            const displayName = `${person.nameEn}/${person.region}`;
+            const isActive = selectedPersonId === person.id;
+            return (
+              <button
+                key={person.id}
+                className={`messenger-card${isActive ? " active" : ""}`}
+                onClick={() => onSelectPerson(person)}
+                data-testid={`person-card-${person.id}`}
+              >
+                <div className="mc-avatar-wrap">
+                  <div className="mc-avatar" style={{ background: avatarColor }}>
+                    {person.nameEn.charAt(0)}{person.nameEn.split(" ")[1]?.charAt(0) ?? ""}
+                  </div>
+                  <span className="mc-status-badge" />
+                </div>
+                <div className="mc-info">
+                  <div className="mc-name">{displayName}</div>
+                  <div className="mc-desc">{person.description}</div>
+                </div>
+                <span className="mc-chevron">›</span>
+              </button>
+            );
+          })}
+        </>
+      )}
     </div>
   );
 }
@@ -519,13 +649,15 @@ function PersonDetailSlide({ person, onBack, onSelectTask }: {
   onBack: () => void;
   onSelectTask: (taskKey: string) => void;
 }) {
+  const avatarColor = getAvatarColor(person.id);
   return (
     <div className="pds-inner" data-testid="person-detail">
       <div className="pds-header">
         <button className="pds-back" onClick={onBack} data-testid="person-back-btn">← 뒤로</button>
         <div className="pds-profile">
-          <div className="pds-avatar" style={{ background: `${person.color}20`, color: person.color }}>
-            {person.avatarInitial}
+          <div className="pds-avatar" style={{ background: avatarColor }}>
+            {person.nameEn.charAt(0)}{person.nameEn.split(" ")[1]?.charAt(0) ?? ""}
+            <span className="pds-avatar-badge" />
           </div>
           <div>
             <div className="pds-name">{person.name} {person.title}</div>
@@ -743,5 +875,22 @@ function PolicyTable({ table }: { table: NonNullable<TaskData["table"]> }) {
         ))}
       </tbody>
     </table>
+  );
+}
+
+function CautionList({ items }: { items: CautionItem[] }) {
+  return (
+    <div className="caution-list" data-testid="caution-list">
+      {items.map((section, i) => (
+        <div className="caution-section" key={i}>
+          <div className="caution-title">{section.title}</div>
+          <ul className="caution-items">
+            {section.items.map((item, j) => (
+              <li key={j} className="caution-item">{item}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
   );
 }
