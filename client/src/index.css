@@ -381,7 +381,7 @@
   height: 52px;
   display: flex;
   align-items: center;
-  justify-content: space-around;
+  justify-content: center;
   background: var(--rail-bg);
   border-top: none;
   flex-shrink: 0;

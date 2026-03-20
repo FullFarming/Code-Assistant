@@ -221,7 +221,7 @@ export default function Home() {
     setTimeout(() => setCopiedField(null), 2000);
   }, []);
 
-  const navTitle = activeTab === "messenger" ? "C&W Korea" : "WPR 업무 가이드";
+  const navTitle = "C&W Korea";
 
   const handleSelectPerson = useCallback((p: Person) => {
     setPanelOpen(false);
@@ -255,11 +255,8 @@ export default function Home() {
         </div>
 
         <div className={`iphone-content${isNavigating ? " navigating" : ""}${isSiriActive ? " siri-blurred" : ""}`} data-testid="iphone-content">
-          <div className={`tab-view${activeTab === "messenger" ? " active" : ""}`}>
-            <MessengerList onSelectPerson={handleSelectPerson} selectedPersonId={selectedPerson?.id ?? null} />
-          </div>
-          <div className={`tab-view${activeTab === "tasks" ? " active" : ""}`}>
-            <BentoGrid onSelectTask={openPanel} />
+          <div className="tab-view active">
+            <MessengerList onSelectPerson={handleSelectPerson} selectedPersonId={selectedPerson?.id ?? null} onSelectTask={openPanel} />
           </div>
         </div>
 
@@ -359,16 +356,6 @@ export default function Home() {
 
         <div className="bottom-tab-bar" data-testid="bottom-tab-bar">
           <button
-            className={`tab-item${!isSiriActive && activeTab === "messenger" ? " active" : ""}`}
-            onClick={() => { if (isSiriActive) handleSiriToggle(); handleTabChange("messenger"); }}
-            data-testid="tab-messenger"
-          >
-            <svg className="tab-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path d="M2 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6.5L3 18.5V15H4a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h2v2.086L8.914 14H16a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4z"/>
-            </svg>
-            <span className="tab-label">팀원</span>
-          </button>
-          <button
             className={`siri-tab-button${isSiriActive ? " siri-on" : ""}`}
             onClick={handleSiriToggle}
             aria-label={isSiriActive ? "검색 닫기" : "Siri 검색 열기"}
@@ -376,16 +363,6 @@ export default function Home() {
             data-testid="siri-button"
           >
             <img src={siriImg} alt="Siri" className="siri-tab-img" />
-          </button>
-          <button
-            className={`tab-item${!isSiriActive && activeTab === "tasks" ? " active" : ""}`}
-            onClick={() => { if (isSiriActive) handleSiriToggle(); handleTabChange("tasks"); }}
-            data-testid="tab-tasks"
-          >
-            <svg className="tab-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path d="M6 2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7.414L11.586 2H6zm0 1h5v4a1 1 0 0 0 1 1h4v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm6 .707L14.293 7H12V3.707zM7 9h6v1H7V9zm0 2.5h6v1H7v-1zm0 2.5h4v1H7v-1z"/>
-            </svg>
-            <span className="tab-label">업무목록</span>
           </button>
         </div>
 
@@ -556,16 +533,17 @@ function OwnerChip({ owner }: { owner: { name: string; nameKo: string } }) {
 
 const AVAILABLE_CHANNELS = new Set(["wpr"]);
 
-function MessengerList({ onSelectPerson, selectedPersonId }: {
+function MessengerList({ onSelectPerson, selectedPersonId, onSelectTask }: {
   onSelectPerson: (p: Person) => void;
   selectedPersonId: string | null;
+  onSelectTask: (key: string) => void;
 }) {
   const [activeFilter, setActiveFilter] = useState<string>("Chats");
 
   return (
     <div className="messenger-list" data-testid="messenger-list">
       <div className="messenger-filter-pills">
-        {["Unread", "Channels", "Chats"].map((f) => (
+        {["업무목록", "Channels", "Chats"].map((f) => (
           <button
             key={f}
             className={`pill-btn${activeFilter === f ? " pill-active" : ""}`}
@@ -577,7 +555,11 @@ function MessengerList({ onSelectPerson, selectedPersonId }: {
         ))}
       </div>
 
-      {activeFilter === "Channels" ? (
+      {activeFilter === "업무목록" ? (
+        <div className="bento-filter-wrap" data-testid="bento-filter-view">
+          <BentoGrid onSelectTask={onSelectTask} />
+        </div>
+      ) : activeFilter === "Channels" ? (
         <div className="channels-inline" data-testid="channels-list">
           <div className="messenger-section-label" data-testid="section-label-channels">▾ Departments</div>
           {DEPARTMENTS.map((dept) => {
