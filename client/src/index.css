@@ -539,6 +539,19 @@
   background: var(--online);
   border: 2px solid #FFFFFF;
 }
+.mc-status-badge--away {
+  background: #FFC83D;
+}
+.mc-avatar--cw {
+  background: #C41230;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+.mc-self {
+  cursor: default;
+  pointer-events: none;
+  opacity: 0.85;
+}
 .mc-info {
   flex: 1;
   min-width: 0;

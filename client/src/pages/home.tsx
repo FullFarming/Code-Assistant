@@ -609,33 +609,18 @@ function MessengerList({ onSelectPerson, selectedPersonId }: {
       ) : (
         <>
           <div className="messenger-section-label" data-testid="section-label-favorites">▾ Favorites</div>
-          {persons.slice(0, 2).map((person) => {
-            const avatarColor = getAvatarColor(person.id);
-            const displayName = `${person.nameEn}/${person.region}`;
-            const isActive = selectedPersonId === person.id;
-            return (
-              <button
-                key={`fav-${person.id}`}
-                className={`messenger-card${isActive ? " active" : ""}`}
-                onClick={() => onSelectPerson(person)}
-                data-testid={`person-card-fav-${person.id}`}
-              >
-                <div className="mc-avatar-wrap">
-                  <div className="mc-avatar" style={{ background: avatarColor }}>
-                    {person.nameEn.charAt(0)}{person.nameEn.split(" ")[1]?.charAt(0) ?? ""}
-                  </div>
-                  <span className="mc-status-badge" />
-                </div>
-                <div className="mc-info">
-                  <div className="mc-name">{displayName}</div>
-                  <div className="mc-desc">{person.description}</div>
-                </div>
-                <span className="mc-chevron">›</span>
-              </button>
-            );
-          })}
+          <div className="messenger-card mc-self" data-testid="person-card-self">
+            <div className="mc-avatar-wrap">
+              <div className="mc-avatar mc-avatar--cw">CW</div>
+              <span className="mc-status-badge mc-status-badge--away" />
+            </div>
+            <div className="mc-info">
+              <div className="mc-name">C&amp;W Korea/KOR</div>
+              <div className="mc-desc">Cushman &amp; Wakefield WPR</div>
+            </div>
+          </div>
           <div className="messenger-section-label" data-testid="section-label-chats">▾ Chats</div>
-          {persons.slice(2).map((person) => {
+          {persons.map((person) => {
             const avatarColor = getAvatarColor(person.id);
             const displayName = `${person.nameEn}/${person.region}`;
             const isActive = selectedPersonId === person.id;
