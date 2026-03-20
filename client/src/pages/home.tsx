@@ -221,7 +221,7 @@ export default function Home() {
     setTimeout(() => setCopiedField(null), 2000);
   }, []);
 
-  const navTitle = activeTab === "messenger" ? "WPR Team" : "WPR 업무 가이드";
+  const navTitle = activeTab === "messenger" ? "C&W Korea" : "WPR 업무 가이드";
 
   const handleSelectPerson = useCallback((p: Person) => {
     setPanelOpen(false);
