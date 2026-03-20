@@ -68,7 +68,7 @@ export const BUBBLES: BubbleConfig[] = [
   { key: "국내출장", emoji: "🚄", text: "국내 출장", top: "31%", left: "5%", floatClass: "float-b" },
   { key: "해외출장", emoji: "✈️", text: "해외 출장", top: "31%", right: "4%", floatClass: "float-c" },
   { key: "락커", emoji: "🔐", text: "락커 사용", top: "45%", left: "2%", floatClass: "float-a" },
-  { key: "인감", emoji: "🖊️", text: "인감 날인", top: "45%", right: "2%", floatClass: "float-b" },
+  { key: "인감", emoji: "✍️", text: "전자 계약", top: "45%", right: "2%", floatClass: "float-b" },
   { key: "법인차량", emoji: "🚗", text: "법인차량", top: "58%", left: "4%", floatClass: "float-c" },
   { key: "supplier", emoji: "💼", text: "Supplier", top: "58%", right: "5%", floatClass: "float-a" },
   { key: "solstice", emoji: "🖥️", text: "Solstice", top: "71%", left: "3%", floatClass: "float-b" },
@@ -105,7 +105,7 @@ export const DATA: Record<string, TaskData> = {
       {
         n: 4, title: "번호 기재 후 글로싸인 날인",
         desc: "회신받은 번호를 기재한 뒤 <strong>Glosign</strong>을 통해 법인인감 날인을 요청합니다.",
-        detail: "→ 비대면 인감날인 절차는 🖊️ 인감 날인 항목을 참고하세요."
+        detail: "→ 비대면 전자 계약 절차는 ✍️ 비대면 전자 계약(Glosign) 항목을 참고하세요."
       }
     ]
   },
@@ -221,21 +221,53 @@ export const DATA: Record<string, TaskData> = {
   },
 
   인감: {
-    icon: "🖊️", label: "비대면 인감 날인 (Glosign)", badge: "시설",
-    owner: { icon: "💻", name: "Noel Kim", nameKo: "김경만 과장", team: "WPR", contact: "noel.kim@cushwake.com" },
+    icon: "✍️", label: "비대면 전자 계약 (Glosign)", badge: "Legal",
+    owner: { icon: "👔", name: "Grace Kwon", nameKo: "권희원 이사", team: "WPR", contact: "grace.kwon@ap.cushwake.com" },
     steps: [
-      { n: 1, title: "Glosign 접속 → [계약 시작하기]", desc: "", detail: null },
-      { n: 2, title: "계약서 파일 업로드", desc: "hwp, pdf, jpg, doc, docx / 10MB 이하 | Google Drive, DropBox 업로드 가능", detail: null },
-      { n: 3, title: "계약명 + 메시지 입력 → [다음]", desc: "", detail: null },
-      { n: 4, title: "[비대면 계약] 선택 → [참여자 추가]", desc: "", detail: null },
       {
-        n: 5, title: "내부 결재자 설정",
-        desc: "결재 1차: 담당 사원 → 결재 2차: 부장",
-        detail: '서명참여자 (법인인감 날인 권한자): <strong>권희원 이사</strong><br>grace.kwon@ap.cushwake.com / 010-9282-4534'
+        n: 1,
+        title: "Glosign 접속 → [계약 시작하기]",
+        desc: "웹브라우저에서 <strong>glosign.com</strong> 접속 후 로그인 → 우측 상단 [계약 시작하기] 클릭",
+        detail: null
       },
-      { n: 6, title: "날인 위치 지정", desc: "[도장모양] 클릭 → 계약서 페이지에서 날인 위치 지정 → [다음]", detail: '인감증명서·법인등기부등본 요청 시: [클립모양] 클릭 → 첨부파일명 입력 후 [요청하기]' },
-      { n: 7, title: "[최종 확인] → 전자서명 신청 완료", desc: "", detail: null }
+      {
+        n: 2,
+        title: "계약서 파일 업로드",
+        desc: "지원 형식: <strong>hwp · pdf · jpg · doc · docx</strong> / 최대 10MB",
+        detail: "Google Drive, Dropbox에서 직접 불러오기도 가능합니다."
+      },
+      {
+        n: 3,
+        title: "계약명 + 메시지 입력 → [다음]",
+        desc: "계약명은 상대방에게 표시되므로 정확하게 입력하세요.",
+        detail: null
+      },
+      {
+        n: 4,
+        title: "[비대면 계약] 선택 → [참여자 추가]",
+        desc: "계약 유형에서 <strong>[비대면 계약]</strong>을 선택한 후 서명 참여자를 추가합니다.",
+        detail: null
+      },
+      {
+        n: 5,
+        title: "서명참여자(법인인감 날인 권한자) 설정",
+        desc: "법인인감 날인 권한자를 반드시 포함해야 합니다.",
+        detail: '법인인감 날인 권한자: <strong>권희원 이사</strong><br>grace.kwon@ap.cushwake.com / 010-9282-4534'
+      },
+      {
+        n: 6,
+        title: "날인 위치 지정 → [다음]",
+        desc: "[도장 모양] 클릭 → 계약서 페이지에서 날인 위치 지정",
+        detail: "인감증명서·법인등기부등본 첨부 요청 시: [클립 모양] 클릭 → 첨부파일명 입력 후 [요청하기]"
+      },
+      {
+        n: 7,
+        title: "[최종 확인] → 전자서명 신청 완료",
+        desc: "참여자 정보와 날인 위치를 확인한 후 [신청하기]를 클릭하면 참여자에게 서명 요청 메일이 발송됩니다.",
+        detail: null
+      }
     ],
+    note: "Glosign은 법적 효력이 있는 공인전자서명 플랫폼입니다. 계약서 원본은 Glosign에 자동 보관되며, 완료 후 PDF 다운로드가 가능합니다.",
   },
 
   법인차량: {

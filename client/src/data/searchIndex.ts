@@ -45,9 +45,9 @@ export const searchIndex: SearchableTask[] = [
     ownerName: '김지성 대리', ownerEn: 'gina kim',
   },
   {
-    key: '인감', label: '비대면 인감 날인', badge: '시설', icon: '🖊️',
-    keywords: ['인감', '날인', 'glosign', '전자서명', '서명', '도장', '비대면'],
-    ownerName: '김경만 과장', ownerEn: 'noel kim',
+    key: '인감', label: '비대면 전자 계약 (Glosign)', badge: 'Legal', icon: '✍️',
+    keywords: ['전자계약', '비대면', 'glosign', '전자서명', '서명', '계약', '인감', '날인'],
+    ownerName: '권희원 이사', ownerEn: 'grace kwon',
   },
   {
     key: '법인차량', label: '법인차량', badge: '시설', icon: '🚗',
