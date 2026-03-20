@@ -845,6 +845,12 @@
   top: 0;
   z-index: 5;
 }
+.ts-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
 .ts-back {
   background: none;
   border: none;
@@ -854,7 +860,25 @@
   font-family: var(--font-body);
   font-weight: 500;
   padding: 4px 0;
-  margin-bottom: 10px;
+}
+.owner-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--ios-bg, #F2F2F7);
+  border-radius: 20px;
+  padding: 4px 10px 4px 7px;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.owner-chip-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+.owner-chip-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ios-secondary, #8E8E93);
+  white-space: nowrap;
 }
 .ts-title-wrap {
   display: flex;

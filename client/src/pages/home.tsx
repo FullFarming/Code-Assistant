@@ -398,9 +398,15 @@ export default function Home() {
         {activeData && panelOpen && (
           <div className="sp-task" data-testid="task-slide">
             <div className="ts-header" data-testid="ts-header">
-              <button className="ts-back" onClick={closePanel} data-testid="back-btn">
-                ← 뒤로
-              </button>
+              <div className="ts-header-top">
+                <button className="ts-back" onClick={closePanel} data-testid="back-btn">
+                  ← 뒤로
+                </button>
+                <div className="owner-chip" data-testid="owner-chip">
+                  <span className="owner-chip-icon">{activeData.owner.icon}</span>
+                  <span className="owner-chip-name">{activeData.owner.nameKo}</span>
+                </div>
+              </div>
               <div className="ts-title-wrap">
                 <span className="ts-icon">{activeData.icon}</span>
                 <span className="ts-title" data-testid="panel-title">{activeData.label}</span>
@@ -414,7 +420,6 @@ export default function Home() {
               <div className="msg-bubble msg-bubble--self" data-testid="msg-bubble-user">
                 네, 알려주세요!
               </div>
-              <OwnerCard owner={activeData.owner} />
               {activeData.steps.length > 0 && (
                 <div className="steps-container">
                   {activeData.steps.map((step) => {
