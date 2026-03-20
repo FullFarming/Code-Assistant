@@ -256,7 +256,7 @@ export default function Home() {
 
         <div className={`iphone-content${isNavigating ? " navigating" : ""}${isSiriActive ? " siri-blurred" : ""}`} data-testid="iphone-content">
           <div className="tab-view active">
-            <MessengerList onSelectPerson={handleSelectPerson} selectedPersonId={selectedPerson?.id ?? null} onSelectTask={openPanel} />
+            <MessengerList onSelectPerson={handleSelectPerson} selectedPersonId={selectedPerson?.id ?? null} onSelectTask={openPanel} onSearchOpen={handleSiriToggle} isSiriActive={isSiriActive} />
           </div>
         </div>
 
@@ -533,26 +533,41 @@ function OwnerChip({ owner }: { owner: { name: string; nameKo: string } }) {
 
 const AVAILABLE_CHANNELS = new Set(["wpr"]);
 
-function MessengerList({ onSelectPerson, selectedPersonId, onSelectTask }: {
+function MessengerList({ onSelectPerson, selectedPersonId, onSelectTask, onSearchOpen, isSiriActive }: {
   onSelectPerson: (p: Person) => void;
   selectedPersonId: string | null;
   onSelectTask: (key: string) => void;
+  onSearchOpen: () => void;
+  isSiriActive: boolean;
 }) {
   const [activeFilter, setActiveFilter] = useState<string>("Chats");
 
   return (
     <div className="messenger-list" data-testid="messenger-list">
       <div className="messenger-filter-pills">
-        {["업무목록", "Channels", "Chats"].map((f) => (
-          <button
-            key={f}
-            className={`pill-btn${activeFilter === f ? " pill-active" : ""}`}
-            onClick={() => setActiveFilter(f)}
-            data-testid={`filter-pill-${f}`}
-          >
-            {f}
-          </button>
-        ))}
+        <div className="pills-group">
+          {["업무목록", "Channels", "Chats"].map((f) => (
+            <button
+              key={f}
+              className={`pill-btn${activeFilter === f ? " pill-active" : ""}`}
+              onClick={() => setActiveFilter(f)}
+              data-testid={`filter-pill-${f}`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+        <button
+          className={`search-pill-btn${isSiriActive ? " search-pill-btn--on" : ""}`}
+          onClick={onSearchOpen}
+          aria-label="검색"
+          data-testid="siri-button"
+        >
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+            <circle cx="8.5" cy="8.5" r="5.5" />
+            <line x1="13" y1="13" x2="18" y2="18" />
+          </svg>
+        </button>
       </div>
 
       {activeFilter === "업무목록" ? (

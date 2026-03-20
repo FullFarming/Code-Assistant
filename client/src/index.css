@@ -378,8 +378,8 @@
 }
 
 .bottom-tab-bar {
+  display: none;
   height: 52px;
-  display: flex;
   align-items: center;
   justify-content: center;
   background: var(--rail-bg);
@@ -463,9 +463,36 @@
 
 .messenger-filter-pills {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
   padding: 8px 8px;
   background: var(--list-bg);
+}
+.pills-group {
+  display: flex;
+  gap: 6px;
+}
+.search-pill-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border-default);
+  background: var(--border-subtle);
+  color: #424242;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.search-pill-btn:hover {
+  background: #EBEBEB;
+}
+.search-pill-btn--on {
+  background: var(--teams-brand);
+  color: #FFFFFF;
+  border-color: transparent;
 }
 
 .pill-btn {
