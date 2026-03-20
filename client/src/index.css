@@ -864,20 +864,42 @@
 .owner-chip {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 7px;
   background: var(--ios-bg, #F2F2F7);
   border-radius: 20px;
-  padding: 4px 10px 4px 7px;
+  padding: 4px 10px 4px 4px;
   border: 1px solid rgba(0,0,0,0.06);
 }
-.owner-chip-icon {
-  font-size: 15px;
-  line-height: 1;
+.owner-chip-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.owner-chip-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 0.3px;
+}
+.owner-chip-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--online, #6BB700);
+  border: 2px solid var(--ios-surface, #FFFFFF);
 }
 .owner-chip-name {
   font-size: 12px;
   font-weight: 600;
-  color: var(--ios-secondary, #8E8E93);
+  color: var(--text-primary, #1C1C1E);
   white-space: nowrap;
 }
 .ts-title-wrap {

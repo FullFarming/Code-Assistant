@@ -402,10 +402,7 @@ export default function Home() {
                 <button className="ts-back" onClick={closePanel} data-testid="back-btn">
                   ← 뒤로
                 </button>
-                <div className="owner-chip" data-testid="owner-chip">
-                  <span className="owner-chip-icon">{activeData.owner.icon}</span>
-                  <span className="owner-chip-name">{activeData.owner.nameKo}</span>
-                </div>
+                <OwnerChip owner={activeData.owner} />
               </div>
               <div className="ts-title-wrap">
                 <span className="ts-icon">{activeData.icon}</span>
@@ -535,6 +532,26 @@ function getAvatarColor(id: string): string {
   let hash = 0;
   for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
   return TEAMS_AVATAR_COLORS[Math.abs(hash) % TEAMS_AVATAR_COLORS.length];
+}
+
+function getInitials(nameEn: string): string {
+  return nameEn.split(" ").map(w => w[0] ?? "").join("").slice(0, 2).toUpperCase();
+}
+
+function OwnerChip({ owner }: { owner: { name: string; nameKo: string } }) {
+  const person = persons.find(p => p.nameEn === owner.name);
+  const avatarColor = person?.color ?? "#6264A7";
+  return (
+    <div className="owner-chip" data-testid="owner-chip">
+      <div className="owner-chip-avatar-wrap">
+        <div className="owner-chip-avatar" style={{ background: avatarColor }}>
+          {getInitials(owner.name)}
+        </div>
+        <div className="owner-chip-dot" />
+      </div>
+      <span className="owner-chip-name">{owner.nameKo}</span>
+    </div>
+  );
 }
 
 const AVAILABLE_CHANNELS = new Set(["wpr"]);
