@@ -316,6 +316,32 @@ export const DATA: Record<string, TaskData> = {
     ],
   },
 
+  it_coord: {
+    icon: "🎧", label: "IT Coordination", badge: "IT",
+    owner: { icon: "💻", name: "Noel Kim", nameKo: "김경만 과장", team: "WPR", contact: "noel.kim@cushwake.com" },
+    steps: [
+      {
+        n: 1,
+        title: "IT Chat으로 1차 해결",
+        desc: '대부분의 IT 이슈는 <strong>Teams 왼쪽 사이드바 → IT Chat</strong>을 통해 빠르게 해결할 수 있습니다.<br><br><img src="/it-chat-icon.png" alt="IT Chat 아이콘" style="width:72px;border-radius:8px;margin:6px 0;display:block;">',
+        detail: "IT Chat은 사내 IT 지원팀과 실시간으로 채팅할 수 있는 채널입니다. 비밀번호 재설정, 소프트웨어 설치, VPN 문제 등 대부분의 이슈를 여기서 해결할 수 있습니다."
+      },
+      {
+        n: 2,
+        title: "Help-hub에서 셀프 해결",
+        desc: 'Teams 왼쪽 사이드바 → <strong>Help-hub</strong>에서 자주 묻는 IT 문제와 가이드 문서를 확인할 수 있습니다.',
+        detail: "Help-hub에는 Windows 설정, Office 365 사용법, 네트워크 연결, 장비 관련 FAQ 등 자주 발생하는 IT 문제의 해결 방법이 정리되어 있습니다."
+      },
+      {
+        n: 3,
+        title: "설명하기 어려운 문제 → Noel Kim에게 직접 연락",
+        desc: '위의 채널로 해결이 어렵거나 문제를 설명하기 어려운 경우 <strong>김경만 과장 (Noel Kim)</strong>에게 직접 연락하세요.',
+        detail: "noel.kim@cushwake.com"
+      }
+    ],
+    note: "IT Chat과 Help-hub를 먼저 활용해 주시면 더 빠른 해결이 가능합니다. 긴급한 장비 오류·시스템 접근 불가 문제는 바로 Noel Kim에게 연락해 주세요.",
+  },
+
   solstice: {
     icon: "🖥️", label: "Solstice 화면 공유", badge: "IT · 무선",
     owner: { icon: "💻", name: "Noel Kim", nameKo: "김경만 과장", team: "WPR", contact: "noel.kim@cushwake.com" },

@@ -63,9 +63,10 @@ export const persons: Person[] = [
     emoji: "💻",
     color: "#3B82F6",
     avatarInitial: "김",
-    description: "인감·IT시스템·회의실·장비 담당",
+    description: "IT Coordination·IT시스템·회의실·장비 담당",
     responsibilities: [
-      { label: "인감 날인 (Glosign)", taskKey: "인감", description: "Glosign 전자서명 및 인감 날인 요청" },
+      { label: "IT Coordination", taskKey: "it_coord", description: "IT 이슈 발생 시 IT Chat·Help-hub 안내 및 직접 지원" },
+      { label: "비대면 전자 계약 (Glosign)", taskKey: "인감", description: "Glosign 전자서명 절차 안내" },
       { label: "Solstice 화면 공유", taskKey: "solstice", description: "Solstice 무선 화면 공유 설정 지원" },
       { label: "Canteen 회의실 Teams Room", taskKey: "canteen", description: "Canteen 회의실 화상회의 설정" },
       { label: "프린트 (Printix)", taskKey: "printix", description: "사내 Printix 앱 설치 및 출력 안내" },

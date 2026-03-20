@@ -60,6 +60,11 @@ export const searchIndex: SearchableTask[] = [
     ownerName: '김지성 대리', ownerEn: 'gina kim',
   },
   {
+    key: 'it_coord', label: 'IT Coordination', badge: 'IT', icon: '🎧',
+    keywords: ['it', 'it chat', 'help-hub', 'helphub', '아이티', '컴퓨터', '시스템', 'vpn', '네트워크', '소프트웨어', '장비', '오류', '문제'],
+    ownerName: '김경만 과장', ownerEn: 'noel kim',
+  },
+  {
     key: 'solstice', label: 'Solstice', badge: 'IT', icon: '🖥️',
     keywords: ['solstice', '화면공유', '미러링', '프레젠테이션', '무선', '디스플레이'],
     ownerName: '김경만 과장', ownerEn: 'noel kim',
