@@ -101,6 +101,7 @@ export default function Home() {
   const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set());
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [panelSourcePerson, setPanelSourcePerson] = useState<Person | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const panelBodyRef = useRef<HTMLDivElement>(null);
   const siriInputRef = useRef<HTMLInputElement>(null);
@@ -113,6 +114,7 @@ export default function Home() {
     setActiveKey(null);
     setExpandedDetails(new Set());
     setSelectedPerson(null);
+    setPanelSourcePerson(null);
     siriDispatch({ type: 'CLOSE' });
     setTimeout(() => siriDispatch({ type: 'CLOSED' }), 300);
     setViewMode("home");
@@ -150,6 +152,7 @@ export default function Home() {
     siriDispatch({ type: 'NAVIGATE', payload: taskKey });
     setTimeout(() => {
       setSelectedPerson(null);
+      setPanelSourcePerson(null);
       setActiveKey(taskKey);
       setPanelOpen(true);
       setExpandedDetails(new Set());
@@ -178,7 +181,11 @@ export default function Home() {
     setPanelOpen(false);
     setActiveKey(null);
     setExpandedDetails(new Set());
-  }, []);
+    if (panelSourcePerson) {
+      setSelectedPerson(panelSourcePerson);
+      setPanelSourcePerson(null);
+    }
+  }, [panelSourcePerson]);
 
   const closePersonDetail = useCallback(() => {
     setSelectedPerson(null);
@@ -227,6 +234,7 @@ export default function Home() {
     setPanelOpen(false);
     setActiveKey(null);
     setExpandedDetails(new Set());
+    setPanelSourcePerson(null);
     setSelectedPerson(p);
   }, []);
 
@@ -497,6 +505,7 @@ export default function Home() {
             person={selectedPerson}
             onBack={closePersonDetail}
             onSelectTask={(key) => {
+              setPanelSourcePerson(selectedPerson);
               setSelectedPerson(null);
               openPanel(key);
             }}
