@@ -371,6 +371,14 @@ export default function Home() {
         )}
       </div>
 
+      {hasSlideOpen && (
+        <div
+          className="panel-backdrop"
+          onClick={() => { closePanel(); closePersonDetail(); }}
+          data-testid="panel-backdrop"
+        />
+      )}
+
       <div className={`side-panel${panelOpen ? " task-open" : ""}`} data-testid="side-panel">
         {activeData && panelOpen && (
           <div className="sp-task" data-testid="task-slide">
