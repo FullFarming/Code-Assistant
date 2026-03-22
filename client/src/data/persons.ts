@@ -39,7 +39,7 @@ export const persons: Person[] = [
       {
         label: "Contract Review & Legal Coordination",
         taskKey: "contract_review",
-        description: "계약서 검토 지원 및 Legal 코디네이션"
+        description: "계약서 검토 지원 및 Legal Coordination"
       },
       {
         label: "계약서 날인 및 보관",
@@ -49,7 +49,7 @@ export const persons: Person[] = [
       {
         label: "Compliance Coordination",
         taskKey: "compliance",
-        description: "윤리 및 규정 준수 조항 코디네이션"
+        description: "윤리 및 규정 준수 조항 Coordination"
       },
     ],
   },
@@ -63,7 +63,7 @@ export const persons: Person[] = [
     emoji: "💻",
     color: "#3B82F6",
     avatarInitial: "김",
-    description: "IT 지원 및 문서 날인 담당",
+    description: "IT Support & 문서 날인 담당",
     responsibilities: [
       { label: "IT Coordination", taskKey: "it_coord", description: "IT 이슈 발생 시 IT Chat·Help-hub 안내 및 직접 지원" },
       { label: "비대면 전자 계약 (Glosign)", taskKey: "인감", description: "Glosign 전자서명 절차 안내" },
@@ -83,7 +83,7 @@ export const persons: Person[] = [
     emoji: "✈️",
     color: "#F59E0B",
     avatarInitial: "김",
-    description: "오피스 관리 및 행정적 업무 지원 담당",
+    description: "Office 관리 및 행정 업무 지원 담당",
     responsibilities: [
       { label: "공문번호 발급", taskKey: "공문번호", description: "사내 공문 번호 발급 및 문서 등록" },
       { label: "보관계약서 열람", taskKey: "계약서", description: "기존 계약서 사본 및 열람 지원" },
@@ -104,7 +104,7 @@ export const persons: Person[] = [
     emoji: "🌸",
     color: "#EC4899",
     avatarInitial: "송",
-    description: "리셉셔니스트",
+    description: "Receptionist",
     responsibilities: [
       { label: "CWK 명함 신청", taskKey: "명함", description: "임직원 명함 제작 신청 및 수령" },
       { label: "화환 신청", taskKey: "화환", description: "경조사 화환 주문 및 배송 처리" },
