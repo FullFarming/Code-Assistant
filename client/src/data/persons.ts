@@ -41,16 +41,6 @@ export const persons: Person[] = [
         taskKey: "contract_review",
         description: "계약서 검토 지원 및 Legal 코디네이션"
       },
-      {
-        label: "계약서 날인 및 보관",
-        taskKey: "contract_seal",
-        description: "Glosign 전자 날인 / 실물 날인 / 보관 절차"
-      },
-      {
-        label: "Compliance Coordination",
-        taskKey: "compliance",
-        description: "윤리 및 규정 준수 조항 코디네이션"
-      },
     ],
   },
   {
