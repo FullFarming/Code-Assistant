@@ -91,6 +91,9 @@ const BENTO_ITEMS: BentoItem[] = [
   { key: "contract_review", icon: "📋", label: "Contract Review", category: "Legal", categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)", wide: true },
   { key: "contract_seal", icon: "🖊️", label: "날인 및 보관", category: "날인", categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)" },
   { key: "compliance", icon: "⚖️", label: "Compliance", category: "Compliance", categoryColor: "#8B5CF6", gradient: "linear-gradient(135deg, #F3E8FF, #DDD6FE)" },
+  { key: "physical_seal", icon: "📝", label: "실물 날인·부대서류", category: "날인", categoryColor: "#3B82F6", gradient: "linear-gradient(135deg, #EFF6FF, #DBEAFE)", wide: true },
+  { key: "office_repair", icon: "🔧", label: "오피스 수리 지원", category: "시설", categoryColor: "#10B981", gradient: "linear-gradient(135deg, #ECFDF5, #D1FAE5)" },
+  { key: "parking_reg", icon: "🅿️", label: "고객사 주차 등록", category: "지원", categoryColor: "#F59E0B", gradient: "linear-gradient(135deg, #FFFBEB, #FEF3C7)" },
 ];
 
 export default function Home() {
@@ -403,13 +406,6 @@ export default function Home() {
               </div>
             </div>
             <div className="ts-body" ref={panelBodyRef} data-testid="panel-body">
-              <div className="chat-timestamp" data-testid="chat-timestamp">Today</div>
-              <div className="msg-bubble msg-bubble--other" data-testid="msg-bubble-bot">
-                {activeData.label} 업무 가이드를 안내해 드릴게요 😊
-              </div>
-              <div className="msg-bubble msg-bubble--self" data-testid="msg-bubble-user">
-                네, 알려주세요!
-              </div>
               {activeData.steps.length > 0 && (
                 <div className="steps-container">
                   {activeData.steps.map((step) => {

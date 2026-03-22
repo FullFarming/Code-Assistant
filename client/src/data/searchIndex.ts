@@ -99,6 +99,21 @@ export const searchIndex: SearchableTask[] = [
     keywords: ['compliance', '컴플라이언스', '윤리', '규정', 'ethics', 'fcpa'],
     ownerName: '권희원 이사', ownerEn: 'grace kwon',
   },
+  {
+    key: 'physical_seal', label: '계약서 실물 날인 및 부대서류 지급', badge: '날인', icon: '📝',
+    keywords: ['실물날인', '실물', '부대서류', '법인인감증명서', '등기부등본', '날인', '인감', '계약서날인', '노엘', 'noel'],
+    ownerName: '김경만 과장', ownerEn: 'noel kim',
+  },
+  {
+    key: 'office_repair', label: '오피스 시설 수리 지원', badge: '시설', icon: '🔧',
+    keywords: ['오피스', '수리', '시설', '유지보수', '파손', '누수', '전기', '냉난방', '가구', '고장', '지나', 'gina'],
+    ownerName: '김지성 대리', ownerEn: 'gina kim',
+  },
+  {
+    key: 'parking_reg', label: '고객사 주차 등록', badge: '지원', icon: '🅿️',
+    keywords: ['주차', '주차등록', '고객사', '차량번호', '방문', '파킹', '엠마', 'emma', 'parking'],
+    ownerName: '송진영 사원', ownerEn: 'emma song',
+  },
 ];
 
 export function searchTasks(query: string, tasks: SearchableTask[]): SearchableTask[] {
