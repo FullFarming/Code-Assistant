@@ -601,4 +601,87 @@ export const DATA: Record<string, TaskData> = {
       }
     ],
   },
+
+  physical_seal: {
+    icon: "📝", label: "계약서 실물 날인 및 부대서류 지급", badge: "날인",
+    owner: { icon: "💻", name: "Noel Kim", nameKo: "김경만 과장", team: "WPR", contact: "noel.kim@cushwake.com" },
+    steps: [
+      {
+        n: 1, title: "날인 요청 메일 발송",
+        desc: "계약서 실물 날인 및 부대서류 지급이 필요한 경우 <strong>Noel Kim</strong>에게 메일로 요청합니다.",
+        email: {
+          to: "Noel Kim (noel.kim@cushwake.com)",
+          cc: "Grace Kwon (grace.kwon@ap.cushwake.com)",
+          subject: "[날인 요청] [고객사명] / [계약명] – 실물 날인",
+          body: "안녕하세요 Noel님,\n\n아래 계약서의 실물 날인 및 부대서류 지급을 요청드립니다.\n\n■ 고객사명   : [고객사명]\n■ 계약명     : [계약명]\n■ 날인 종류  : □ 계약서 실물 날인  □ 부대서류 날인  □ 법인인감증명서  □ 등기부등본\n■ 필요 수량  : [수량]\n■ 필요 일자  : [날짜]\n\n첨부 서류를 확인 후 처리 부탁드립니다.\n\n감사합니다.",
+          attach: "[계약명]_계약서.pdf / 사용인감계(해당 시)"
+        }
+      },
+      {
+        n: 2, title: "부대서류 준비 확인",
+        desc: "날인 종류에 따라 아래 서류를 준비합니다.",
+        detail: "<strong>계약서 실물 날인</strong>: 날인 대상 계약서 원본 + 사용인감계<br><strong>부대서류 날인</strong>: 날인 대상 문서 원본<br><strong>법인인감증명서</strong>: 발급 목적 및 제출처 명시<br><strong>등기부등본</strong>: 용도 및 발급 수량 명시"
+      },
+      {
+        n: 3, title: "날인 완료 후 수령",
+        desc: "Noel Kim이 날인 완료 후 회신하면 서류를 수령합니다. 법인인감증명서·등기부등본은 직접 전달 또는 메일 수신 방법을 협의합니다.",
+        detail: null
+      }
+    ],
+    warn: "법인인감증명서 및 등기부등본 요청 시 사용 목적과 제출처를 반드시 명시해야 합니다."
+  },
+
+  office_repair: {
+    icon: "🔧", label: "오피스 시설 수리 지원", badge: "시설",
+    owner: { icon: "✈️", name: "Gina Kim", nameKo: "김지성 대리", team: "WPR", contact: "gina.kim@cushwake.com" },
+    steps: [
+      {
+        n: 1, title: "문제 상황 파악 및 기록",
+        desc: "오피스 내 시설 문제(파손, 누수, 전기, 냉난방 등) 발생 시 상황을 사진과 함께 기록합니다.",
+        detail: "문제 위치(층·구역), 발생 시각, 문제 유형(전기·배관·가구·냉난방·기타)을 메모해두면 빠른 처리에 도움됩니다."
+      },
+      {
+        n: 2, title: "Gina Kim에게 수리 요청",
+        desc: "파악한 내용을 <strong>Gina Kim</strong>에게 메일 또는 Teams 메시지로 전달합니다.",
+        email: {
+          to: "Gina Kim (gina.kim@cushwake.com)",
+          subject: "[시설 수리 요청] [위치] / [문제 유형]",
+          body: "안녕하세요 Gina님,\n\n오피스 시설 문제 발생으로 수리 지원을 요청드립니다.\n\n■ 발생 위치  : [층 / 구역]\n■ 문제 유형  : □ 전기  □ 배관·누수  □ 가구  □ 냉난방  □ 기타([직접 입력])\n■ 발생 일시  : [날짜 및 시각]\n■ 상세 내용  : [구체적인 상황 설명]\n\n첨부: [현장 사진 (해당 시)]\n\n빠른 처리 부탁드립니다. 감사합니다."
+        }
+      },
+      {
+        n: 3, title: "수리 일정 확인 및 협조",
+        desc: "Gina Kim이 수리 업체 일정을 조율하면 필요 시 해당 구역 접근을 허용하고 협조합니다.",
+        detail: null
+      }
+    ],
+    note: "긴급 상황(누수, 정전 등)은 메일 발송과 동시에 Teams 메시지로도 즉시 알려주세요."
+  },
+
+  parking_reg: {
+    icon: "🅿️", label: "고객사 주차 등록", badge: "지원",
+    owner: { icon: "🌸", name: "Emma Song", nameKo: "송진영 사원", team: "WPR", contact: "emma.song@cushwake.com" },
+    steps: [
+      {
+        n: 1, title: "주차 등록 정보 준비",
+        desc: "주차 등록을 위해 아래 두 가지 정보를 반드시 준비합니다.",
+        detail: "<strong>필수 정보</strong><br>① 고객사명 (방문 회사 이름)<br>② 차량번호 (예: 12가 3456)<br><br>정보가 누락될 경우 등록이 불가합니다."
+      },
+      {
+        n: 2, title: "Emma Song에게 주차 등록 요청",
+        desc: "준비한 정보를 <strong>Emma Song</strong>에게 메일 또는 Teams 메시지로 전달합니다.",
+        email: {
+          to: "Emma Song (emma.song@cushwake.com)",
+          subject: "[주차 등록 요청] [고객사명] / [방문 일자]",
+          body: "안녕하세요 Emma님,\n\n고객사 방문 주차 등록을 요청드립니다.\n\n■ 고객사명  : [고객사 이름]\n■ 차량번호  : [차량번호 (예: 12가 3456)]\n■ 방문 일자 : [날짜]\n■ 방문 시간 : [시간 (예: 14:00 ~ 16:00)]\n\n처리 부탁드립니다. 감사합니다."
+        }
+      },
+      {
+        n: 3, title: "등록 완료 확인",
+        desc: "Emma Song으로부터 등록 완료 회신을 받은 후 고객사에 주차 가능 안내를 전달합니다.",
+        detail: null
+      }
+    ],
+    warn: "고객사명과 차량번호 두 가지 정보가 모두 있어야 주차 등록이 가능합니다. 정보 누락 시 등록이 지연됩니다."
+  },
 };
